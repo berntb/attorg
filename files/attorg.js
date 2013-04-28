@@ -1,4 +1,4 @@
-//    This file is part of attorg.
+//    This file is part of attorg. Copyright Bernt Budde 2013
 //
 //    Attorg is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
