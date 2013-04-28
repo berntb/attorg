@@ -1,0 +1,388 @@
+<!--
+    This file is part of Attorg. Copyright 2013 Bernt Budde.
+
+    Attorg is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Attorg is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Attorg.  If not, see <http://www.gnu.org/licenses/>.
+
+	The author is Bernt Budde, see my GitHub account, user berntb.
+-->
+
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <a class="brand" href="#">Attorg</a>
+    <ul class="nav">
+      <li class="active"><a href="#">Home</a></li>
+    </ul>
+    <a class="brand pull-left" href="#"></a>
+  </div>
+</div>
+
+
+<!-- Main content -->
+
+
+<!-- HEADER line -->
+<div class="container">
+
+<div class="page-header">
+	<div class="row">
+		<div class="span12">
+			<h1>Attorg -- Emacs Org mode in JavaScript</h1>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="span10">
+    <h2>About Emacs and Org Mode</h2>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span10 offset1">
+    <h4>About Emacs</h4>
+
+    <p class="text-info">Emacs is the classical text editor, with
+    unrivalled functionality since the 1970s. ... XXXX Add some
+    links</p>
+
+    <h4>About Org Mode</h4>
+    <p class="text-info">XXXX Add some links</p>
+    
+  </div>
+</div>
+
+
+<div class="row">
+  <div class="span10 offset1">
+    <h4>About Attorg</h4>
+
+    <p class="text-info">Attorg is a complement to Emacs, so just a
+      web browser can be used to do minor updates to your
+      Org documents.</p>
+    <p>Attorg will probably never have a fraction of the features of
+      Org Mode. The distant goal is that Attorg might become a gateway
+      drug for real Org Mode... :-)
+    </p>
+
+  </div>
+</div>
+
+
+<div class="row">
+	<div class="span10">
+    <h2>Commands</h2>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span10 offset1">
+    <h4>About using the commands</h4>
+    <p>There are lots of keyboard commands while editing an Org
+    document's Headlines. The commands are based on Emacs commands, so
+    learning these will transfer to the use of Org Mode proper.
+    </p>
+    <p>These abbreviations are used in the command list:
+    <dl>
+      <dt><code>C-X</code></dt>
+      <dd>Means <strong>Control-X</strong>.</dd>
+      <dt><code>M-X</code></dt>
+      <dd>Means <strong>Alt-X</strong> (or <strong>ESC X</strong>).</dd>
+      <dt><code>M-C-X</code></dt>
+      <dd>Means <strong>Alt-Control-X</strong> (or <strong>ESC
+    Control-X</strong>).
+    </dl>
+    </p>
+    <p>A Headline has the parts of:
+      <ul>
+        <li>the Headline text proper</li>
+        <li>A Block of text (directly after the Headline)</li>
+        <li>The hierarchical level (measured in number of stars)</li>
+        <li>A TODO status (with changeable alternatives)</li>
+      </ul>
+    </p>
+    <p>To be able to use the commands, you must be editing a Headline
+    or a Block. You get there by either adding a new Headline or
+    editing an existing Headline. <br/>
+      Add a new Headline by clicking the <i class="icon-plus
+    add-header"></i> icon.<br/>
+      Edit an existing Headline by clicking the <i class="icon-edit
+    edit-header"></i> icon or double click the text of a Headline or
+    Block.
+    </p>
+  </div>
+</div>
+
+<div class="row">
+	<div class="span10 offset1">
+    <h3>Change Levels</h3>
+    <dl>
+      <dt><code>M-left</code></dt>
+      <dd>Decrease indentation (number of stars).</dd>
+      <dt><code>M-right</code></dt>
+      <dd>Increase indentation (number of stars).</dd>
+      <dt><code>M-shift-left</code></dt>
+      <dd>Decrease indentation (number of stars) for the whole subtree.</dd>
+      <dt><code>M-shift-right</code></dt>
+      <dd>Increase indentation (number of stars) for the whole subtree.</dd>
+    </dl>
+    <h3>Move between Headlines/Blocks</h3>
+    <dl>
+      <dt><code>C-P</code>, <code>C-up</code></dt>
+      <dd>Go to <em>P</em>revious. If editing a Headline text, go to
+      previous Headline. If in Block, go to the Headline.</dd>
+      <dt><code>C-N</code>, <code>C-down</code></dt>
+      <dd>Go to <em>N</em>ext. If in Headline, go to Block. If in
+      Block, go to the next Headline.</dd>
+      <dt><code>C-C C-U</code></dt>
+      <dd>Go to the previous higher level Headline (fewer number of
+      stars). So if the cursor is at a Headline with four stars, this
+      Headline will be closed and the previous Headline with three
+      stars will be opened for editing. The idea is that you can
+      quickly go to a higher level by repeating this a few times.</dd>
+    </dl>
+    <h3>Move Headlines/Blocks</h3>
+    <dl>
+      <dt><code>M-up</code></dt>
+      <dd>Move this Headline up one step, effectively changing place
+      with this Headline and the previous. This doesn't change
+      Levels in any way.</dd>
+      <dt><code>M-down</code></dt>
+      <dd>Move this Headline down one step, effectively changing place
+      with this Headline and the next. This doesn't change
+      Levels in any way.</dd>
+      <dt><code>M-shift-up</code></dt>
+      <dd>Move this Headline <em>with its whole subtree of lower
+      priority Headlines</em> up to before the previous subtree.</dd>
+      <dt><code>M-shift-down</code></dt>
+      <dd>Move this Headline <em>with its whole subtree of lower
+      priority Headlines</em> down to after the next subtree.</dd>
+    </dl>
+    <h3>Diverse commands</h3>
+    <dl>
+      <dt><code>TAB</code></dt>
+      <dd>Opens/closes the hierarchy of Headlines below the edited
+      Headline, in three levels. This is the same as clicking
+      the <i class="icon-caret-right"></i> icon.</dd>
+      <dt><code>shift-TAB</code></dt>
+      <dd>As normal <code>TAB</code>, but for <strong>all</strong>
+      the Headlines after the edited Headline. Note
+      the <em>after</em>, this is a difference from Emacs.</dd>
+      <dt><code>Return</code></dt>
+      <dd>In Headline only. Saves the changes of the Headline/Block
+      and close the edits.</dd>
+      <dt><code>M-Return</code></dt>
+      <dd>Saves the changes of the Headline/Block and opens a new
+      Headline of the same level.</dd>
+      <dt><code>C-G</code></dt>
+      <dd>Closes editing, without saving any changes.</dd>
+      
+    </dl>
+  </div>
+</div>
+
+
+<div class="row">
+	<div class="span10">
+  <h2>To be done</h2>
+  <p class="text-info">In short: A lot. The UI/UX needs a lot of love,
+  in general.</p>
+  <ul>
+    <li>The opening of editing fields directly below the Headline was
+      a bad idea, imho. It should probably be a specific field where
+      just one Headline is being edited.</li>
+    <li>The editing should use some existing intelligent text editor
+      which can handle underline, overstrike etc in the text -- not
+      only in the rendered text. This should be extended to handle the
+      "usual suspects" for Emacs, like C-A, C-E, M-F, M-B, etc,
+      etc.</li>
+    <li>Now the server must be called for parsing a Headline (To Be
+      Implemented, even that :-) ), it would be nice if the Perl
+      Org::Parser was in Javascript, but I'm not going to implement
+      that (I like JavaScript but <i class="icon-heart"></i> Perl :-)
+      ).</li>
+    <li></li>
+  </ul>
+    
+             
+  </div>
+</div>
+
+<div class="row">
+	<div class="span10">
+  <h2>Credits</h2>
+  <p>Thanks to the creators of Emacs, Org Mode and
+   <a href="http://search.cpan.org/~sharyanto/Org-Parser/">Org
+  Parser</a>!
+  </div>
+</div>
+  
+
+
+<div class="row">
+	<div class="span4">
+		<h2><i class="icon-twitter-sign icon-large"></i> Twitter Bootstrap</h2>
+		<p>
+		Twitter's <a target="_blank" href="http://twitter.github.com/bootstrap/index.html">bootstrap</a> is simple and flexible HTML, CSS, and Javascript for popular user interface components and interactions.
+		</p>
+		<p>
+		This <b>Dancer</b> template is pre-configured to use bootstrap, and contains a script to easily upgrade to the latest bootstrap version.
+		</p>
+	</div>
+
+	<div class="span4">
+		<h2><i class="icon-flag icon-large"></i> Font-Awesome</h2>
+		<p>
+		Fort-Awesome's <a target="_blank" href="http://fortawesome.github.com/Font-Awesome/">Font-Awesome</a> is an iconic font designed for use with Twitter Bootstrap (overriding bootstrap's default "glyphicons" set).
+		</p>
+		<p>
+		This <b>Dancer</b> template is pre-configured to use Font-Awesome, and contains a script to easily upgrade to the latest Font-Awesome version.
+		</p>
+	</div>
+
+	<div class="span4">
+		<h2><i class="icon-cogs icon-large"></i> jQuery-1.7.2</h2>
+		<p>
+		<a target="_blank" href="http://jquery.com/">jQuery</a> is a fast and concise JavaScript Library that simplifies HTML document traversing, event handling, animating, and Ajax interactions for rapid web development.
+		</p>
+		<p>
+		Dancer always used jQuery by default, so there's nothing really new here, except upgrading to 1.7.2 (and not using CDN).
+		</p>
+	</div>
+</div>
+
+<div class="row">
+	<div class="span4">
+		<h2><i class="icon-random icon-large"></i> Template::Toolkit</h2>
+		<p>
+		<a target="_blank" href="http://template-toolkit.org/">Template::Toolkit</a> is a fast, flexible and highly extensible template processing system.
+		</p>
+		<p>
+		Dancer always worked with Template::Toolkit, so there's nothing really new here, except:
+		<ul>
+			<li>Dancer's default template was <a href="https://metacpan.org/module/Template::Simple" target="_blank">Template::Simple</a>, and in this template it's changed to the more powerful Template::Toolkit.</li>
+			<li>Dancer's default tags were <span class="label">&lt;%</span> and <span class="label">%&gt;</span>,<br/>and in this template there are changed to <span class="label">[&#37;</span> and <span class="label">&#37;]</span>.</li>
+		</ul>
+
+		</p>
+
+	</div>
+
+	<div class="span4">
+		<h2><i class="icon-music icon-large"></i> Dancer inside</h2>
+		<a href="http://perldancer.org" target="_blank">What more could you ask for?
+		<br/>
+		<img src="images/dancer_star.png">
+		</a>
+	</div>
+
+	<div class="span4">
+		<h2><i class="icon-gift icon-large"></i> Working Examples</h2>
+		Don't re-invent the wheel! Here are ready-to-use examples, just copy, paste &amp; adapt the code &amp; templates to your needs:
+		<ul>
+			<li><a href="[% request.uri_for("/simple_form")%]">Simple &lt;FORM&gt; processing</a></li>
+			<li><a href="[% request.uri_for("/navbar_login")%]">Login Form and NavBar Dropdown Menu</a></li>
+			<li><a href="[% request.uri_for("/tabs")%]">Tabs/Pills</a></li>
+			<li><a href="[% request.uri_for("/photo_carousel")%]">Photo Gallery Carousel</a></li>
+			<li><a href="[% request.uri_for("/photo_grid")%]">Photo Gallery Grid / Thumbnails</a></li>
+			<li><a href="[% request.uri_for("/markdown")%]">Markdown Text Rendering</a></li>
+			<li><a href="[% request.uri_for("/template_plugins")%]">Template::Toolkit plugins</a></li>
+			<li><a href="[% request.uri_for("/error_handling")%]">Dancer's Error Handling</a></li>
+			<li><a href="[% request.uri_for("/dynamic_content")%]">Generate Dynamic Content</a></li>
+		</ul>
+	</div>
+</div>
+
+<br/>
+<br/>
+
+
+<div class="page-header">
+	<div class="row">
+		<div class="span12">
+			<h1>Technical Stuff</h1>
+		</div>
+	</div>
+</div>
+
+
+<div class="row">
+	<div class="span12">
+		<h2><i class="icon-share-alt icon-large"></i> Start here</h2>
+
+		<ol>
+			<li><a href="https://github.com/agordon/dancer_bootstrap_fontawesome_template/zipball/master">Download</a> the latest template files</li>
+			<li>Extract the files</li>
+			<li>run <code>update_bootstrap</code> and <code>update_fontawesome</code> to download the latest versions</li>
+			<li>run <code>update_app_name</code> to set your application name (instead of the hardcoded <b>dancer_bootstrap_fontawesome_template</b>).</li>
+			<li>run <code>./bin/app.pl</code> (in the usual Dancer way)</li>
+		</ol>
+
+		<pre>
+$ wget -O dancer.zip https://github.com/agordon/dancer_bootstrap_fontawesome_template/zipball/master
+$ unzip dancer.zip
+$ cd agordon-dancer_bootstrap_fontawesome_template-*
+$ ./bin/update_bootstrap
+$ ./bin/update_fontawesome
+$ ./bin/update_app_name MyNewApp  # or any name you like
+$ ./bin/app.pl
+## and visit http://localhost:3000 to dance
+		</pre>
+	</div>
+</div>
+
+<br/>
+<br/>
+
+
+<div class="row">
+	<div class="span9">
+		<h2><i class="icon-question-sign icon-large"></i> How to</h2>
+		<ul>
+			<li>Learn about Dancer: <a target="_blank" href="http://perldancer.org">http://perldancer.org</a></li>
+			<li>Learn about Bootstrap's CSS: <a target="_blank" href="http://twitter.github.com/bootstrap/index.html">http://twitter.github.com/bootstrap/index.html</a></li>
+			<li>Learn about Font-Awesome: <a target="_blank" href="http://fortawesome.github.com/Font-Awesome">http://fortawesome.github.com/Font-Awesome</a></li>
+
+			<li>Override Bootstrap's CSS settings: change <code>&lt;dancer_directory&gt;/public/css/style.css</code> - it will be loaded <b>after</b> Bootstrap's CSS.</li>
+			<li>Tweak the CSS/JS loading: see <code>&lt;dancer_directory&gt;/views/layout/main.tt</code></li>
+			<li>Add Javascript code to be loaded when the document is ready: see <code>&lt;dancer_directory&gt;/views/layout/main.tt</code> (the <code>&lt;javascript&gt;</code> at the bottom).</li>
+			<li>Update bootstrap: run <code>&lt;dancer_directory&gt;/bin/update_bootstrap</code></li>
+			<li>Update Font-Awesome: run <code>&lt;dancer_directory&gt;/bin/update_fontawesome</code></li>
+			<li>Update jQuery: You'll have to do it manually. See the <a href="https://github.com/agordon/dancer_bootstrap_fontawesome_template/blob/master/README" target="_blank">README</a> file.</li>
+		</ul>
+
+	</div>
+
+	<div class="span3">
+		<h2><i class="icon-road icon-large"></i> Deploy</h2>
+		Try the Dancing <a href="[% request.uri_base %]/deploy">Deployment wizard</a>.
+
+		<br/>
+		<br/>
+		<h2><i class="icon-github-sign icon-large"></i> Fork me</h2>
+		<a target="_blank" href="https://github.com/agordon/dancer_bootstrap_fontawesome_template">GitHub repository</a>
+
+		<br/>
+		<br/>
+
+		<h2><i class="icon-envelope icon-large"></i> Email me</h2>
+		<a target="_blank" href="mailto: gordon at cshl dot edu">gordon at cshl dot edu</a>
+	</div>
+
+</div>
+
+<br/>
+<br/>
+<br/>
+<br/>
+</div>
