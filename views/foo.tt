@@ -1,0 +1,41 @@
+<div class="navbar">
+  <div class="navbar-inner">
+    <div class="container">
+	<h3><a class="brand" href="[% request.uri_base %]"><img src="images/dancer_man.png"> Perl Dancer</a></h3>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="page-header">
+	<div class="row">
+		<div class="span12">
+			<h1>Attorg - org documents in the browser</h1>
+		</div>
+	</div>
+</div>
+
+<!-- For the data; just let it take all the horizontal space it can -->
+<div class="row">
+<div class="span2">Todo states:</div>
+<div class="span2">Done states:</div>
+<div class="span2">Priorities:</div>
+<div class="span6">Drawer names:</div>
+</div>
+<div id="org_edit_document_parameters" class="row">
+<div class="span2 todo_states_list">-</div>
+<div class="span2 done_states_list">-</div>
+<div class="span2 priority_list">-</div>
+<div class="span6 drawer_names_list">-</div>
+</div>
+<!-- <div class="row"> -->
+<div id="org_edit">Hej svejs</div>
+<!-- </div> -->
+
+
+</div> <!-- container -->
+
+<!-- <script src="/jquery-1.8.3.min.js"></script> -->
+<!-- <script src="bootstrap/js/bootstrap.js"></script> -->
+ <!-- Test data: -->

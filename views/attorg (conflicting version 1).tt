@@ -1,0 +1,185 @@
+<div class="navbar navbar-fixed-top">
+  <div class="navbar-inner">
+    <a class="brand" href="#">Attorg</a>
+    <ul class="nav">
+      <li class="active"><a href="#">Home</a></li>
+      <li><a href="#">Update Priorities</a></li>
+      <li><a href="#">Update TODO states</a></li>
+      <li><a href="/info">Help and command list</a></li>
+    </ul>
+    <a class="brand pull-left" href="#"></a>
+    <form class="navbar-search pull-right">
+      <input type="text" class="search-query" placeholder="Search">
+    </form>
+  </div>
+</div>
+
+<!-- <div class="page-header"> -->
+<!-- <h1>Foo</h1> -->
+<!-- </div> -->
+<div class="container">
+
+<div class="page-header">
+	<div class="row">
+		<div class="span12">
+      <h4 class="pull-left">Document: <span id="filename">XXXX</span></h4>
+      <span class="pull-right"><b>user: [%= user_name %]</b></span>
+			<!-- <h1>Attorg - org documents in the browser</h1> -->
+		</div>
+	</div>
+</div>
+
+<!-- For the data; just let it take all the horizontal space it can -->
+<div class="row">
+</div>
+<div class="row">
+<div class="span2">Todo states:</div>
+<div class="span2">Done states:</div>
+<div class="span2">Priorities:</div>
+<div class="span6">Drawer names:</div>
+</div>
+<div id="org_edit_document_parameters" class="row">
+<div class="span2 todo_states_list">-</div>
+<div class="span2 done_states_list">-</div>
+<div class="span2 priority_list">-</div>
+<div class="span6 drawer_names_list">-</div>
+</div>
+<!-- <div class="row"> -->
+<div id="org_edit">Hej svejs</div>
+<!-- </div> -->
+
+
+</div> <!-- container -->
+<input type="text" id="file-to-start" style="display:none;"
+ value="[%= filename %]"/>
+<!-- <script src="/jquery-1.8.3.min.js"></script> -->
+<!-- <script src="bootstrap/js/bootstrap.js"></script> -->
+ <!-- Test data: -->
+<script id ="data" type="text/json">
+[
+   {
+      "drawer_names" : [
+         "CLOCK",
+         "LOGBOOK",
+         "PROPERTIES"
+      ],
+      "priorities" : [
+         "A",
+         "B",
+         "C"
+      ],
+      "document" : 1,
+      "done_states" : [
+         "DONE"
+      ],
+      "todo_states" : [
+         "TODO"
+      ]
+   },
+   {
+      "level" : 1,
+      "title_text" : "Duh",
+      "tags" : ""
+   },
+   {
+      "level" : 2,
+      "title_text" : "A-txt",
+      "tags" : ""
+   },
+   {
+      "level" : 2,
+      "title_text" : "Complex before [[http://www.techotopia.com/index.php/Using_Xcode_Storyboarding_%28iPhone_iOS_5%29][Book]] After",
+      "title_subs" : [
+         [
+            "Org::Element::Text",
+            "Complex before ",
+            ""
+         ],
+         [
+            "Org::Element::Link",
+            "[[http://www.techotopia.com/index.php/Using_Xcode_Storyboarding_%28iPhone_iOS_5%29][Book]]"
+         ],
+         [
+            "Org::Element::Text",
+            " After",
+            ""
+         ]
+      ],
+      "tags" : ""
+   },
+   {
+      "level" : 3,
+      "title_text" : "AA",
+      "tags" : ""
+   },
+   {
+      "level" : 3,
+      "title_text" : "AB",
+      "tags" : ""
+   },
+   {
+      "level" : 2,
+      "block_indent" : 3,
+      "title_text" : "B",
+      "block" : "Text text\n",
+      "tags" : ""
+   },
+   {
+      "level" : 3,
+      "title_text" : "BA",
+      "tags" : ""
+   },
+   {
+      "level" : 4,
+      "title_text" : "BAA",
+      "tags" : ""
+   },
+   {
+      "level" : 1,
+      "block_indent" : 2,
+      "title_text" : "Blaha",
+      "block" : "Some Block text from <2013-01-03 Thu> time.\n",
+      "block_parts" : [
+         [
+            "Org::Element::Text",
+            "  Some Block text from "
+         ],
+         [
+            "Org::Element::Timestamp",
+            "<2013-01-03 Thu>"
+         ],
+         [
+            "Org::Element::Text",
+            " time.\n"
+         ]
+      ],
+      "tags" : ""
+   },
+   {
+      "level" : 2,
+      "block_indent" : 3,
+      "title_text" : "C",
+      "block" : "foo bar\nfrotz\n",
+      "tags" : ""
+   },
+   {
+      "level" : 3,
+      "title_text" : "CA [2012-07-18 Wed]",
+      "block" : "\n\n",
+      "title_subs" : [
+         [
+            "Org::Element::Text",
+            "CA ",
+            ""
+         ],
+         [
+            "Org::Element::Timestamp",
+            "[2012-07-18 Wed]"
+         ]
+      ],
+      "tags" : ""
+   }
+]
+</script>
+<script src="[% request.uri_base %]/javascripts/attorg.js"></script>
+

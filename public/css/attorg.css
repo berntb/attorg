@@ -1,0 +1,49 @@
+/* Note -- this will be everywhere! */
+body { padding-top: 40px; }
+
+/* Set colors similar to default emacs config: */
+.hl1 {
+    margin-left:   0px;
+    /* margin-top: 8px; Hardly needed if we use Bootstrap-well */
+    /* padding: 3px; */
+}
+.hl2 {
+    margin-left:  0px;
+    /* margin-top: 4px; */
+    /* background-color: #e0e0e0; */
+    /* margin-bottom: 2px; */
+}
+.hl3 {
+    margin-left:  10px;
+    /* background-color: #d0d0d0; */
+}
+.hl4 {
+    margin-left:  20px;
+    /* background-color: #c0c0c0; */
+}
+.hl5 {
+    margin-left:  30px;
+}
+.hl6 {
+    margin-left:  40px;
+}
+.hl7 {
+    margin-left:  48px;
+}
+.hl8 {
+    margin-left:  56px;
+}
+.hl9 {
+    margin-left:  60px;
+}
+.hl10 {
+    margin-left:  60px;
+}
+/* Will do for now */
+
+
+/* Layout: */
+
+.more-cmd {
+    padding-right: 15px;
+}

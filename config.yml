@@ -1,0 +1,68 @@
+# This file is part of Attorg. Copyright 2013 Bernt Budde.
+
+# Attorg is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Attorg is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Attorg.  If not, see <http://www.gnu.org/licenses/>.
+
+# The author is Bernt Budde, see my GitHub account, user berntb.
+
+# This is the main configuration file of your Dancer app
+# env-related settings should go to environments/$env.yml
+# all the settings in this file will be loaded at Dancer's startup.
+
+# Your application's name
+appname: "Attorg Test"
+
+# The default layout to use for your application (located in
+# views/layouts/main.tt)
+layout: "main"
+
+# when the charset is set to UTF-8 Dancer will handle for you
+# all the magic of encoding and decoding. You should not care
+# about unicode within your app when this setting is set (recommended).
+charset: "UTF-8"
+
+#plugins:
+#   Auth::Extensible:
+#      
+
+session: "YAML"
+session_dir: "/home/bernt/wuala/attorg/session-storage"
+# session: "Simple"
+
+# For attorg specifics:
+userdata_top: "/home/bernt/wuala/orgs"
+
+plugins:
+   Auth::Extensible:
+      realms:
+          config:
+              provider: Config
+              users:
+                  - user: user
+                    pass: fubar
+                    roles:
+                      - Developer
+                      - Manager
+                      - BeerDrinker
+                  # - user: bob
+                  #   pass: '{SSHA}+2u1HpOU7ak6iBR6JlpICpAUvSpA/zBM'
+                  #   roles:
+                  #     - Tester
+
+template: "template_toolkit"
+engines:
+   template_toolkit:
+     encoding:  'utf8'
+     start_tag: '[%'
+     end_tag:   '%]'
+
