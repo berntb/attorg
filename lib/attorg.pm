@@ -15,11 +15,13 @@
 
 	# The author is Bernt Budde, see the GitHub account berntb.
 
+use v5.10;
+
 package attorg;
 use Dancer ':syntax';
 use strict;
 use warnings;
-use Cwd;
+use Cwd /abs_path/;
 use Sys::Hostname;
 use File::Spec;
 use Data::Dumper;
@@ -59,11 +61,40 @@ sub _get_org_file_data {
   $to_read    = File::Spec->catfile($data_dir, $file)
 	  if ! -f $to_read;
 
-  # Catch errors here!!
+  # Catch errors here
   my $data    = Attorg::Extract::Org::get_org_presentation( $to_read );
 
   return $data;
 }
+
+
+sub _parse_org_headline {
+  my $hline   = shift;
+  my $block   = shift;
+
+  $hline      =~ s/^\s*//;
+  $hline      =~ s/\s*$//s;		# Remove empty spaces 
+  $block      =~ s/\s*$//s;		# Block must be able to start on indentation.
+
+  my $alltext = length($hline) ? $hline : '';
+  $alltext   .= "\n" . $block
+	  if length($block);
+
+  # XXXX This is pure user supplied text from over a socket... Check
+  # it more carefully, before sending it on to Parse::Org!!
+
+  # Catch errors here.
+  my $data    = Attorg::Extract::Org::get_org_from_string( $alltext );
+
+  return undef  if !scalar @$data || !$data->[0]{document}
+	  || ! defined $data->[1];
+
+  # Title specifications and Block specs
+  # say STDERR Dumper [$data->[1]->{title_subs}, $data->[1]->{block_parts}];
+  return [$data->[1]->{title_subs}, $data->[1]->{block_parts}];
+}
+
+
 
 get '/attorg' => require_login sub {
   
@@ -74,12 +105,12 @@ get '/attorg' => require_login sub {
     };
 };
 
-get '/attorg/:file' => require_login sub {
+get '/attorg/edit/:file' => require_login sub {
   my $file    = params->{file};
 
-  print STDERR "X" x 79, "\n";
-  print STDERR logged_in_user->{user};
-  print STDERR "X" x 79, "\n";
+  say STDERR "X" x 79;
+  say STDERR $file;
+  say STDERR "X" x 79, "\n";
 
   template 'attorg' =>
     {
@@ -93,8 +124,36 @@ get '/attorg/:file' => require_login sub {
 get '/attorg/data/:file' => require_login sub {
   my $file    = params->{file};
 
+  say STDERR "GETTING $file";
   return to_json( _get_org_file_data($file) );
 };
+
+get '/attorg/translate_row/' => require_login sub {
+  my $headline= params->{headline} // '';
+  my $block   = params->{text} // '';
+
+  return to_json( _parse_org_headline($headline, $block) );
+};
+
+
+post '/attorg/translate_row/' => require_login sub {
+  my $headline= params->{headline} // '';
+  my $block   = params->{text} // '';
+
+  return to_json( _parse_org_headline($headline, $block) );
+};
+
+
+
+# Just a test. Do verify path, so doesn't get /etc/passwd etc... :-)
+get qr{/attorg/get_whole_string/(.*)} => require_login sub {
+  my($file) = splat;
+
+  # Google for: canonicalize
+  say "Got '$file'";
+
+};
+
 
 get '/attorg/load/:file' => require_login sub {
   my $file    = params->{file};
@@ -102,7 +161,6 @@ get '/attorg/load/:file' => require_login sub {
 
   # Catch errors here!!
   my $data    = _get_org_file_data($file);
-  # Attorg::Extract::Org::get_org_presentation( $to_read );
 
   return "<h2>$file</h2>\n" .
     "<pre>" . to_json( $data ) . "</pre>";

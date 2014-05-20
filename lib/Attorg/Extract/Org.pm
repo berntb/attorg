@@ -34,13 +34,24 @@ $Data::Dumper::Sortkeys  = 1;
 # TODO: priority, tags, progress (??), etc, etc...
 
 sub get_org_presentation {
-
   my $org_file = shift;
 
   die "No file '$org_file'"              if ! -f $org_file;
 
   my $orgp = Org::Parser->new();
   my $doc = $orgp->parse_file($org_file);
+
+  my @headlines_for_json;
+  trav($doc, \@headlines_for_json);
+
+  return \@headlines_for_json;
+}
+
+sub get_org_from_string {
+  my $org_string = shift;
+
+  my $orgp = Org::Parser->new();
+  my $doc = $orgp->parse($org_string);
 
   my @headlines_for_json;
   trav($doc, \@headlines_for_json);

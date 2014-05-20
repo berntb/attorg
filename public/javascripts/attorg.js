@@ -20,21 +20,24 @@
 
 // ----------------------------------------------------------------------
 
+
 // Global variable for model data, replace with some VMC-variant.
 var stored_model     = {};
 var org_controllers  = {};
 
 // Old jQuery style for: $(document).ready(function() { ... } );
 $(function() {
-
+  // - - -
   // This function should be sent into all created Models, to
   // guarantee that IDs are unique.
   var _internal_ix_counter = 0;   // How to do this better in js??
+
 
   function _generate_id_string() {
     return "aoid_" + _internal_ix_counter++; // Attorg ID
   }
   
+  // - - -
   var _init = function(document_name, data,
                        document_div_id, divid_headlines) {
     var model  = new OrgModel(document_name, data,
@@ -68,9 +71,17 @@ $(function() {
   var divid_headlines = "org_edit";
   var fileName = $("#file-to-start").val();
 
+  // Just test code
+  var ajaxtst = $.post("/attorg/translate_row/",
+					  {headline: "** Foo",
+					   text: " foo bar\n  frotz _gurka_ gazonkan \n\n  "},
+					  function(data) {
+						alert("Got post:\n" + data);
+					  }
+					 );
+
   if (fileName === '') {
     // XXXX Set up empty data representation:
-
     // Temporary test data
     // text   = $("#data").html();
     text = '[ ' +
@@ -103,10 +114,6 @@ $(function() {
 // Model code:
 
 var OrgModel = function() {
-
-  // var _internal_ix_counter = 0;   // How to do this better in js??
-
-
   return function(documentName, org_data,
                   visible_update_callback, increment_function) {
     var that = this;
@@ -115,8 +122,8 @@ var OrgModel = function() {
 
     var arr = [].concat(org_data); // (Shallow copy)
     if (arr.length && arr[0].document) {
-      // alert("foo");
       this.document_info = arr.shift();
+	  // alert( JSON.stringify(arr[0], null, 2) );
     } else {
       this.document_info = {};
     }
@@ -442,7 +449,7 @@ var OrgModel = function() {
       },
       title_html: function() {
         // Returns a html version of a title
-        if (! this.headline.title_subs)
+        if (! this.headline.title_subs || this.headline.local_mod_title)
           return escapeHtml( this.title() );
 
         // N B: No parsing of Headline/Block in local javascript, so
@@ -468,7 +475,7 @@ var OrgModel = function() {
         return this.headline.block;
       },
       block_html: function() {
-        if (! this.headline.block_parts)
+        if (! this.headline.block_parts  || this.headline.local_mod_block )
           return escapeHtml( this.block() );
 
         // N B: No parsing of Headline/Block in local javascript, so
@@ -479,6 +486,7 @@ var OrgModel = function() {
 
       },
       todo: function() {
+		// XXXX Have a function which returns a function doing an accessor:
         if (arguments.length > 0)
           this.headline.todo_state = arguments[0];
         return this.headline.todo_state;
@@ -489,6 +497,27 @@ var OrgModel = function() {
           this.headline.level = arguments[0];
         }
         return this.headline.level;
+      },
+
+      // ------------------------------------------------------------
+	  // Has local changes been done, not yet parsed by server?
+
+	  // (If two changes are done, don't want to update the older
+	  // change even when it comes back.)
+	  // XXXX Future update -- when have net access, do bulk update
+	  // of all the marked Headline objects.
+	  modified_locally: function() {
+		if (arguments.length > 0) {
+          // XXXX Check so numeric??
+          this.headline.was_modified_locally = arguments[0];
+        }
+        return this.headline.was_modified_locally;
+      },
+	  increment_modified_locally: function() {
+		var now = this.modified_locally();
+		now     = now ? now+1 : 1;
+		this.modified_locally(now);
+		return now;
       },
 
       
@@ -1440,6 +1469,8 @@ var OrgController = function() {
         headline.todo( this.value );
         that.model.dirty(i, 'todo');
         that.view.render_headline( headline );
+
+		// XXXX Re-parse the headline, by way of the server.
       }
     };
 
@@ -1811,6 +1842,7 @@ var OrgController = function() {
       this.view.render_new_edit_headline(ix, headline);
 
       this.view.setSelectTitle( headline );
+	  // XXXX Needs to set dirty??
     }
 
     // Help method which updates a Headline from Edit fields:
@@ -1834,22 +1866,96 @@ var OrgController = function() {
     this.update_headline_title_block = function(headline, title, block) {
       var modified = false;
       if (title !== undefined && title !== headline.title()) {
+		console.log(JSON.stringify(
+		  Object.getOwnPropertyNames(headline.headline))
+				   );
         headline.title( title );
+		// alert("HEADLINE UPDATE " + JSON.stringify(headline.headline));
         that.model.dirty(headline.index, 'title');
+		headline.headline.title_subs = undefined;
+		// This is if multiple quick updates and 
+		if (headline.headline.title_update_ix) {
+		  headline.headline.title_update_ix++;
+		} else {
+		  headline.headline.title_update_ix = 1;
+		}
         modified = true;
         // XXXX Check with server for parsing subparts of Headline!!
       }
       if (block !== undefined && block !== headline.block() ) {
         headline.block( block );
         that.model.dirty(headline.index, 'block');
-        that.view.render_headline( headline );
+		headline.headline.block_parts = undefined;
+        that.view.render_headline( headline ); // XXXX Remove?? done below!
         modified = true;
         // XXXX Check with server for parsing subparts of Block!!
       }
-      if (modified)
+      if (modified) {
+		// Will be replaced
         that.view.render_headline( headline );
+		that._update_headline_delayed( headline );
+	  }
     };
 
+
+	// Add a callback which updates the Headline from the server.
+	this._update_headline_delayed = function(headline) {
+	  // XXXX Need Model function to decide if a Headline/block has
+	  // Org things that needs parsing (only server side).
+
+	  var headline_text = headline.title() || "";
+	  var block_text    = headline.block() || "";
+
+	  var modified_ix   = headline.increment_modified_locally();
+	  var id            = headline.id_str();
+
+	  // Sets a flag that an update from the net is expected.  If
+	  // there is no network contact, this flag will hang around and
+	  // can be updated later. XXXX
+
+	  // Use 'post' since 'get' might have some size limits? 'put' is
+	  // not supported by some older browsers? (It is "REST" since
+	  // this is data w/out a real id?)
+	  var ajaxtst = $.post("/attorg/translate_row/",
+						   {headline: "* " + headline_text,
+							text: block_text},
+						   function(reply) {
+							 var ix = that.model.get_ix_from_id_string(id);
+							 if (ix === undefined) {
+							   // Seems the Headline was removed before answer?
+							   alert("Id " + id + " doesn't exist anymore??");
+							   return;
+							 }
+							 var headline = that.model.headline( ix );
+
+							 // Check to see if this has been sent to
+							 // the server again, after this query was sent:
+							 var modified_now = headline.modified_locally();
+							 if (modified_now === undefined
+								 || modified_now > modified_ix) {
+							   alert("No update!");
+							   return;
+							 }
+
+							 // - - - Update!
+							 var data = JSON.parse(reply);
+							 headline.modified_locally(undefined);
+
+							 alert("Got update reply for id " + id
+								   + ", ix " + ix
+								   + "\nAll data:\n" + data
+								   + "\nLen:\n" + data.length
+								   + "\nTitle subs :\n" + data[0]);
+								  //  + "\nBlock subs :\n" + data[1]
+								  // );
+							 if (data[0] && data[0] !== undefined)
+							   headline.headline.title_subs = data[0];
+							 if (data[1]  && data[1] !== undefined)
+							   headline.headline.block_parts = data[1];
+							 that.view.render_headline( headline );
+						   }
+						  );
+	};
 
     // ------------------------------------------------------------
     // Initialization:
@@ -2097,6 +2203,8 @@ var OrgView = function() {
     // ------------------------------------------------------------
     // Edit Headline:
 
+	// XXXX Huh?? How is the logic here?? make_edit_headline() is only
+	// used by this render_new_edit_headline()? Read.
     this.render_new_edit_headline = function(ix, headline) {
       // Adds a new Headline and renders it as editable.
       var rendered_html = this.make_edit_headline( headline );
