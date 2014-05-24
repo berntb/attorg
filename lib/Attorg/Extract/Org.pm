@@ -130,9 +130,15 @@ sub trav {
     }
     # Not Headline: A list of parts of the text block.
     # (This will always come before the Headline kids, so a straight
-    # print will work. Neat.)
+    # print will work for testing. Neat.)
     # XXXX Need to do special handling for any types??
-    push @blocks, [ ref($kid), $kid->as_string() ];
+	my $block = [ ref($kid), $kid->as_string() ];
+	if (ref($kid) eq "Org::Element::Text") {
+		my $style = $kid->style();
+		push @$block, $style             if $style && length($style);
+	}
+
+    push @blocks, $block;
   }
   if (@blocks) {
     $hdr_spec->{block} = join('', map { $_->[1] } @blocks);

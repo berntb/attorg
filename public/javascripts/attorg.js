@@ -113,719 +113,717 @@ $(function() {
 // ----------------------------------------------------------------------
 // Model code:
 
-var OrgModel = function() {
-  return function(documentName, org_data,
-                  visible_update_callback, increment_function) {
-    var that = this;
+var OrgModel = function(documentName, org_data,
+						visible_update_callback, increment_function) {
+  var that = this;
 
-    this.documentNameValue = documentName;
+  this.documentNameValue = documentName;
 
-    var arr = [].concat(org_data); // (Shallow copy)
-    if (arr.length && arr[0].document) {
-      this.document_info = arr.shift();
-	  // alert( JSON.stringify(arr[0], null, 2) );
-    } else {
-      this.document_info = {};
+  var arr = [].concat(org_data); // (Shallow copy)
+  if (arr.length && arr[0].document) {
+    this.document_info = arr.shift();
+	// alert( JSON.stringify(arr[0], null, 2) );
+  } else {
+    this.document_info = {};
+  }
+
+  this.all_data = arr;
+  this.length   = arr.length;
+
+  // This function must generate unique ID strings:
+  this.generate_id_string = increment_function;
+
+  // This will be called for every headline set to hidden/shown.
+  this.callback_fun_visible = visible_update_callback;
+
+  // (N B: Make helper fun instead of duplicated accessor code :-( .)
+
+  // From mustache.js, see:
+  // stackoverflow.com/questions/24816/escaping-html-strings-with-jquery
+  var entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
+  };
+
+  function escapeHtml(string) {
+    return String(string).replace(/[&<>"'\/]/g, function (s) {
+      return entityMap[s];
+    });
+  }
+
+
+  // - - - - -
+  // Document data:
+  this.todo_states = function() {
+    var info = this.document_info;
+    if (arguments.length > 0) {
+      var arr = arguments[0];
+      if (! $.isArray(arr) ) {
+        console.log("Error! Can't set todo_states to type " + typeof(arr));
+        return;
+      }
+      info.todo_states = arr;
+    }
+    return info.todo_states;
+  };
+
+  this.done_states = function() {
+    var info = this.document_info;
+    if (arguments.length > 0) {
+      var arr = arguments[0];
+      if (! $.isArray(arr) ) {
+        console.log("Error! Can't set done_states to type " + typeof(arr));
+        return;
+      }
+      info.done_states = arr;
+    }
+    return info.done_states;
+  };
+
+  this.all_todo_done_states = function() {
+    return [].concat(this.todo_states()).concat(this.done_states());
+  };
+
+  this.priorities = function() {
+    var info = this.document_info;
+    if (arguments.length > 0) {
+      var arr = arguments[0];
+      if (! $.isArray(arr) ) {
+        console.log("Error! Can't set priorities to type " + typeof(arr));
+        return;
+      }
+      info.priorities = arr;
+    }
+    return info.priorities;
+  };
+
+  this.drawer_names = function() {
+    var info = this.document_info;
+    if (arguments.length > 0) {
+      var arr = arguments[0];
+      if (! $.isArray(arr) ) {
+        console.log("Error! Can't set Drawer names to type " + typeof(arr));
+        return;
+      }
+      info.drawer_names = arr;
+    }
+    return info.drawer_names;
+  };
+
+  // - - - - -
+  // Modification of model content:
+  this.documentName = function() {
+    if (arguments.length > 0)
+      this.documentNameValue = arguments[0];
+    return this.documentNameValue;
+  }
+
+  this.modified_flag = false;
+
+  this.modified = function() {
+    if (arguments.length > 0)
+      this.modified_flag = arguments[0] ? true : false;
+    return this.modified_flag;
+  }
+
+  this.dirty = function(ix, field) {
+    // XXXX More flags for which Headline (field?) is modified??
+    this.modified_flag = true;
+  };
+
+
+  this.delete_headline = function(ix) {
+    // Doesn't update the index of existing Headline objects, seems
+    // too expensive for client side. (This might bite me later. :-( )
+    this._delete_id_str( this.all_data[ix].idstr, ix);
+    this.all_data.splice(ix, 1);
+    this.length--;
+  };
+
+
+  // Add a new Headline:
+  this.new_headline = function(ix, spec) {
+    // XXXX This doesn't create _subs, need call to server for that.
+    // Add later.
+    var headline_data = {
+      level: (spec.level ? spec.level : 1),
+      todo_state: (spec.todo ? spec.todo : ''),
+      title_text: (spec.title_text ? spec.title_text : ''),
+      block: (spec.block ? spec.block : ''),
+      tags: (spec.tags ? spec.tags : ''),
+    };
+
+    this.all_data.splice(ix, 0, headline_data);
+    var headline_obj = this.headline(ix);
+    if (headline_obj.headline !== headline_data)
+      throw new Error("Internal err, failed creating and adding a Headline");
+
+    this.length++;
+    return headline_obj;
+  }
+
+  this.moveHeadline = function(ix_from, ix_to, dont_refresh_ids) {
+    // N B -- this doesn't do anything with existing objects. Keep
+    // it light, it is JavaScript running on a (possibly mobile)
+    // client.
+    if (ix_from !== ix_to) {
+      var headline_data   = this.all_data[ix_from];
+      this.all_data.splice(ix_from, 1);
+      this.all_data.splice(ix_to, 0, headline_data);
     }
 
-    this.all_data = arr;
-    this.length   = arr.length;
+    if (! dont_refresh_ids)
+      this.refresh_id_strings();
+  };
 
-    // This function must generate unique ID strings:
-    this.generate_id_string = increment_function;
+  // - - - - -
+  this.headline = function(ix) {
+    if (ix < 0 || ix >= this.all_data.length)
+      // XXXX How should I do code logic errors in client side Javascript?
+      // Logging with Ajax call!?
+      throw new Error("Bad Headline ix:" + ix);
 
-    // This will be called for every headline set to hidden/shown.
-    this.callback_fun_visible = visible_update_callback;
+    var headline_data = this.all_data[ix];
+    var headline =  new Headline(headline_data);
 
-    // (N B: Make helper fun instead of duplicated accessor code :-( .)
+    // Set up some init stuff (should be in Model init, not here).
+    this.get_id_string(ix, headline); // Sets value if not there already
+    if (headline_data.visible === undefined)
+      headline_data.visible = true;
 
-    // From mustache.js, see:
-    // stackoverflow.com/questions/24816/escaping-html-strings-with-jquery
-    var entityMap = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': '&quot;',
-      "'": '&#39;',
-      "/": '&#x2F;'
-    };
+    // This index is not updated after deleting/inserting Headlines:
+    headline.index = ix;
 
-    function escapeHtml(string) {
-      return String(string).replace(/[&<>"'\/]/g, function (s) {
-        return entityMap[s];
-      });
+    return headline;
+  };
+
+
+  // - - - - -
+  // Handle unique string ids to Headline index:
+
+  // (We need a unique string and just not indexing, since headlines
+  // might be deleted, added and moved -- so ordering is transient.)
+
+  // Creation of the strings are injected from the outside, since
+  // DOM IDs are made from them (so they are guaranteed to be
+  // unique).
+
+  this.idstr_to_ix = {};
+
+  this.get_id_string = function(ix, headline) {
+    if (headline === undefined)
+      headline = this.headline(ix);
+    if (headline.id_str()) {
+      // Just make certain the ix/id_str connection is updated..
+      if (this.idstr_to_ix[idstr] !== ix)
+        this.refresh_id_strings();
+      return headline.id_str();
+    }
+    var idstr = this.generate_id_string();
+    this.idstr_to_ix[idstr] = ix;
+    headline.id_str(idstr);
+    return idstr;
+  };
+
+  this._delete_id_str = function(id_string, ix) {
+    delete this.idstr_to_ix[id_string];
+    for (var id_str in this.idstr_to_ix) {
+      if (this.idstr_to_ix[id_str] >= ix)
+        this.idstr_to_ix[id_str]--;
+    }
+  }
+
+  this.get_ix_from_id_string = function(id_string) {
+    if (this.idstr_to_ix[id_string] === undefined)
+      return undefined;
+
+    var ix = this.idstr_to_ix[id_string];
+    var headline = this.headline(ix);
+    if (headline !== undefined && headline.id_str() === id_string)
+      return ix;
+
+    // Add flag for if this can help (i.e. has anything been
+    // deleted, moved etc?)
+    this.refresh_id_strings();
+    if (this.idstr_to_ix[id_string] === undefined)
+      throw new Error("No Headline for id-string:" + id_string);
+    return this.idstr_to_ix[id_string];
+  };
+
+  // Note, this knows about implementation of headline structure:
+  this.refresh_id_strings = function() {
+    this.idstr_to_ix = {};
+    for(var i = 0; i < this.length; i++) {
+      var headline_data = this.all_data[i];
+      var idstr    = headline_data.idstr;
+      if (idstr)
+        this.idstr_to_ix[idstr] = i;
+    }
+  };
+
+  // ------------------------------------------------------------
+  // Headline object (still part of Model):
+
+  // Help funs for Headline (XXXX Move last)
+  var Headline = function(headline) {
+    this.headline = headline; // Contain the data structure
+    this.owner    = that;
+  };
+
+  var encodeOrgText = {
+    U: ['<u>', '</u>'],
+    B: ['<b>', '</b>'],
+    I: ['<i>', '</i>'],
+    C: ['<code>', '</code>'],
+    S: ['<span style="text-decoration: line-through;">', '</span>'],
+  };
+
+  function _encode_org_subtext(textSubs, isBlock) {
+    // Encodes headline/block for showing.
+
+    // XXXX isBlock decides if block specific stuff should be done
+    // (DEADLINE, lists, spreadsheets, PROPERTIES, ???) Implement!
+    // (But first, think out a GUI for editing PROPERTIES etc. :-) )
+
+    var collected = '';
+    for(i in textSubs) {
+      var item    = textSubs[i];
+      var type    = item[0];
+      var value   = item[1];
+      var parts, tmp, txt;
+      if (type  === "Org::Element::Text") {
+        if (item.length > 2 && item[2] !== "") {
+          value = escapeHtml( value.slice(1,-1) );
+          if (item[2] in encodeOrgText) {
+            value = encodeOrgText[item[2]][0] + value +
+              encodeOrgText[item[2]][1];
+          }
+        } else {
+          value   = escapeHtml( value );
+        }
+      } else if (type  === "Org::Element::Link") {
+        parts = /^\s*\[\[([^\[]*)\]\[(.*)\]\]\s*$/.exec(value);
+        if (parts !== null && typeof(parts) == 'object' && parts.length) {
+          try {
+            txt     = escapeHtml(parts[2]);
+            console.log(parts[1]);
+            tmp     = '<a href="' + parts[1] + '">' + txt + '</a>';
+            value   = tmp;
+          } catch(duh) { value = "ERROR WITH LINK:" + value};
+        } else {
+          parts = /^\s*\[\[([^\[]*)\]\s*\]\s*$/.exec(value);
+          if (parts !== null && typeof(parts) == 'object' && parts.length){
+            try {
+              txt   = escapeHtml(parts[1]);
+              tmp   = '<a href="' + parts[1] + '">' + txt + '</a>';
+              value = tmp;
+            } catch(duh) { value = "ERROR WITH LINK:" + value};
+          }
+        }
+      }
+      // XXXX Add dates here!!
+      collected  += value;
     }
 
+    return collected;
+  };
 
-    // - - - - -
-    // Document data:
-    this.todo_states = function() {
-      var info = this.document_info;
-      if (arguments.length > 0) {
-        var arr = arguments[0];
-        if (! $.isArray(arr) ) {
-          console.log("Error! Can't set todo_states to type " + typeof(arr));
-          return;
-        }
-        info.todo_states = arr;
-      }
-      return info.todo_states;
-    };
 
-    this.done_states = function() {
-      var info = this.document_info;
-      if (arguments.length > 0) {
-        var arr = arguments[0];
-        if (! $.isArray(arr) ) {
-          console.log("Error! Can't set done_states to type " + typeof(arr));
-          return;
-        }
-        info.done_states = arr;
-      }
-      return info.done_states;
-    };
 
-    this.all_todo_done_states = function() {
-      return [].concat(this.todo_states()).concat(this.done_states());
-    };
+  // ------------------------------------------------------------
+  Headline.prototype = {
 
-    this.priorities = function() {
-      var info = this.document_info;
-      if (arguments.length > 0) {
-        var arr = arguments[0];
-        if (! $.isArray(arr) ) {
-          console.log("Error! Can't set priorities to type " + typeof(arr));
-          return;
-        }
-        info.priorities = arr;
-      }
-      return info.priorities;
-    };
-
-    this.drawer_names = function() {
-      var info = this.document_info;
-      if (arguments.length > 0) {
-        var arr = arguments[0];
-        if (! $.isArray(arr) ) {
-          console.log("Error! Can't set Drawer names to type " + typeof(arr));
-          return;
-        }
-        info.drawer_names = arr;
-      }
-      return info.drawer_names;
-    };
-
-    // - - - - -
-    // Modification of model content:
-    this.documentName = function() {
+    title: function() {
+      // XXXXX Need to send line for evaluation to server, in case
+      // it contains link or other logic
       if (arguments.length > 0)
-        this.documentNameValue = arguments[0];
-      return this.documentNameValue;
-    }
+        // Note -- this doesn't reset title_subs etc!
+        this.headline.title_text = arguments[0];
+      return this.headline.title_text;
+    },
+    title_html: function() {
+      // Returns a html version of a title
+      if (! this.headline.title_subs)
+        return escapeHtml( this.title() );
 
-    this.modified_flag = false;
+      // N B: No parsing of Headline/Block in local javascript, so
+      // no way to update this. Must go to server to update this info.
+      // XXXX Add a 'dirty' flag, when can't reach the server.
 
-    this.modified = function() {
+      return _encode_org_subtext( this.headline.title_subs, false );
+    },
+
+    id_str: function() {
+      // Internal use
+      // Unique string ID that is set in html and can be used to
+      // find the right Headline again.
       if (arguments.length > 0)
-        this.modified_flag = arguments[0] ? true : false;
-      return this.modified_flag;
-    }
+        this.headline.idstr = arguments[0];
+      return this.headline.idstr;
+    },
 
-    this.dirty = function(ix, field) {
-      // XXXX More flags for which Headline (field?) is modified??
-      this.modified_flag = true;
-    };
+    block: function() {
+      if (arguments.length > 0)
+        // Note -- this doesn't handle block_subs!
+        this.headline.block = arguments[0];
+      return this.headline.block;
+    },
+    block_html: function() {
+      if (! this.headline.block_parts)
+        return escapeHtml( this.block() );
 
+      // N B: No parsing of Headline/Block in local javascript, so
+      // no way to update this. Must go to server to update this info.
+      // XXXX Add a 'dirty' flag, when can't reach the server.
 
-    this.delete_headline = function(ix) {
-      // Doesn't update the index of existing Headline objects, seems
-      // too expensive for client side. (I _know_ this will bite me
-      // sometime. :-( )
-      this._delete_id_str( this.all_data[ix].idstr, ix);
-      this.all_data.splice(ix, 1);
-      this.length--;
-    };
+      return _encode_org_subtext( this.headline.block_parts, true );
 
+    },
+    todo: function() {
+	  // XXXX Have a function which returns a function doing an accessor:
+      if (arguments.length > 0)
+        this.headline.todo_state = arguments[0];
+      return this.headline.todo_state;
+    },
+    level: function() {
+      if (arguments.length > 0) {
+        // XXXX Check so numeric??
+        this.headline.level = arguments[0];
+      }
+      return this.headline.level;
+    },
 
-    // Add a new Headline:
-    this.new_headline = function(ix, spec) {
-      // XXXX This doesn't create _subs, need call to server for that.
-      // Add later.
-      var headline_data = {
-        level: (spec.level ? spec.level : 1),
-        todo_state: (spec.todo ? spec.todo : ''),
-        title_text: (spec.title_text ? spec.title_text : ''),
-        block: (spec.block ? spec.block : ''),
-        tags: (spec.tags ? spec.tags : ''),
+    // ------------------------------------------------------------
+	// Has local changes been done, not yet parsed by server?
+
+	// (If two changes are done, don't want to update the older
+	// change even when it comes back.)
+	// XXXX Future update -- when have net access, do bulk update
+	// of all the marked Headline objects.
+	modified_locally: function() {
+	  if (arguments.length > 0) {
+        // XXXX Check so numeric??
+        this.headline.was_modified_locally = arguments[0];
+      }
+      return this.headline.was_modified_locally;
+    },
+	increment_modified_locally: function() {
+	  var now = this.modified_locally();
+	  now     = now ? now+1 : 1;
+	  this.modified_locally(now);
+	  return now;
+    },
+
+    
+    // ------------------------------------------------------------
+    // Test if Headline match string/regexp:
+
+    compareTitleRegexp: function(compareWith) {
+      // In parameter must be a regexp. Returns true/false.
+
+      // (Don't test for if regexp/string. This is probably part of
+      // an inner loop and JS isn't exactly quick.)
+      //if (compareWith instanceof RegExp)
+      return compareWith.test(this.title());
+    },
+    compareBlockRegexp: function(compareWith) {
+      return compareWith.test(this.block());
+    },
+
+    
+    // ------------------------------------------------------------
+    // Implement removing/inserting/moving:
+    // (N B: .index is NOT updated after del/insert of Headline!!)
+
+    delete: function() {
+      this.owner.delete_headline(this.index);
+    },
+
+    // XXXXX Move the creation of a new Headline here.
+
+    move: function(to_ix, dontRefresh) {
+      this.owner.moveHeadline(this.index, to_ix, dontRefresh);
+    },
+
+    // Also, any Headline that are moved to the top must be set as
+    // visible. (Not here, the Controller must do that and call the
+    // View.)
+
+    // ------------------------------------------------------------
+    // This part implements (in)visible subsets of the headlines.
+
+    // 2nd version of Visible implementation -- cache results for
+    // speed. Half as readable, but less slow. :-(
+
+    visible: function() {
+      // XXXX Add so Level 1 is always visible??
+      var present_value = this.headline.visible;
+      if (arguments.length > 0) {
+        var new_value = arguments[0];
+        
+        if (new_value !== present_value) {
+          this.headline.visible = new_value ? true : false;
+          if (that.callback_fun_visible !== undefined)
+            that.callback_fun_visible(this, this.headline.visible,
+                                      this.owner.noOpenCloseUpdates);
+          return new_value;
+        }
+      }
+
+      if (present_value === undefined) return true; // Default value
+      return present_value;
+    },
+
+    change_children_visible: function(how_many_shown) {
+      // how_many_shown === true  -- all children are set to visible.
+      // how_many_shown === false -- all children are set to invisible.
+      // how_many_shown === 1     -- only direct children are shown
+
+      var ix = this.index;
+      var level        = this.level();
+      var topModel     = this.owner;
+      var len          = topModel.length;
+
+      var shown_kids   = false;
+
+      topModel.noOpenCloseUpdates = true; // Flag for callback to model
+      for(var i = ix+1; i < len; i++) {
+        var kid        = topModel.headline(i);
+        var kid_level  = kid.level();
+        if (kid_level <= level)
+          break;
+        if (how_many_shown === true)
+          kid.visible(true);
+        else if (how_many_shown === false)
+          kid.visible(false);
+        else if (how_many_shown === 1) {
+          if (kid_level === level+1) {
+            kid.visible(true);
+            shown_kids = true;
+          } else
+            kid.visible(false);
+        } else
+          throw new Error("Only true/false/1 as in parameter!");
+      }
+
+      // Kludge, there weren't any direct kids -- just show all:
+      if (how_many_shown === 1 && !shown_kids && i > ix+2)
+        return this.change_children_visible(true);
+
+      topModel.noOpenCloseUpdates = false;
+      return this.updateVisibleInHierarchy();
+    },
+
+    // (Had speed problemsl Then have a simple routine that
+    // updates(/forces re-evaluation of) the cache for a Headline.
+    visible_children: function() {
+      // Returns:
+      // 'no_kids'           -- no kids at all.
+      // 'no_visible'        -- no visible children.
+      // 'direct_kids'       -- only direct children are visible.
+      // 'all_visible'       -- all children visible.
+      // 'some'              -- some visible children, some hidden.
+
+      if (!this.headline.has_kids)
+        return 'no_kids';
+      if (!this.headline.hidden_kids)
+        return 'all_visible';
+      if (this.just1st_kids)
+        return 'direct_kids';
+      if (!this.headline.visible_kids)
+        return 'no_visible';
+      return 'some';          // Some kids are visible.
+    },
+
+    has_invisible_child: function() {
+      return this.headline.hidden_kids;
+    },
+
+    has_visible_child: function() {
+      return this.headline.visible_kids;
+    },
+
+    // ------------------------------------------------------------
+
+    findTopOwner: function() {
+      // Finds "topmost" Headline for a Headline
+      var ix    = this.index;
+      var level = this.level();
+      var topModel  = this.owner;
+
+      if (level == 1)
+        return ix;
+      for(var i = ix-1; i >= 0; i--) {
+        var prev_level = topModel.all_data[i].level;
+        if (prev_level == 1)
+          return i;
+        if (prev_level < level) {
+          level = prev_level;
+          ix    = i;
+        }
+      }
+      return ix;              // No level 1?? This was the lowest we found
+    },
+
+    findDirectOwner: function() {
+      // Finds Direct owner of Headline.
+      // If sends in Level 1 or the topmost Headline, returns itself
+      var ix          = this.index;
+      var level       = this.level();
+      if (ix === 0 || level === 1) return this;
+
+      var topModel    = this.owner;
+
+      for(var i = ix-1; i >= 0; i--) {
+        // (Doesn't need to create object etc to get level like this.)
+        var prev_level= topModel.all_data[i].level;
+        if (prev_level < level)
+          return i;
+      }
+      return ix;              // No level 1?? This was the lowest we found
+    },
+
+    findSubTree: function() {
+      // Finds all first/last of subtree beneath the Headline.
+      // Includes the Headline itself.
+      // Returns: [first, last], not inclusive for last (for-loop style).
+      var ix          = this.index;
+      var level       = this.level();
+      var topModel    = this.owner;
+
+      for(var i = ix+1; i < topModel.length; i++) {
+        var nxt_level = topModel.all_data[i].level;
+        if (nxt_level <= level)   return [ix, i];
+      }
+      return [ix, topModel.length];
+    },
+
+    findPrevSubTree: function() {
+      // Find the subtree before this (if any).
+      // If found, returns [first, last], not inclusive. Otherwise undefined.
+      var ix       = this.index;
+      if (ix === 0) return undefined; // Duh
+      var level    = this.level();
+      var topModel = this.owner;
+
+      for(var i = ix-1; i >= 0; i--) {
+        var prevH  = topModel.headline(i);
+        if (prevH.level() < level)    return undefined;
+        if (prevH.level() === level)  return [i,ix];
+      }
+      return [0,ix];          // ???
+    },
+
+    findNextSubTree: function() {
+      // If found, returns [first, last], not inclusive. Otherwise undefined.
+      var ix       = this.index;
+      var level    = this.level();
+      var topModel = this.owner;
+
+      if (ix === topModel.length-1) return undefined;
+
+      var mySubTree= this.findSubTree();
+      if (mySubTree === undefined) return undefined;
+      var lastTree = mySubTree[1];
+
+      // Is my subtree the last one?
+      if (lastTree >= topModel.length) return undefined;
+
+      return topModel.headline(lastTree).findSubTree();
+    },
+
+    // ------------------------------------------------------------
+
+    updateVisibleInHierarchy: function() {
+      // Find visible/hidden for a Headline set. Call this
+      // after changing the hierarchy and/or visible status of
+      // Headlines.
+
+      // Returns: [first_updated, last_updated].
+
+      var ix    = this.index;
+      var level = this.level();
+      var lvl;                // Loop var later
+
+      // We want to know we're at top level of the local level hierarchy:
+      if (level !== 1 && ix > 0) {
+        ix      = this.findTopOwner();
+        if (ix !== this.index)
+          level = this.owner.headline(ix).level();
+      }
+
+      // Help routine that sets up flags in Headline record for if
+      // it has visible/hidden kids and if it has only 1st level
+      // kids visible.
+      var setup_record = function(headline, visible, hidden, just1st) {
+        headline.has_kids     = (visible !== false || hidden !== false);
+        headline.visible_kids = visible;
+        headline.hidden_kids  = hidden;
+        headline.just1st_kids = just1st;
       };
 
-      this.all_data.splice(ix, 0, headline_data);
-      var headline_obj = this.headline(ix);
-      if (headline_obj.headline !== headline_data)
-        throw new Error("Internal err, failed creating and adding a Headline");
-
-      this.length++;
-      return headline_obj;
-    }
-
-    this.moveHeadline = function(ix_from, ix_to, dont_refresh_ids) {
-      // N B -- this doesn't do anything with existing objects. Keep
-      // it light, it is JavaScript running on a (possibly mobile)
-      // client.
-      if (ix_from !== ix_to) {
-        var headline_data   = this.all_data[ix_from];
-        this.all_data.splice(ix_from, 1);
-        this.all_data.splice(ix_to, 0, headline_data);
-      }
-
-      if (! dont_refresh_ids)
-        this.refresh_id_strings();
-    };
-
-    // - - - - -
-    this.headline = function(ix) {
-      if (ix < 0 || ix >= this.all_data.length)
-        // XXXX How should I do code logic errors in client side Javascript?
-        // Logging with Ajax call!?
-        throw new Error("Bad Headline ix:" + ix);
-
-      var headline_data = this.all_data[ix];
-      var headline =  new Headline(headline_data);
-
-      // Set up some init stuff (should be in Model init, not here).
-      this.get_id_string(ix, headline); // Sets value if not there already
-      if (headline_data.visible === undefined)
-        headline_data.visible = true;
-
-      // This index is not updated after deleting/inserting Headlines:
-      headline.index = ix;
-
-      return headline;
-    };
-
-
-    // - - - - -
-    // Handle unique string ids to Headline index:
-
-    // (We need a unique string and just not indexing, since headlines
-    // might be deleted, added and moved -- so ordering is transient.)
-
-    // Creation of the strings are injected from the outside, since
-    // DOM IDs are made from them (so they are guaranteed to be
-    // unique).
-
-    this.idstr_to_ix = {};
-
-    this.get_id_string = function(ix, headline) {
-      if (headline === undefined)
-        headline = this.headline(ix);
-      if (headline.id_str()) {
-        // Just make certain the ix/id_str connection is updated..
-        if (this.idstr_to_ix[idstr] !== ix)
-          this.refresh_id_strings();
-        return headline.id_str();
-      }
-      var idstr = this.generate_id_string();
-      this.idstr_to_ix[idstr] = ix;
-      headline.id_str(idstr);
-      return idstr;
-    };
-
-    this._delete_id_str = function(id_string, ix) {
-      delete this.idstr_to_ix[id_string];
-      for (var id_str in this.idstr_to_ix) {
-        if (this.idstr_to_ix[id_str] >= ix)
-          this.idstr_to_ix[id_str]--;
-      }
-    }
-
-    this.get_ix_from_id_string = function(id_string) {
-      if (this.idstr_to_ix[id_string] === undefined)
-        return undefined;
-
-      var ix = this.idstr_to_ix[id_string];
-      var headline = this.headline(ix);
-      if (headline !== undefined && headline.id_str() === id_string)
-        return ix;
-
-      // Add flag for if this can help (i.e. has anything been
-      // deleted, moved etc?)
-      this.refresh_id_strings();
-      if (this.idstr_to_ix[id_string] === undefined)
-        throw new Error("No Headline for id-string:" + id_string);
-      return this.idstr_to_ix[id_string];
-    };
-
-    // Note, this knows about implementation of headline structure:
-    this.refresh_id_strings = function() {
-      this.idstr_to_ix = {};
-      for(var i = 0; i < this.length; i++) {
-        var headline_data = this.all_data[i];
-        var idstr    = headline_data.idstr;
-        if (idstr)
-          this.idstr_to_ix[idstr] = i;
-      }
-    };
-
-    // ------------------------------------------------------------
-    // Headline object (still part of Model):
-
-    // Help funs for Headline (XXXX Move last)
-    var Headline = function(headline) {
-      this.headline = headline; // Contain the data structure
-      this.owner    = that;
-    };
-
-    var encodeOrgText = {
-      U: ['<u>', '</u>'],
-      B: ['<b>', '</b>'],
-      I: ['<i>', '</i>'],
-      C: ['<code>', '</code>'],
-      S: ['<span style="text-decoration: line-through;">', '</span>'],
-    };
-
-    function _encode_org_subtext(textSubs, isBlock) {
-      // Encodes headline/block for showing.
-
-      // XXXX isBlock decides if block specific stuff should be done
-      // (DEADLINE, lists, spreadsheets, PROPERTIES, ???) Implement!
-      // (But first, think out a GUI for editing PROPERTIES etc. :-) )
-
-      var collected = '';
-      for(i in textSubs) {
-        var item    = textSubs[i];
-        var type    = item[0];
-        var value   = item[1];
-        var parts, tmp, txt;
-        if (type  === "Org::Element::Text") {
-          if (item.length > 2 && item[2] !== "") {
-            value = escapeHtml( value.slice(1,-1) );
-            if (item[2] in encodeOrgText) {
-              value = encodeOrgText[item[2]][0] + value +
-                encodeOrgText[item[2]][1];
-            }
-          } else {
-            value   = escapeHtml( value );
-          }
-        } else if (type  === "Org::Element::Link") {
-          parts = /^\s*\[\[([^\[]*)\]\[(.*)\]\]\s*$/.exec(value);
-          if (parts !== null && typeof(parts) == 'object' && parts.length) {
-            try {
-              txt     = escapeHtml(parts[2]);
-              console.log(parts[1]);
-              tmp     = '<a href="' + parts[1] + '">' + txt + '</a>';
-              value   = tmp;
-            } catch(duh) { value = "ERROR WITH LINK:" + value};
-          } else {
-            parts = /^\s*\[\[([^\[]*)\]\s*\]\s*$/.exec(value);
-            if (parts !== null && typeof(parts) == 'object' && parts.length){
-              try {
-                txt   = escapeHtml(parts[1]);
-                tmp   = '<a href="' + parts[1] + '">' + txt + '</a>';
-                value = tmp;
-              } catch(duh) { value = "ERROR WITH LINK:" + value};
-            }
-          }
-        }
-        // XXXX Add dates here!!
-        collected  += value;
-      }
-
-      return collected;
-    };
-
-
-
-    // ------------------------------------------------------------
-    Headline.prototype = {
-
-      title: function() {
-        // XXXXX Need to send line for evaluation to server, in case
-        // it contains link or other logic
-        if (arguments.length > 0)
-          // Note -- this doesn't reset title_subs etc!
-          this.headline.title_text = arguments[0];
-        return this.headline.title_text;
-      },
-      title_html: function() {
-        // Returns a html version of a title
-        if (! this.headline.title_subs || this.headline.local_mod_title)
-          return escapeHtml( this.title() );
-
-        // N B: No parsing of Headline/Block in local javascript, so
-        // no way to update this. Must go to server to update this info.
-        // XXXX Add a 'dirty' flag, when can't reach the server.
-
-        return _encode_org_subtext( this.headline.title_subs, false );
-      },
-
-      id_str: function() {
-        // Internal use
-        // Unique string ID that is set in html and can be used to
-        // find the right Headline again.
-        if (arguments.length > 0)
-          this.headline.idstr = arguments[0];
-        return this.headline.idstr;
-      },
-
-      block: function() {
-        if (arguments.length > 0)
-          // Note -- this doesn't handle block_subs!
-          this.headline.block = arguments[0];
-        return this.headline.block;
-      },
-      block_html: function() {
-        if (! this.headline.block_parts  || this.headline.local_mod_block )
-          return escapeHtml( this.block() );
-
-        // N B: No parsing of Headline/Block in local javascript, so
-        // no way to update this. Must go to server to update this info.
-        // XXXX Add a 'dirty' flag, when can't reach the server.
-
-        return _encode_org_subtext( this.headline.block_parts, true );
-
-      },
-      todo: function() {
-		// XXXX Have a function which returns a function doing an accessor:
-        if (arguments.length > 0)
-          this.headline.todo_state = arguments[0];
-        return this.headline.todo_state;
-      },
-      level: function() {
-        if (arguments.length > 0) {
-          // XXXX Check so numeric??
-          this.headline.level = arguments[0];
-        }
-        return this.headline.level;
-      },
-
-      // ------------------------------------------------------------
-	  // Has local changes been done, not yet parsed by server?
-
-	  // (If two changes are done, don't want to update the older
-	  // change even when it comes back.)
-	  // XXXX Future update -- when have net access, do bulk update
-	  // of all the marked Headline objects.
-	  modified_locally: function() {
-		if (arguments.length > 0) {
-          // XXXX Check so numeric??
-          this.headline.was_modified_locally = arguments[0];
-        }
-        return this.headline.was_modified_locally;
-      },
-	  increment_modified_locally: function() {
-		var now = this.modified_locally();
-		now     = now ? now+1 : 1;
-		this.modified_locally(now);
-		return now;
-      },
-
-      
-      // ------------------------------------------------------------
-      // Test if Headline match string/regexp:
-
-      compareTitleRegexp: function(compareWith) {
-        // In parameter must be a regexp. Returns true/false.
-
-        // (Don't test for if regexp/string. This is probably part of
-        // an inner loop and JS isn't exactly quick.)
-        //if (compareWith instanceof RegExp)
-        return compareWith.test(this.title());
-      },
-      compareBlockRegexp: function(compareWith) {
-        return compareWith.test(this.block());
-      },
-
-            
-      // ------------------------------------------------------------
-      // Implement removing/inserting/moving:
-      // (N B: .index is NOT updated after del/insert of Headline!!)
-
-      delete: function() {
-        this.owner.delete_headline(this.index);
-      },
-
-      // XXXXX Move the creation of a new Headline here.
-
-      move: function(to_ix, dontRefresh) {
-        this.owner.moveHeadline(this.index, to_ix, dontRefresh);
-      },
-
-      // Also, any Headline that are moved to the top must be set as
-      // visible. (Not here, the Controller must do that and call the
-      // View.)
-
-      // ------------------------------------------------------------
-      // This part implements (in)visible subsets of the headlines.
-
-      // 2nd version of Visible implementation -- cache results for
-      // speed. Half as readable, but less slow. :-(
-
-      visible: function() {
-        // XXXX Add so Level 1 is always visible??
-        var present_value = this.headline.visible;
-        if (arguments.length > 0) {
-          var new_value = arguments[0];
-          
-          if (new_value !== present_value) {
-            this.headline.visible = new_value ? true : false;
-            if (that.callback_fun_visible !== undefined)
-              that.callback_fun_visible(this, this.headline.visible,
-                                        this.owner.noOpenCloseUpdates);
-            return new_value;
-          }
-        }
-
-        if (present_value === undefined) return true; // Default value
-        return present_value;
-      },
-
-      change_children_visible: function(how_many_shown) {
-        // how_many_shown === true  -- all children are set to visible.
-        // how_many_shown === false -- all children are set to invisible.
-        // how_many_shown === 1     -- only direct children are shown
-
-        var ix = this.index;
-        var level        = this.level();
-        var topModel     = this.owner;
-        var len          = topModel.length;
-
-        var shown_kids   = false;
-
-        topModel.noOpenCloseUpdates = true; // Flag for callback to model
-        for(var i = ix+1; i < len; i++) {
-          var kid        = topModel.headline(i);
-          var kid_level  = kid.level();
-          if (kid_level <= level)
-            break;
-          if (how_many_shown === true)
-            kid.visible(true);
-          else if (how_many_shown === false)
-            kid.visible(false);
-          else if (how_many_shown === 1) {
-            if (kid_level === level+1) {
-              kid.visible(true);
-              shown_kids = true;
-            } else
-              kid.visible(false);
-          } else
-            throw new Error("Only true/false/1 as in parameter!");
-        }
-
-        // Kludge, there weren't any direct kids -- just show all:
-        if (how_many_shown === 1 && !shown_kids && i > ix+2)
-          return this.change_children_visible(true);
-
-        topModel.noOpenCloseUpdates = false;
-        return this.updateVisibleInHierarchy();
-      },
-
-      // (Had speed problemsl Then have a simple routine that
-      // updates(/forces re-evaluation of) the cache for a Headline.
-      visible_children: function() {
-        // Returns:
-        // 'no_kids'           -- no kids at all.
-        // 'no_visible'        -- no visible children.
-        // 'direct_kids'       -- only direct children are visible.
-        // 'all_visible'       -- all children visible.
-        // 'some'              -- some visible children, some hidden.
-
-        if (!this.headline.has_kids)
-          return 'no_kids';
-        if (!this.headline.hidden_kids)
-          return 'all_visible';
-        if (this.just1st_kids)
-          return 'direct_kids';
-        if (!this.headline.visible_kids)
-          return 'no_visible';
-        return 'some';          // Some kids are visible.
-      },
-
-      has_invisible_child: function() {
-        return this.headline.hidden_kids;
-      },
-
-      has_visible_child: function() {
-        return this.headline.visible_kids;
-      },
-
-      // ------------------------------------------------------------
-
-      findTopOwner: function() {
-        // Finds "topmost" Headline for a Headline
-        var ix    = this.index;
-        var level = this.level();
-        var topModel  = this.owner;
-
-        if (level == 1)
-          return ix;
-        for(var i = ix-1; i >= 0; i--) {
-          var prev_level = topModel.all_data[i].level;
-          if (prev_level == 1)
-            return i;
-          if (prev_level < level) {
-            level = prev_level;
-            ix    = i;
-          }
-        }
-        return ix;              // No level 1?? This was the lowest we found
-      },
-
-      findDirectOwner: function() {
-        // Finds Direct owner of Headline.
-        // If sends in Level 1 or the topmost Headline, returns itself
-        var ix          = this.index;
-        var level       = this.level();
-        if (ix === 0 || level === 1) return this;
-
-        var topModel    = this.owner;
-
-        for(var i = ix-1; i >= 0; i--) {
-          // (Doesn't need to create object etc to get level like this.)
-          var prev_level= topModel.all_data[i].level;
-          if (prev_level < level)
-            return i;
-        }
-        return ix;              // No level 1?? This was the lowest we found
-      },
-
-      findSubTree: function() {
-        // Finds all first/last of subtree beneath the Headline.
-        // Includes the Headline itself.
-        // Returns: [first, last], not inclusive for last (for-loop style).
-        var ix          = this.index;
-        var level       = this.level();
-        var topModel    = this.owner;
-
-        for(var i = ix+1; i < topModel.length; i++) {
-          var nxt_level = topModel.all_data[i].level;
-          if (nxt_level <= level)   return [ix, i];
-        }
-        return [ix, topModel.length];
-      },
-
-      findPrevSubTree: function() {
-        // Find the subtree before this (if any).
-        // If found, returns [first, last], not inclusive. Otherwise undefined.
-        var ix       = this.index;
-        if (ix === 0) return undefined; // Duh
-        var level    = this.level();
-        var topModel = this.owner;
-
-        for(var i = ix-1; i >= 0; i--) {
-          var prevH  = topModel.headline(i);
-          if (prevH.level() < level)    return undefined;
-          if (prevH.level() === level)  return [i,ix];
-        }
-        return [0,ix];          // ???
-      },
-
-      findNextSubTree: function() {
-        // If found, returns [first, last], not inclusive. Otherwise undefined.
-        var ix       = this.index;
-        var level    = this.level();
-        var topModel = this.owner;
-
-        if (ix === topModel.length-1) return undefined;
-
-        var mySubTree= this.findSubTree();
-        if (mySubTree === undefined) return undefined;
-        var lastTree = mySubTree[1];
-
-        // Is my subtree the last one?
-        if (lastTree >= topModel.length) return undefined;
-
-        return topModel.headline(lastTree).findSubTree();
-      },
-
-      // ------------------------------------------------------------
-
-      updateVisibleInHierarchy: function() {
-        // Find visible/hidden for a Headline set. Call this
-        // after changing the hierarchy and/or visible status of
-        // Headlines.
-
-        // Returns: [first_updated, last_updated].
-
-        var ix    = this.index;
-        var level = this.level();
-        var lvl;                // Loop var later
-
-        // We want to know we're at top level of the local level hierarchy:
-        if (level !== 1 && ix > 0) {
-          ix      = this.findTopOwner();
-          if (ix !== this.index)
-            level = this.owner.headline(ix).level();
-        }
-
-        // Help routine that sets up flags in Headline record for if
-        // it has visible/hidden kids and if it has only 1st level
-        // kids visible.
-        var setup_record = function(headline, visible, hidden, just1st) {
-          headline.has_kids     = (visible !== false || hidden !== false);
-          headline.visible_kids = visible;
-          headline.hidden_kids  = hidden;
-          headline.just1st_kids = just1st;
-        };
-
-        var level_specs    = [];
-        // In array, order of is: vis,  hidden, just_1st_level_visible
-        var start_level    = level;
-        for(var i = ix; i < this.owner.length; i++) {
-          var kid_record   = this.owner.all_data[i];
-          var kid_level    = kid_record.level;
-          var kid_visible  = kid_record.visible;
-          if (kid_level <= start_level && i > ix)
-            break;
-          // Set up flags for if previous has visible/invisible in
-          // them and also set to false if not a level has all hidden
-          // except direct children.
-          var kid_index    = kid_visible ? 1 : 2;
-          for(lvl = start_level; lvl < kid_level; lvl++) {
-            if (level_specs[lvl] !== undefined) {
-              level_specs[lvl][kid_index] = true; // visible or hidden
-              if ( kid_visible && lvl !== kid_level-1)
-                level_specs[lvl][3] = false;
-              if (!kid_visible && lvl === kid_level-1)
-                level_specs[lvl][3] = false;
-            }
-          }
-          for(lvl = kid_level; lvl < 10; lvl++) { // Hardcoded constant :-(
-            // Move data to Headline spec:
-            if (level_specs[lvl] === undefined)
-              continue;
-            var prev_ix    = level_specs[lvl][0];
-            setup_record(this.owner.all_data[prev_ix],
-                         level_specs[lvl][1], level_specs[lvl][2],
-                         level_specs[lvl][3]
-                        );
-          }
-          level_specs[kid_level] = [i, false, false, true];
-        }
-
-        // Set up remaining specifications:
-        for(lvl = start_level; lvl < 10; lvl++) {
+      var level_specs    = [];
+      // In array, order of is: vis,  hidden, just_1st_level_visible
+      var start_level    = level;
+      for(var i = ix; i < this.owner.length; i++) {
+        var kid_record   = this.owner.all_data[i];
+        var kid_level    = kid_record.level;
+        var kid_visible  = kid_record.visible;
+        if (kid_level <= start_level && i > ix)
+          break;
+        // Set up flags for if previous has visible/invisible in
+        // them and also set to false if not a level has all hidden
+        // except direct children.
+        var kid_index    = kid_visible ? 1 : 2;
+        for(lvl = start_level; lvl < kid_level; lvl++) {
           if (level_specs[lvl] !== undefined) {
-            var prev_ix    = level_specs[lvl][0];
-            setup_record(this.owner.all_data[prev_ix],
-                         level_specs[lvl][1], level_specs[lvl][2],
-                         level_specs[lvl][3]
-                        );
+            level_specs[lvl][kid_index] = true; // visible or hidden
+            if ( kid_visible && lvl !== kid_level-1)
+              level_specs[lvl][3] = false;
+            if (!kid_visible && lvl === kid_level-1)
+              level_specs[lvl][3] = false;
           }
         }
+        for(lvl = kid_level; lvl < 10; lvl++) { // Hardcoded constant :-(
+          // Move data to Headline spec:
+          if (level_specs[lvl] === undefined)
+            continue;
+          var prev_ix    = level_specs[lvl][0];
+          setup_record(this.owner.all_data[prev_ix],
+                       level_specs[lvl][1], level_specs[lvl][2],
+                       level_specs[lvl][3]
+                      );
+        }
+        level_specs[kid_level] = [i, false, false, true];
+      }
 
-        return [ix, i-1];       // Note -- inclusive list of updated!
-      },
-      
-      // End of Visibility/Hidden methods.
-      // ------------------------------------------------------------
+      // Set up remaining specifications:
+      for(lvl = start_level; lvl < 10; lvl++) {
+        if (level_specs[lvl] !== undefined) {
+          var prev_ix    = level_specs[lvl][0];
+          setup_record(this.owner.all_data[prev_ix],
+                       level_specs[lvl][1], level_specs[lvl][2],
+                       level_specs[lvl][3]
+                      );
+        }
+      }
+
+      return [ix, i-1];       // Note -- inclusive list of updated!
+    },
+    
+    // End of Visibility/Hidden methods.
+    // ------------------------------------------------------------
 
 
-    };
-
-    return this;
   };
-}();
+
+  return this;
+};
+
 
 
 // ----------------------------------------------------------------------
@@ -1011,9 +1009,7 @@ var OrgKeyFunMapper = function() {
 
 
 
-var OrgController = function() {
-
-  return function(model, document_div_id, divid_headlines ) {
+var OrgController = function(model, document_div_id, divid_headlines ) {
     var that = this;
 
     this.document_div_id = document_div_id;
@@ -1943,11 +1939,11 @@ var OrgController = function() {
 
 							 alert("Got update reply for id " + id
 								   + ", ix " + ix
-								   + "\nAll data:\n" + data
+								   // + "\nAll data:\n" + data
 								   + "\nLen:\n" + data.length
-								   + "\nTitle subs :\n" + data[0]);
-								  //  + "\nBlock subs :\n" + data[1]
-								  // );
+								   + "\nTitle subs :\n" + data[0] // );
+								   + "\nBlock subs :\n" + data[1]
+								  );
 							 if (data[0] && data[0] !== undefined)
 							   headline.headline.title_subs = data[0];
 							 if (data[1]  && data[1] !== undefined)
@@ -1978,16 +1974,13 @@ var OrgController = function() {
 
     // End of Controller Object spec:
     return this;
-  };
-}();
+};
 
 
 // ----------------------------------------------------------------------
 // Main View object:
 
-var OrgView = function() {
-
-  return function(document_div_id, divid_headlines) {
+var OrgView = function(document_div_id, divid_headlines) {
     var that = this;
 
     this.document_div_id = document_div_id;
@@ -2545,5 +2538,3 @@ var OrgView = function() {
       div.remove();
     };
   };
-
-}();

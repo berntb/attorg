@@ -21,7 +21,7 @@ package attorg;
 use Dancer ':syntax';
 use strict;
 use warnings;
-use Cwd /abs_path/;
+# use Cwd qw/abs_path/;
 use Sys::Hostname;
 use File::Spec;
 use Data::Dumper;
@@ -69,15 +69,15 @@ sub _get_org_file_data {
 
 
 sub _parse_org_headline {
-  my $hline   = shift;
-  my $block   = shift;
+  my $hline   = shift // '';
+  my $block   = shift // '';
 
   $hline      =~ s/^\s*//;
   $hline      =~ s/\s*$//s;		# Remove empty spaces 
   $block      =~ s/\s*$//s;		# Block must be able to start on indentation.
 
   my $alltext = length($hline) ? $hline : '';
-  $alltext   .= "\n" . $block
+  $alltext   .= "\n " . $block
 	  if length($block);
 
   # XXXX This is pure user supplied text from over a socket... Check
@@ -85,6 +85,8 @@ sub _parse_org_headline {
 
   # Catch errors here.
   my $data    = Attorg::Extract::Org::get_org_from_string( $alltext );
+
+  say STDERR "-" x 70, "\n$alltext\n", Dumper($data), "-" x 70, "\n";
 
   return undef  if !scalar @$data || !$data->[0]{document}
 	  || ! defined $data->[1];
