@@ -97,15 +97,14 @@ sub _parse_org_headline {
 }
 
 
-
 get '/attorg' => require_login sub {
-  
   template 'attorg' =>
     {
      user_def => logged_in_user()->{user},
      filename => '',
     };
 };
+
 
 get '/attorg/edit/:file' => require_login sub {
   my $file    = params->{file};

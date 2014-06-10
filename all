@@ -1,0 +1,99 @@
+$VAR1 = bless( {
+                 'document' => $VAR1,
+                 'children' => [
+                                 bless( {
+                                          'parent' => $VAR1,
+                                          'level' => 1,
+                                          'document' => $VAR1,
+                                          'children' => [
+                                                          bless( {
+                                                                   'parent' => $VAR1->{'children'}[0],
+                                                                   'text' => '   Gazonk
+',
+                                                                   'style' => '',
+                                                                   'document' => $VAR1
+                                                                 }, 'Org::Element::Text' ),
+                                                          bless( {
+                                                                   'parent' => $VAR1->{'children'}[0],
+                                                                   'level' => 2,
+                                                                   'document' => $VAR1,
+                                                                   'children' => [
+                                                                                   bless( {
+                                                                                            'parent' => $VAR1->{'children'}[0]{'children'}[1],
+                                                                                            'text' => '  bar frotz
+  gurka',
+                                                                                            'style' => '',
+                                                                                            'document' => $VAR1
+                                                                                          }, 'Org::Element::Text' )
+                                                                                 ],
+                                                                   'title' => bless( {
+                                                                                       'parent' => $VAR1->{'children'}[0],
+                                                                                       'text' => '',
+                                                                                       'style' => '',
+                                                                                       'document' => $VAR1,
+                                                                                       'children' => [
+                                                                                                       bless( {
+                                                                                                                'parent' => $VAR1->{'children'}[0]{'children'}[1]{'title'},
+                                                                                                                'text' => 'foo ',
+                                                                                                                'style' => '',
+                                                                                                                'document' => $VAR1
+                                                                                                              }, 'Org::Element::Text' ),
+                                                                                                       bless( {
+                                                                                                                'parent' => $VAR1->{'children'}[0]{'children'}[1]{'title'},
+                                                                                                                'text' => 'duh',
+                                                                                                                'style' => 'U',
+                                                                                                                'document' => $VAR1,
+                                                                                                                'children' => undef
+                                                                                                              }, 'Org::Element::Text' ),
+                                                                                                       bless( {
+                                                                                                                'parent' => $VAR1->{'children'}[0]{'children'}[1]{'title'},
+                                                                                                                'text' => ' dah',
+                                                                                                                'style' => '',
+                                                                                                                'document' => $VAR1
+                                                                                                              }, 'Org::Element::Text' )
+                                                                                                     ]
+                                                                                     }, 'Org::Element::Text' ),
+                                                                   '_str' => '** foo _duh_ dah
+'
+                                                                 }, 'Org::Element::Headline' )
+                                                        ],
+                                          'title' => bless( {
+                                                              'parent' => bless( {
+                                                                                   'parent' => $VAR1,
+                                                                                   'text' => '',
+                                                                                   'style' => '',
+                                                                                   'document' => $VAR1,
+                                                                                   'children' => [
+                                                                                                   $VAR1->{'children'}[0]{'title'}
+                                                                                                 ]
+                                                                                 }, 'Org::Element::Text' ),
+                                                              'text' => 'BAH',
+                                                              'style' => '',
+                                                              'document' => $VAR1
+                                                            }, 'Org::Element::Text' ),
+                                          '_str' => '* BAH
+'
+                                        }, 'Org::Element::Headline' )
+                               ],
+                 'done_states' => [
+                                    'DONE'
+                                  ],
+                 'properties' => {},
+                 'tags' => [],
+                 'drawer_names' => [
+                                     'CLOCK',
+                                     'LOGBOOK',
+                                     'PROPERTIES'
+                                   ],
+                 'time_zone' => undef,
+                 'priorities' => [
+                                   'A',
+                                   'B',
+                                   'C'
+                                 ],
+                 'radio_targets' => [],
+                 'todo_states' => [
+                                    'TODO'
+                                  ]
+               }, 'Org::Document' );
+
