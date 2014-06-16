@@ -8,36 +8,36 @@ body { padding-top: 40px; }
     /* padding: 3px; */
 }
 .hl2 {
-    margin-left:  0px;
+    margin-left:  10px;
     /* margin-top: 4px; */
     /* background-color: #e0e0e0; */
     /* margin-bottom: 2px; */
 }
 .hl3 {
-    margin-left:  10px;
+    margin-left:  20px;
     /* background-color: #d0d0d0; */
 }
 .hl4 {
-    margin-left:  20px;
+    margin-left:  30px;
     /* background-color: #c0c0c0; */
 }
 .hl5 {
-    margin-left:  30px;
-}
-.hl6 {
     margin-left:  40px;
 }
+.hl6 {
+    margin-left:  50px;
+}
 .hl7 {
-    margin-left:  48px;
+    margin-left:  58px;
 }
 .hl8 {
-    margin-left:  56px;
+    margin-left:  66px;
 }
 .hl9 {
-    margin-left:  60px;
+    margin-left:  70px;
 }
 .hl10 {
-    margin-left:  60px;
+    margin-left:  80px;
 }
 /* Will do for now */
 

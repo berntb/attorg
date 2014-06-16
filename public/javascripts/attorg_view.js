@@ -17,6 +17,12 @@
 
 // ----------------------------------------------------------------------
 
+// XXXX Make setting up templates neater!!
+// Inject template texts, instead.
+
+var compiled_template_hline = _.template( $("#template_hline").html() );
+var compiled_template_edit  = _.template( $("#template_edit_hline").html() );
+var compiled_template_empty = _.template( $("#template_hidden_hline").html() );
 
 // Main View object:
 
@@ -26,7 +32,8 @@ var OrgView = function(document_div_id, divid_headlines) {
   this.document_div_id = document_div_id;
   this.divid_headlines = divid_headlines;
 
-  
+  // Keep IDs of those Headlines not rendered, since they aren't visible
+  this.lazilyNotRendered = {};
 
   this.documentName = function() {
     if (arguments.length > 0) {
@@ -109,17 +116,15 @@ var OrgView = function(document_div_id, divid_headlines) {
   // ------------------------------------------------------------
   // - - - - - Headlines:
 
-  this.render_headline = function(headline) {
+  this.render_headline = function(headline, always_render) {
     var div  = $( '#' + this.make_headline_id(headline) );
-
     if (div === undefined)
       return;
-
-    var all_todo_done_states = headline.owner.all_todo_done_states();
-    div.replaceWith( this.make_headline( headline,
-                                         all_todo_done_states,
-                                         true)
-                   );
+	// alert("caller is " + arguments.callee.caller.toString() + "\n Block is:"
+	// 	  + headline.block_html());
+    div.parent().replaceWith( this.make_headline(headline, undefined,
+												 always_render) );
+	// alert(headline.block_html());
   };
 
 
@@ -144,9 +149,6 @@ var OrgView = function(document_div_id, divid_headlines) {
     }
   };
 
-  // XXXX Add presentation headline, with text/block. Should make
-  // links, overstrike, etc, etc, etc!
-
   // Handles commands to edit Level, TODO, insert new Headline and
   // to enter Editing mode for a Headline. In the future, tags,
   // etc. (Modal editing in Emacs... :-( :-) )
@@ -154,81 +156,47 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 
   this.make_headline = function( headline, all_todo_done_states,
-                                 internal_html_only) {
-    // XXXX Should be replaced with a template fun.
-    var title_value   = headline.title();
-    var text_block    = headline.block();
-    var todo_state    = headline.todo();
-    var level         = headline.level();
+								 force_visible) {
     var visible_at_all= headline.visible();
+	var headline_id = headline.id_str();
+
+	// Don't build everything when empty.
+	// (When show_headline() is called, then it needs to make certain
+	//  it is created before being shown as visible.)
+
+	if (!visible_at_all && ! force_visible ) {
+	  this.lazilyNotRendered[headline_id] = true;
+	  return compiled_template_empty( { id: headline_id } );
+	}
+
+    var title_value   = headline.title();
+	var text_block    = headline.block();
+
     var visible_kids  = headline.visible_children();
-    var open_status   = (visible_kids.no_kids || visible_kids.all) ?
-      true : false;
 
-    if (all_todo_done_states === undefined)
-      all_todo_done_states = headline.owner.all_todo_done_states();
-    var main_div_id   = this.make_headline_id( headline );
-    var id_str_hline  = headline.id_str(); // Unique string for this Headline
-    var level_id      = 'l_'  + id_str_hline;
-    var todo_id       = 'do_' + id_str_hline;
+    var level         = headline.level();
 
-    // Level dependent stuff:
-    if (level < 1)  level =  1;
-    if (level > 10) level = 10;
-    var css_div_class = "hl" + level;
-    // To override Bootstrap class
-    var style_kludge  = 'style="color: ' + level_colors[level] + '" ';
+	var block_html    = '';
+	if (text_block !== undefined &&
+		! this.dontShowBlockRegexp.test(text_block)) {
+	  block_html      = "<pre>" + headline.block_html() + "</pre>";
+	}
 
-    // - - - Make it all:
-    var top_div_style = visible_at_all ? '' : ' style="display: none;" ';
-
-    var b             = function(className) {
-      return '<a class="btn btn-mini ' + className + '">';
-    };
-    var bend          = '</a>';
-    var buttons       = '<div class="btn-group span1">'    +
-      this._make_open_close_button(visible_kids) + 
-      b('edit-header pull-right') + '<i class="icon-edit edit-header"></i>' +
-      bend +
-      "<br/>\n" +
-      b('add-header pull-right')  + '<i class="icon-plus add-header"></i>'  +
-      bend +
-      '</div>';
-
-    var select_html   = this.make_level_select(level, level_id);
-    var todo_html     = this.make_todo_select(todo_state, todo_id,
-                                              all_todo_done_states);
-
-    // (controls[-row], well are Bootstrap stuff)
-    var well          = (level === 1) ? ' well well-small ' : '';
-    var row_start     = internal_html_only ? '' :
-      '<div class="row "' + top_div_style + '>';
-    row_start        += '<div class="controls controls-row span12 ' + well +
-      css_div_class + '" id="' + main_div_id + '">' + "\n";
-    var row_end       = internal_html_only ? "" :
-      "<div class=\"row headline-edit\"></div></div>\n";
-
-    // Set up text for Headline/Block.
-    var text_part     = '<span class="span8 title-text" ' +
-      style_kludge + ">" +
-      headline.title_html();
-    //this.escapeHtml(title_value);
-    var block_part    = '';
-    if (text_block !== undefined &&
-        ! this.dontShowBlockRegexp.test(text_block)) {
-      text_part      += "<pre>\n" +
-        headline.block_html() +
-        "</pre>\n";
-    }
-    text_part        += "</span>\n";
-
-    return row_start +
-      buttons +
-      '<div class="span2 controls-row">' +
-      select_html +  todo_html + '</div>' +
-      text_part +
-      "</div>\n" +
-      row_end;
+	return compiled_template_hline(
+	  { id: headline_id, // ID string for Headline
+		visible: visible_at_all,
+		visible_kids: headline.visible_children(),
+		level: level,
+		subtree_open_closed: this._make_open_close_button(visible_kids),
+		// Move into Template??
+		level_select_options: _make_level_select_help(level),
+		todo_select_options: _make_todo_select_help(headline.todo(),
+													all_todo_done_states),
+		// Kludge for setting Bootstrap color:
+		color_text: level_colors[level],
+		title: headline.title_html(),
+		block: block_html
+	  });
   };
 
 
@@ -236,9 +204,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   // ------------------------------------------------------------
   // Edit Headline:
 
-  // XXXX Huh?? How is the logic here?? make_edit_headline() is only
-  // used by this render_new_edit_headline()? Read.
-  this.render_new_edit_headline = function(ix, headline) {
+  this.render_edit_headline = function(ix, headline) {
     // Adds a new Headline and renders it as editable.
     var rendered_html = this.make_edit_headline( headline );
 
@@ -248,79 +214,27 @@ var OrgView = function(document_div_id, divid_headlines) {
       return;
 
     // XXXX If the block text for a Headline is "too" long, hide the
-    // block by default??? (And have small button to show it all.)
+    // [end of the?] text block by default??? (And have a button to
+    // show the hidden text.)
 
     div.html( rendered_html );
   };
 
 
   this.make_edit_headline = function( headline, all_todo_done_states) {
-    // XXXX This should be replaced with a template fun.
     var title_value   = headline.title();
     var text_block    = headline.block() || '';
-    var level         = headline.level();
 
-    if (all_todo_done_states === undefined)
-      all_todo_done_states = headline.owner.all_todo_done_states();
-    var main_div_id   = this.make_headline_id( headline );
-    var edit_div_id   = this.make_headline_edit_id( headline );
-    var title_id      = this.makeEditTitleId(headline);
-    var block_id      = this.makeEditBlockId(headline);
+	// XXXX Also put a frame around H-line + edit fields??
 
-    // Level dependent stuff:
-    if (level < 1)  level =  1;
-    if (level > 10) level = 10;
-    var div_edit_class= "ed" + level;
-    var css_div_class = "hl" + level;
-    var css_text_class= "inp" + level;
-    // Override Bootstrap class for color in editing, too??
-    // var style_kludge  = 'style="color: ' + level_colors[level] + '" ';
-
-    // - - - Make buttons:
-    var buttons    = '<div class="span3">' +
-      '<div class="row btn-toolbar span3">'    +
-      '<div class="btn-group">'    +
-      '<button class="btn btn-small btn-primary save-cmd">Save</button>' +
-      '<button class="btn btn-small update-cmd">Update</button>'  +
-      '</div>' +
-      '<div class="btn-group">'    +
-      '<button class="btn btn-small cancel-cmd">Cancel</button>'  +
-      '</div>' +
-      '</div>' + "\n" +       // /btn-toolbar
-      '<div class="row btn-group span3">'    +
-      // Make 'More' button a dropdown menu? (See "Components -- Bootstrap")
-      // '<button class="btn more-cmd">More</button>'  +
-      this.make_more_edit_menu() + '&nbsp;' + 
-      // '<br/>' +
-      //'<a class="btn delete-header"><i class="icon-trash"> Delete</i>' +
-      '</a>' +
-      '</div>' +
-      "</div>\n";
-
-    // (Bootstrap layout with controls[-row]. 'well well-small'??)
-    var row_start     = '<div class="controls controls-row  '+
-      css_div_class + '" id="' + main_div_id + '">' + "\n";
-    var row_end       = "</div>\n";
-
-    var block_part    = '<textarea class="span9 block_edit" ' +
-      'rows="5" cols="73" id="' + block_id + '" >' +
-      this.escapeHtml(text_block) +
-      "</textarea>\n";
-
-    // XXXX Add some way of hiding the block of a Headline, if it is
-    // really long.
-    return '<div class="controls controls-row" ' +
-      'id="' + edit_div_id + '">' + "\n" +
-      buttons +
-      '<div class="span9">' + "\n" +
-      '<input type="text" class="span9 title_edit" ' +
-      'id="' + title_id + '" value="' + title_value.replace(/"/g, '&quot;') +
-      '" ' + /* style_kludge  + */ '/>' + "<br/>\n" +
-      block_part +
-      "</div>\n" +
-      "</div>\n";
+	return compiled_template_edit(
+	  { id: headline.id_str(), // ID string for Headline
+		level: headline.level(),
+		title_text: title_value.replace(/"/g, '&quot;'),
+		block_text: this.escapeHtml(text_block),
+	  }) ;
+	return make_edit_headline(headline, all_todo_done_states);
   };
-
 
   // ------------------------------------------------------------
   // Utilities:
@@ -359,7 +273,15 @@ var OrgView = function(document_div_id, divid_headlines) {
   };
 
   this.show_headline = function(headline, noOpenCloseUpdates) {
+	var id_str = headline.id_str();
     var div  = $( '#' + this.make_headline_id(headline) ).parent();
+
+	// Check if this Headline wasn't rendered (lazy).
+	if (this.lazilyNotRendered[id_str]) {
+	  delete this.lazilyNotRendered[id_str];
+	  this.render_headline(headline, true);
+	}
+
     div.show();
     if (! this.noOpenCloseUpdates && !noOpenCloseUpdates)
       this.fixOpenCloseFromTo(headline.index, headline.index,
@@ -376,6 +298,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 
   // - - - - - Handle close/open box:
+  // XXXX Have code both here and in Template. :-( Just use one way.
   this.fixOpenCloseFromTo = function(from_ix, to_ix, model) {
     // Changes the open/closed flags for Headlines.
 
@@ -393,9 +316,9 @@ var OrgView = function(document_div_id, divid_headlines) {
   this._make_open_close_button = function(visible_kids) {
     var icon;
     if (visible_kids === 'no_kids') {
-      return '<span class="open-subtree pull-left" style="display: none;"></span>';
-      //return '<button type="button" class="btn btn-mini open-subtree" ' +
-      //  ' disabled>-</button>';
+	  return '<span class="open-subtree pull-left" style="display: none;"></span>';
+      // return '<button type="button" class="btn btn-mini open-subtree" ' +
+	  // 	' disabled>-</button>';
     } else if (visible_kids === 'all_visible') {
       icon  = 'icon-caret-down';
     } else if (visible_kids === 'some') {
@@ -464,6 +387,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   // From mustache.js, see:
   // stackoverflow.com/questions/24816/escaping-html-strings-with-jquery
+  // But try underscore.js instead.
   var entityMap = {
     "&": "&amp;",
     "<": "&lt;",
@@ -474,6 +398,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   };
 
   this.escapeHtml =  function(string) {
+	// return _.escape(string);
     return String(string).replace(/[&<>"'\/]/g, function (s) {
       return entityMap[s];
     });
@@ -482,7 +407,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   // - - - - - Make Level-select HTML:
   var _level_generated = [];
 
-  function make_level_select_help(level, level_id) {
+  function _make_level_select_help(level) {
     // Help fun, generates the options for the select.
     var lvl_items   = '';
     for (var i=1; i < 11; i++) {
@@ -505,7 +430,7 @@ var OrgView = function(document_div_id, divid_headlines) {
     // Memoizises most of the work.
     // (XXXX Let code check super of this, so no need to have id?)
     if (! _level_generated[level])
-      _level_generated[level] = make_level_select_help(level)
+      _level_generated[level] = _make_level_select_help(level)
       + "</select>\n";
 
     return '<select name="level-select" class="span1 lvl_select" ' +
@@ -515,7 +440,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   // - - - Make TODO-select HTML:
   var _todo_generated = [];
 
-  function make_todo_select_help(present_state, all_todo_done_states) {
+  function _make_todo_select_help(present_state, all_todo_done_states) {
     var todo_items = '<option value="">-</option>';
     for (var i in all_todo_done_states) {
       var state     = all_todo_done_states[i];
@@ -536,9 +461,10 @@ var OrgView = function(document_div_id, divid_headlines) {
     // XXXX When writes code to update TODO-states, need to clear
     // out this cache!!
     if (! _todo_generated[present_state])
-      _todo_generated[present_state]
-      = make_todo_select_help(present_state, all_todo_done_states)
-      + "</select>\n";
+      _todo_generated[present_state] = _make_todo_select_help(
+		present_state,
+		all_todo_done_states
+	  ) + "</select>\n";
 
     return '<select name="todo" class="span1 todo_select" ' +
       'id="' + todo_id + '">' + _todo_generated[present_state];

@@ -78,6 +78,144 @@
 
 <!-- <script type="text/javascript">alert("Loading -- JS");</script> -->
 
+<!-- Templates ---------------------- -->
+
+<!-- Normal headline: -->
+<script id ="template_hline" type="text/template">
+<div class="row" <%= visible ? "" :  'style="display: none;"' %> >
+  <div id="hl_<%= id %>"
+	   class="controls controls-row span12  <%= level === 1 ? "well well-small hl1" : "hl" + level %>">
+	<div class="btn-group span1">
+	  <%= subtree_open_closed %>
+	  <!-- %
+		 // No. Needs to update open/closed without updating the
+		 // whole template.
+		 if (visible_kids === "no_kids") {
+			// (Can't do return, quits all of template.)
+		 } else {
+			print('<a class="btn btn-small open-subtree pull-left">');
+
+			if (visible_kids === "all_visible") {
+				print('<i class="icon-caret-down"></i></a>');
+			} else if (visible_kids === "some") {
+				print('<i class="icon-angle-down"></i></a>');
+			} else {
+				print('<i class="icon-caret-right"></i></a>');
+			}
+		 }
+	  % -->
+	  <a class="btn btn-mini add-header pull-right">
+		<i class="icon-plus add-header"></i>
+	  </a>
+	  <br>
+	  <a class="btn btn-mini edit-header pull-right">
+		<i class="icon-edit edit-header"></i>
+	  </a>
+	</div>
+	<div class="span2 controls-row">
+	  <select id="l_<%= id %>" class="span1 lvl_select" name="level-select">
+	  <%= level_select_options %>
+	  </select>
+	  <select id="do_<%= id %>" class="span1 todo_select" name="todo">
+		<%= todo_select_options %>
+	  </select>
+	</div>
+	<span class="span8 title-text" style="color:<%= color_text %>" >
+	  <%= title %>
+	  <%= block %>
+	</span>
+  </div>
+  <div class="row headline-edit"></div>
+</div>
+</script>
+
+<!-- Edit part of a Headline: -->
+<script id ="template_edit_hline" type="text/template">
+<div class="row headline-edit">
+	<div id="ed-<%= id %>" class="controls controls-row">
+	  <div class="span3">
+		<div class="row btn-toolbar span3">
+		  <div class="btn-group">
+			<button class="btn btn-small btn-primary save-cmd">Save</button>
+			<button class="btn btn-small update-cmd">Update</button>
+		  </div>
+		  <div class="btn-group">
+			<button class="btn btn-small cancel-cmd">Cancel</button>
+		  </div>
+		</div>
+		<div class="row btn-group span3">
+		  <div class="btn-group">
+			<a data-toggle="dropdown" class="btn dropdown-toggle">
+			  More<i class="icon-large icon-caret-down"></i>
+			</a>
+			<ul class="dropdown-menu">
+			  <li>
+				<a class="delete-header">
+				  <i class="icon-trash"></i> Delete
+				</a>
+			  </li>
+			  <li class="divider"></li>
+			  <li>
+				<a class="move-header-up">
+				  <i class="icon-angle-up"></i> Move Up
+				</a>
+			  </li>
+			  <li>
+				<a class="move-header-down">
+				  <i class="icon-angle-down"></i> Move Down
+				</a>
+			  </li>
+			  <li>
+				<a class="move-tree-up">
+				  <i class="icon-chevron-up"></i> Move Subtree Up
+				</a>
+			  </li>
+			  <li>
+				<a class="move-tree-down">
+				  <i class="icon-chevron-down"></i> Move Subtree Down
+				</a>
+			  </li>
+			  <li class="divider"></li>
+			  <li>
+				<a class=""><i class="icon-coffee"></i> Not implemented yet:
+				</a>
+			  </li>
+			  <li>
+				<a class="">
+				  <i class="icon-copy"></i> Copy Subtree
+				</a>
+			  </li>
+			  <li>
+				<a class="">
+				  <i class="icon-paste"></i> Paste Subtree
+				</a>
+			  </li>
+			  <li>
+				<a class="">
+				  <i class="icon-trash"></i> Delete Subtree
+				</a>
+			  </li>
+			</ul>
+		  </div>&nbsp;
+		</div>
+	  </div>
+	  <div class="span9">
+		<input type="text" value="<%= title_text %>" id="t_<%= id %>"
+			   class="span9 title_edit"><br>
+<textarea id="b_<%= id %>" cols="73" rows="5" class="span9 block_edit">
+<%= block_text %></textarea>
+	  </div>
+	</div>
+  </div>
+</script>
+
+<!-- Not visible Headline, values put there lazily: -->
+<script id ="template_hidden_hline" type="text/template">
+<div class="row" style="display: none;">
+  <div id="hl_<%= id %>">Lazily not instantiated.</div>
+</div>
+</script>
+
 
  <!-- Test data: -->
 <script id ="data" type="text/json">
@@ -206,10 +344,15 @@
    }
 ]
 </script>
+
+
+
 <!-- <script type="text/javascript" -->
 <!-- 	src="[% request.uri_base %]/javascripts/duh.js"></script> -->
 
 
+<script type="text/javascript"
+	src="[% request.uri_base %]/javascripts/underscore-min.js"></script>
 <script type="text/javascript"
 	src="[% request.uri_base %]/javascripts/attorg_view.js"></script>
 <script type="text/javascript"

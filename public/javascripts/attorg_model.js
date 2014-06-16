@@ -65,6 +65,7 @@ var OrgModel = function(documentName, org_data,
   };
 
   function escapeHtml(string) {
+	// return _.escape(string);
     return String(string).replace(/[&<>"'\/]/g, function (s) {
       return entityMap[s];
     });
@@ -354,8 +355,8 @@ var OrgModel = function(documentName, org_data,
 	  // (Don't have a local parser for org mode, have to go to server
 	  // for this.)
       return _encode_org_subtext( this.headline.block_parts, true );
-
     },
+
     todo: function() {
 	  // XXXX Have a function which returns a function doing an accessor:
       if (arguments.length > 0) {
@@ -370,7 +371,12 @@ var OrgModel = function(documentName, org_data,
         this.headline.level = arguments[0];
 		this.owner.dirty();
       }
-      return this.headline.level;
+	  var level = this.headline.level;
+	  if (level < 1)
+		return 1;
+	  if (level > 10)
+		return 10;
+      return level;
     },
 
     // ------------------------------------------------------------
@@ -753,7 +759,29 @@ var OrgModel = function(documentName, org_data,
             } catch(duh) { value = "ERROR WITH LINK:" + value};
           }
         }
-      }
+      } else if (type  === "Org::Element::Target") {
+		// In Emacs: <<target name>>
+		// Implement internal links in the document with JS. The
+		// "obvious way" (normal internal HTML links) is not good,
+		// since you need to open Headlines to show the hidden part.
+
+		// N B internal links aren't supported by Org::Parser!
+		value = " [Target TBI] ";
+	  } else if (type  === "Org::Element::RadioTarget") {
+		// In Emacs: <<<target name>>>
+		// With this, ALL OCCURENCES of the text (Headlines, blocks)
+		// should be links to this place.
+		// (N B In Emacs, Radio Target links are updated (1) on load
+		//  and (2) on C-C C-C with cursor on a target.)
+
+		// Also note that in Org::Parser documentation, a radio target
+		// was before all Headlines.
+		value = " [Radio Target TBI] ";
+	  } else {
+		console.log("Got problems with type " + type + ", value is "
+					+ value + "\nPlease implement");
+	  }
+
       // XXXX Add dates here!!
       collected  += value;
     }
