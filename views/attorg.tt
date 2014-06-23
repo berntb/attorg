@@ -356,6 +356,10 @@
 <script type="text/javascript"
 	src="[% request.uri_base %]/javascripts/attorg_view.js"></script>
 <script type="text/javascript"
+	src="[% request.uri_base %]/javascripts/attorg_cmds.js"></script>
+<script type="text/javascript"
+	src="[% request.uri_base %]/javascripts/attorg_cmd_list.js"></script>
+<script type="text/javascript"
 	src="[% request.uri_base %]/javascripts/attorg_model.js"></script>
 <script type="text/javascript"
 	src="[% request.uri_base %]/javascripts/attorg.js"></script>

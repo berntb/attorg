@@ -58,14 +58,17 @@ $(function() {
         model.headline(i).visible(true);
     }
 
-	var view   = new OrgView(document_div_id, divid_headlines);
+	var view       = new OrgView(document_div_id, divid_headlines);
+	var cmdHandler = new OrgCmdMapper();
     org_controllers[divid_headlines] = new OrgController(
       model,
 	  view,
+	  cmdHandler,
       document_div_id,
       divid_headlines
     );
     // org_controllers[divid_headlines].init_view(view);
+	OrgAddKeyCmds(cmdHandler, org_controllers[divid_headlines], model, view);
   };
 
   var text, data, model;
@@ -113,187 +116,9 @@ $(function() {
 // ----------------------------------------------------------------------
 // Controller:
 
-// (Make another controller for editing content? A bit messy with all
-// functionality rolled into one.)
 
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// Help for mapping key codes to functions.
-
-var OrgKeyFunMapper = function() {
-
-  return function(controller) {
-    var that = this;
-
-    this.controller = controller;
-
-    // Prefix command function, that eats and caches prefixes!
-    // Supports C-C and ESC. A C-G should throw away prefixes.
-    // Note, need a stack of two: C-C ESC . -- add date.
-
-    // XXXXX Add support for C-X, <more> stuff... (M-X would just be a
-    // normal cmd which opened a text field.)
-
-    // XXXXX Select (or have a text field) with keys that should be
-    // treated as prefixes for ESC and C-. Then e.g. iPad can use
-    // meta/ctrl key sequences. (Can you add to keyboard on
-    // iPad/Android in Safari/Chrome??)
-
-    // - - - Handle prefix commands
-    var savedPrefixes  = [];
-
-    this.handlePrefix  = function(event, meta, control, keyCode) {
-      // Returns false if it didn't "eat" the char.
-      // This is assumed to be able to throw away non-used prefix codes.
-      // C-G
-      if (keyCode === 71 && control && savedPrefixes.length) {
-        // Remove the C-G and any saved prefix
-        savedPrefixes  = [];
-        console.log("Ate C-G to throw away start of cmd");
-        return true;
-      }
-
-      // ESC
-      if (keyCode === 27) {
-        if (savedPrefixes.length) {
-          if (savedPrefixes[savedPrefixes.length-1] === 27)
-            return true;       // Assume double ESC is a mistake
-          if (savedPrefixes.length >= 2) {
-            savedPrefixes = []; // Show err message somewhere??
-            return true;        // Not supported, should have temp err msg??
-          }
-        }
-        savedPrefixes.push('ESC');
-        return true;
-      }
-
-      // C-C
-      if (keyCode === 67 && control && !meta) {
-        savedPrefixes = ['C-C']; // Nothing before/after this
-        return true;
-      }
-
-      // XXXX Catch some extra chars and make them into an M- or C-
-      // prefix? Then e.g. an iPad could use Emacs key sequences.
-
-      return false;             // No change
-    };
-
-    // - - - Key translation part:
-
-    // uc-names for keys (so the addKeyFun function can use named keys
-    // as parameters.)
-    var keyCodeList    = {
-      37:  [37, 'LEFT'],
-      38:  [38, 'UP'],
-      39:  [39, 'RIGHT'],
-      40:  [40, 'DOWN'],
-      13:  [13, 'CR'],
-      9:   [ 9, 'TAB'],
-    };
-
-    var keyCommandList = {};    // Key translations to functions
-
-    // Notes:
-    // Key code: [text_handler, block_handler] // block is optional
-    // (If a handler is 'undefined', it won't be called)
-
-    // Function to add function to key:
-    this.addKeyFun = function(keyCodes, fun) {
-      // If sends in one fun, it is for both text and block.
-      // To not have a fun for text or block, send in undefined.
-      var funs  = [fun];
-      if (arguments.length > 2)
-        funs.push( arguments[2] ); // block fun
-      var keycodeArr = keyCodes.toUpperCase().split(/,\s*/);
-      for(var i in keycodeArr) {
-        var keyCode = keycodeArr[i];
-        console.log("Adding '" + keyCode + "' (from " + keyCodes + ")" );
-        keyCommandList[keyCode] = funs;
-      }
-    };
-    this.keyFuns = function() { return keyCommandList; };
-
-    this.findKeyCodeFun = function(event, which_off) {
-      if (which_off === 'title' || which_off === undefined)
-        which_off   = 0;
-      else if (which_off === 'block')
-        which_off   = 1;
-
-      if (savedPrefixes.length &&
-          savedPrefixes[savedPrefixes.length-1] === 'ESC') {
-        savedPrefixes.pop();
-        event.metaKey = true;
-      }
-
-      var keyCode   = event.which; // (From jQuery, browser compatibility)
-      var metaDescr = (event.altKey || event.metaKey) ? 'M-' : '';
-      var ctrlDescr = event.ctrlKey ? 'C-' : '';
-      var shiftDescr= event.shiftKey ? 'S-' : false;
-      var metaDescr = metaDescr + ctrlDescr;
-
-      // For now, can only be C-C as other prefix
-      if (savedPrefixes.length && savedPrefixes[0] === 'C-C') {
-        if (savedPrefixes.length === 1) {
-          // This is sensitive -- ONE SPACE:
-          metaDescr = 'C-C ' + metaDescr;
-        }
-        savedPrefixes = [];
-      }
-
-
-      var keyNames  = keyCodeList[keyCode] || [keyCode,
-                                               String.fromCharCode(keyCode)];
-      
-      console.log("keys:" + keyNames + ', meta:' + metaDescr);
-
-      // First, for the named keys:
-      function selectFun(funList) {
-        var match = funList.length > 1 ? funList[which_off] : funList[0];
-        return match;
-      }
-
-      var i, check, val, match;
-      for(i = 0; i < keyNames.length; i++) {
-        check       = metaDescr + keyNames[i];
-        val         = undefined;
-        if (shiftDescr && keyCommandList.hasOwnProperty(shiftDescr + check)) {
-          check     = shiftDescr + check;
-          val       = keyCommandList[check];
-        } else if (keyCommandList.hasOwnProperty(check))
-          val       = keyCommandList[check];
-
-        if (val) {
-          match     = selectFun(val);
-          if (match) {
-            console.log("Matched " + check);
-            return match;
-          } else
-            console.log("Skipped match for " + check);
-        }
-      }
-      // Is there "any modifier" specification ('X-')?
-      for(i = 0; i < keyNames.length; i++) {
-        check       = 'X-' + keyNames[i];
-        if (keyCommandList.hasOwnProperty(check)) {
-          console.log("Fallback: " + check);
-          match     = selectFun(keyCommandList[check]);
-          if (match) {
-            console.log("Fallback matched:" + check);
-            return match;
-          } else
-            console.log("Skipped match for Fallback:" + check);
-        }
-      }
-
-      return undefined;
-    };
-  };
-}();
-
-
-
-var OrgController = function(model, view,
+var OrgController = function(model, view, commandHandler,
 							 document_div_id, divid_headlines) {
   var that = this;
 
@@ -317,12 +142,14 @@ var OrgController = function(model, view,
   // ------------------------------------------------------------
   this.view  = view;
   this.model = model;
+  // XXXX Should replace the command handler later:
+  this.cmdHandler      = commandHandler;
 
   this.document_div_id = document_div_id;
   this.divid_headlines = divid_headlines;
   this.divid_search    = divid_headlines + "_search";
 
-  this.keyMapper = new OrgKeyFunMapper(this);
+  // this.keyMapper       = new OrgKeyFunMapper();
 
   // ------------------------------------------------------------
   // Set up callbacks for Model:
@@ -350,268 +177,6 @@ var OrgController = function(model, view,
   //   console.log("Char " + m + c + keycode + ", " + headline.title() + b);
   // }
 
-  this.keyMapper.addKeyFun(
-    'X-CR',
-    // XXXX M-CR should move the block to the new headline, C-CR
-    // should not do so.
-    function(event, ctrl, meta, keycode, headline, block_p) {
-      console.log("In headline CR, before meta test");
-      that.updateEditedHeadline(headline);
-      that.view.close_edit_headline( headline );
-      if (ctrl) {
-        var ix     = headline.index;
-        that._insertAndRenderHeading(ix+1, headline.level() );
-        return true;
-      }
-      if (meta) {
-        // XXXX Should this work like Emacs??
-        // I.e., if the Headlines subtree is fully closed, M-CR
-        // should open new Headline _after_ the tree. (Don't move
-        // either the block or the text to the right of
-        // the cursor to the new Headline).
-        var ix     = headline.index;
-        that._insertAndRenderHeading(ix+1, headline.level() );
-        return true;
-      }
-      return true;
-    },
-    function(event, ctrl, meta, keycode, headline, block_p) {
-      console.log("In block CR, before meta test");
-      if (ctrl) {
-        that.updateEditedHeadline(headline);
-        that.view.close_edit_headline( headline );
-        return true;
-      }          
-      if (!meta) return false;
-
-      that.updateEditedHeadline(headline);
-      that.view.close_edit_headline( headline );
-      var ix     = headline.index;
-      that._insertAndRenderHeading(ix+1, headline.level() );
-      return true;
-    }
-  );
-
-
-  this.keyMapper.addKeyFun(
-    'C-G',
-    function(event, ctrl, meta, keycode, headline, block_p) {
-      console.log("Skip editing.");
-      that.view.close_edit_headline( headline );
-      return true;
-    }
-  );
-
-
-  this.keyMapper.addKeyFun(
-    'X-TAB',
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      var hide_action  = that.updateTreeVisibility( headline );
-      if (!event.shiftKey)
-        return true;
-
-      // Difference from Emacs -- just show all after present
-      // position.  (Later -- find out how to do scrolling so
-      // we can keep the present field under editing visible.)
-      var ix           = headline.index;
-      var i;
-      var model        = headline.owner;
-      var hidden       = false;
-      var shown        = false;
-      var top_headlines= [];
-      for(i = ix+1; i < model.length; i++) {
-        var later_hline= model.headline(i);
-        if (later_hline.visible())
-          shown = true;
-        else
-          hidden = true;
-        if (later_hline.level() === 1)
-          top_headlines.push( later_hline );
-      }
-      // XXXX Should have logic for only showing children??
-
-      // XXXX BUGGY -- will hide when editing non-level 1!! XXXX
-
-      if (hide_action === 'kids') {
-        // Just one or the other:
-        if (shown && !hidden) {
-          that.updateTreeVisibility( headline, 'hide' );
-          hide_action = 'hide';
-        } else {
-          that.updateTreeVisibility( headline, 'all' );
-          hide_action = 'all';
-        }
-      }
-
-      if (hide_action === '') {
-        if (hidden === false)
-          hide_action = 'hide';
-        else {
-          hide_action = 'all';
-        }
-      }
-
-      console.log("Shift-TAB action:" + hide_action);
-
-      for(i = 0; i < top_headlines.length; i++)
-        that.updateTreeVisibility(top_headlines[i], hide_action);
-      return true;
-    });
-
-
-  this.keyMapper.addKeyFun(
-    'C-C C-U',                // Move to level above
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      var ix           = headline.index;
-      var model        = headline.owner;
-
-      var ix           = headline.index;
-      var model        = headline.owner;
-      var level        = headline.level();
-
-      // XXXX FIX, 1/2 written
-      for(var i = ix-1; i >= 0; i--) {
-        var nxtH       = model.headline(i);
-        if (nxtH.level() < level) {
-          // Save and close old Editing:
-          nxtH.visible(true);
-          // XXXXX Anything else here???
-          that.saveAndGotoIndex(headline, i); // Should go block or hline??
-          return true;
-        }
-      }
-      // XXXX Move somewhere else??
-      return true;
-    }
-  );
-
-
-  // XXXX Add support for C-C C-N
-  this.keyMapper.addKeyFun(
-    'C-N, down, C-down',
-    // Title:
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      that.view.setFocusBlock( headline );
-      return true;
-    },
-    // Block:
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      // C-N in Block goes to next Visible Headline:
-      var ix           = headline.index;
-      var model        = headline.owner;
-
-      if (keycode === 40 && !ctrl)
-        return false;         // Don't use 'down' in Block
-
-      for(var i = ix+1; i < model.length; i++) {
-        if (model.headline(i).visible()) {
-          that.saveAndGotoIndex(headline, i, false);
-          break;
-        }
-      }
-      return true;
-    });
-
-
-  this.keyMapper.addKeyFun(
-    'C-80, up, C-up',      // 80 === C-P (To see that ASCII code works too)
-    // Title:
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      var ix           = headline.index;
-      var model        = headline.owner;
-
-      for(var i = ix-1; i >= 0; i--) {
-        if (model.headline(i).visible()) {
-          // Save and close old Editing:
-          that.saveAndGotoIndex(headline, i, true);
-          break;
-        }
-      }
-      return true;
-    },
-    // Block:
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      if (keycode === 38 && !ctrl)
-        return false;         // Don't use 'up' in Block
-
-      // Just go to Title:
-      that.view.setFocusTitle( headline );
-      return true;
-    });
-
-
-  this.keyMapper.addKeyFun(
-    'M-left',
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      if (headline.level() === 1)   return true;          // No change
-
-      if (event.shiftKey) {
-        var tree = headline.findSubTree();
-        that.levelChangeSubtree(tree[0], tree[1], -1);
-      } else {
-        that.levelChange(headline, headline.level()-1 );
-      }
-      return true;
-    });                       // Just one fun, so both for Title and Block
-
-  this.keyMapper.addKeyFun(
-    'M-right',
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      // If shift, moves the whole subtree.
-      if (event.shiftKey) {
-        var tree = headline.findSubTree();
-        that.levelChangeSubtree(tree[0], tree[1], 1);
-      } else {
-        that.levelChange(headline, headline.level()+1 );
-      }
-      return true;
-    });
-
-  this.keyMapper.addKeyFun(
-    'M-down',
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      if (event.shiftKey) {
-        var thisTree  = headline.findSubTree();
-        var nextTree  = headline.findNextSubTree();
-        if (nextTree !== undefined && thisTree !== undefined)
-          that.moveHeadlineTree( nextTree[0], nextTree[1], // From
-                                 thisTree[0]-1             // After this
-                               );
-      } else {
-        // (Yeah, not really org-mode to move a single Headline by
-        // default and the whole tree with shift-M-down.)
-        that.moveHeadlineDown( headline );
-      }
-      return true;
-    });
-
-  this.keyMapper.addKeyFun(
-    'M-up',
-    function(event, ctrl, meta, keycode,
-             headline, block_p) {
-      var ix = headline.index;
-      if (event.shiftKey) {
-        // Just temp to test:
-        var thisTree  = headline.findSubTree();
-        var prevTree  = headline.findPrevSubTree();
-        if (prevTree !== undefined && thisTree !== undefined)
-          that.moveHeadlineTree( prevTree[0], prevTree[1], // From
-                                 thisTree[1]               // After this
-                               );
-      } else
-        that.moveHeadlineUp( headline ); // Move single headline:
-      return true;
-    });
-
   // ------------------------------------------------------------
   // Event handlers:
 
@@ -621,8 +186,7 @@ var OrgController = function(model, view,
     // div.find('.title_input').change(  // Less bad
     // div.on('change', 'input:text',    this.title_text_change_event);
 
-    // XXXXX Remove Event handlers for buttons I had to remove for
-    // visibility...
+    // XXXXX Move implementation to Cmd implementation.
 
     div.on('change',  '.lvl_select',      this.levelChangeEvent);
     div.on('change',  '.todo_select',     this.todoChangeEvent);
@@ -669,17 +233,16 @@ var OrgController = function(model, view,
     var metaKey  = (event.altKey || event.metaKey);
     var ctrlKey  = event.ctrlKey;
 
-    if (that.keyMapper.handlePrefix(event, metaKey, ctrlKey, keyCode)) {
+	if (that.cmdHandler.handlePrefix(event, metaKey, ctrlKey, keyCode)) {
       // Like ESC as prefix for 'M-'
       event.preventDefault();
       return;
     }
 
-    var handler  = that.keyMapper.findKeyCodeFun(event);
+    var handler  = that.cmdHandler.findKeyCodeFun(event);
     if (handler &&
-        handler(event, ctrlKey, metaKey, keyCode, headline, false))
+        handler(true, event, ctrlKey, metaKey, keyCode, headline, false))
       event.preventDefault();
-
   };
 
 
@@ -700,16 +263,19 @@ var OrgController = function(model, view,
     var ctrlKey  = event.ctrlKey;
 
     // Is this key eaten as a command prefix? (C-C, M-, etc)
-    if (that.keyMapper.handlePrefix(event, metaKey, ctrlKey, keyCode)) {
+    if (that.cmdHandler.handlePrefix(event, metaKey, ctrlKey, keyCode)) {
       event.preventDefault();
       return;
     }
 
-    var handler  = that.keyMapper.findKeyCodeFun(event, 'block');
+    var handler  = that.cmdHandler.findKeyCodeFun(event, 'block');
     if (handler &&
-        handler(event, ctrlKey, metaKey, keyCode, headline, true))
+        handler(true, event, ctrlKey, metaKey, keyCode, headline, true)) {
+        // handler(event, ctrlKey, metaKey, keyCode, headline, true)) {
       event.preventDefault();
+	}
 
+	// XXXX Push to View!
     // Temporary fix for height of textarea. Add a delayed event
     // which updates height after a short time??
     event.target.style.height = "";
@@ -1075,7 +641,7 @@ var OrgController = function(model, view,
     var nextHeadline   = this.model.headline(goIx);
 
     if (! that.view.has_headline_edit_on(nextHeadline))
-      that.view.render_edit_headline(i, nextHeadline);
+      that.view.render_edit_headline(goIx, nextHeadline);
 
     if (focusOnBlock)
       this.view.setFocusBlock( nextHeadline );
