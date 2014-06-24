@@ -37,7 +37,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   this.documentName = function() {
     if (arguments.length > 0) {
-      $("#filename").html(this.escapeHtml(arguments[0]));
+      $("#filename").html(_.escape(arguments[0]));
     }
     return $("#filename").html();
   };
@@ -231,7 +231,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  { id: headline.id_str(), // ID string for Headline
 		level: headline.level(),
 		title_text: title_value.replace(/"/g, '&quot;'),
-		block_text: this.escapeHtml(text_block),
+		block_text: _.escape(text_block),
 	  }) ;
 	return make_edit_headline(headline, all_todo_done_states);
   };
@@ -384,25 +384,6 @@ var OrgView = function(document_div_id, divid_headlines) {
       return false;
     return true;
   };
-
-  // From mustache.js, see:
-  // stackoverflow.com/questions/24816/escaping-html-strings-with-jquery
-  // But try underscore.js instead.
-  var entityMap = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': '&quot;',
-    "'": '&#39;',
-    "/": '&#x2F;'
-  };
-
-  this.escapeHtml =  function(string) {
-	// return _.escape(string);
-    return String(string).replace(/[&<>"'\/]/g, function (s) {
-      return entityMap[s];
-    });
-  }
 
   // - - - - - Make Level-select HTML:
   var _level_generated = [];

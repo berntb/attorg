@@ -21,6 +21,16 @@
 
 // Model code:
 
+var OrgModelDUH = function(documentName, org_data,
+						visible_update_callback, increment_function) {
+  this.prototype = new OrgModelTop(documentName, org_data,
+								   visible_update_callback,
+								   increment_function);
+  return this;
+};
+
+
+// Does simple data structures, not View-oriented operations
 var OrgModel = function(documentName, org_data,
 						visible_update_callback, increment_function) {
   var that = this;
@@ -52,25 +62,6 @@ var OrgModel = function(documentName, org_data,
   this.modified_flag = false;
 
   // (N B: Make helper fun instead of duplicated accessor code :-( .)
-
-  // From mustache.js, see:
-  // stackoverflow.com/questions/24816/escaping-html-strings-with-jquery
-  var entityMap = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': '&quot;',
-    "'": '&#39;',
-    "/": '&#x2F;'
-  };
-
-  function escapeHtml(string) {
-	// return _.escape(string);
-    return String(string).replace(/[&<>"'\/]/g, function (s) {
-      return entityMap[s];
-    });
-  }
-
 
   // - - - - -
   // Attribute administratrivia:
@@ -321,7 +312,7 @@ var OrgModel = function(documentName, org_data,
     title_html: function() {
       // Returns a html version of a title
       if (! this.headline.title_subs)
-        return escapeHtml( this.title() );
+        return  _.escape(this.title());
 
       // N B: No parsing of Headline/Block in local javascript, so
       // no way to update this. Must go to server to update this info.
@@ -351,7 +342,7 @@ var OrgModel = function(documentName, org_data,
     },
     block_html: function() {
       if (! this.headline.block_parts)
-        return escapeHtml( this.block() );
+        return _.escape( this.block() );
 	  // (Don't have a local parser for org mode, have to go to server
 	  // for this.)
       return _encode_org_subtext( this.headline.block_parts, true );
@@ -732,19 +723,19 @@ var OrgModel = function(documentName, org_data,
       var parts, tmp, txt;
       if (type  === "Org::Element::Text") {
         if (item.length > 2 && item[2] !== "") {
-          value = escapeHtml( value.slice(1,-1) );
+          value = _.escape(value.slice(1,-1));
           if (item[2] in encodeOrgText) {
             value = encodeOrgText[item[2]][0] + value +
               encodeOrgText[item[2]][1];
           }
         } else {
-          value   = escapeHtml( value );
+          value   = _.escape(value);
         }
       } else if (type  === "Org::Element::Link") {
         parts = /^\s*\[\[([^\[]*)\]\[(.*)\]\]\s*$/.exec(value);
         if (parts !== null && typeof(parts) == 'object' && parts.length) {
           try {
-            txt     = escapeHtml(parts[2]);
+            txt     = _.escape(parts[2]);
             console.log(parts[1]);
             tmp     = '<a href="' + parts[1] + '">' + txt + '</a>';
             value   = tmp;
@@ -753,7 +744,7 @@ var OrgModel = function(documentName, org_data,
           parts = /^\s*\[\[([^\[]*)\]\s*\]\s*$/.exec(value);
           if (parts !== null && typeof(parts) == 'object' && parts.length){
             try {
-              txt   = escapeHtml(parts[1]);
+              txt   =  _.escape(parts[1]);
               tmp   = '<a href="' + parts[1] + '">' + txt + '</a>';
               value = tmp;
             } catch(duh) { value = "ERROR WITH LINK:" + value};
@@ -774,8 +765,8 @@ var OrgModel = function(documentName, org_data,
 		// (N B In Emacs, Radio Target links are updated (1) on load
 		//  and (2) on C-C C-C with cursor on a target.)
 
-		// Also note that in Org::Parser documentation, a radio target
-		// was before all Headlines.
+		// In Org::Parser documentation, a radio target was before all
+		// Headlines.
 		value = " [Radio Target TBI] ";
 	  } else {
 		console.log("Got problems with type " + type + ", value is "
