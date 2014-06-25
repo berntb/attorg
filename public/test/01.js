@@ -229,8 +229,8 @@ test( "Headline + move", function() {
 
 // (Might want to update the ix:es directly, trade speed for simplicity.)
 
-// Verify the ids/ix store.
 function _verify_ids_and_ix(model) {
+  // Verify the ids/ix store.
   var ids = model.idstr_to_ix;
 
   for(var id in ids) {
@@ -322,9 +322,20 @@ test( "Headline move/delete + index handling", function() {
 
   ids_before = ids_after;
   model.new_headline(1, {title_text: "E",});
-  is(_verify_ids_and_ix( model ), undefined, "ids/ix translation");
+  // alert(JSON.stringify(model.headline(1)) + "\n------------\n"
+  // 		+ JSON.stringify(model.idstr_to_ix));
+
+  // Ids aren't updated directly after an insertion. So bulk insert
+  // (i.e. loading a large data set) won't force reevaluation of
+  // indexes directly.
+  isnt(_verify_ids_and_ix( model ), undefined, "ids/ix after insert");
+  // After insertion, offsets will be bad for all ix:es after the
+  // inserted. So touch a later one and the indexes will be fixed.
+  model.headline(2);			// 2 > 1
+  is(_verify_ids_and_ix( model ), undefined, "ids/ix translation II");
+
   ids_after  = ids_to_ix_arr(model.idstr_to_ix);
-  is( model.length, 3, "Num of Headlines after deleting one");
+  is( model.length, 3, "Num of Headlines after inserting another one");
   is( ids_before[2], ids_after[3], "Insertion moves those after down");
 
   // alert( JSON.stringify(ids_before) + ",\n" + JSON.stringify(ids_after) );
