@@ -722,11 +722,8 @@ var OrgController = function(model, view, commandHandler,
   };
 
   this.updateEditedHeadline = function(headline) {
-    var model_str_id = headline.id_str();
-    var title = $('#t_' + model_str_id);
-    var block = $('#b_' + model_str_id);
-
-    that.update_headline_title_block(headline, title.val(), block.val());
+	var values = that.view.get_values(headline);
+    that.update_headline_title_block(headline, values.title, values.block);
     return headline;
   };
 

@@ -209,7 +209,8 @@ var OrgView = function(document_div_id, divid_headlines) {
     var rendered_html = this.make_edit_headline( headline );
 
     var div_id  = this.make_headline_id( headline );
-    var div  = $("#" + div_id).parent().children(':last');
+    var div_parent  = $("#" + div_id).parent();
+	var div = div_parent.children(':last');
     if (! div.is(":visible"))
       return;
 
@@ -217,6 +218,7 @@ var OrgView = function(document_div_id, divid_headlines) {
     // [end of the?] text block by default??? (And have a button to
     // show the hidden text.)
 
+	div_parent.addClass("well well-small");
     div.html( rendered_html );
   };
 
@@ -238,6 +240,14 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   // ------------------------------------------------------------
   // Utilities:
+
+  this.get_values = function(headline) {
+	var model_str_id = headline.id_str();
+    var title = $('#t_' + model_str_id);
+    var block = $('#b_' + model_str_id);
+
+	return {title: title.val(), block: block.val() };
+  };
 
 
   this.move_headline = function(headline, to_ix) {
@@ -269,7 +279,10 @@ var OrgView = function(document_div_id, divid_headlines) {
   this.close_edit_headline = function(headline) {
     var div_id  = this.make_headline_id( headline );
     // (Doesn't check if edit is on at all; probably not faster.)
-    $("#" + div_id).parent().children(':last').html('');
+    var div_parent  = $("#" + div_id).parent();
+	div_parent.removeClass("well well-small");
+	var div = div_parent.children(':last');
+    div_parent.children(':last').html('');
   };
 
   this.show_headline = function(headline, noOpenCloseUpdates) {
