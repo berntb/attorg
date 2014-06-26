@@ -495,7 +495,8 @@ var OrgController = function(model, view, commandHandler,
     if (new_level === 1)
       headline.visible(true);
     // that.model.dirty(ix, 'level');
-    this.view.render_headline( headline );
+	// (This kludge doesn't rerender any open edit fields.)
+    this.view.render_headline( headline, true, true );
     that._updateOpenCloseAroundChanged(ix);
 
   };
@@ -512,7 +513,7 @@ var OrgController = function(model, view, commandHandler,
       if (new_level === 1)
         headline.visible(true);
       that.model.dirty(i, 'level');
-      this.view.render_headline( headline );
+      this.view.render_headline( headline, false, true );
     }
     // This should only be called for a subtree, but do double
     // updates just to be sure...

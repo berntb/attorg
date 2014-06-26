@@ -82,7 +82,11 @@
 
 <!-- Normal headline: -->
 <script id ="template_hline" type="text/template">
-<div class="row" <%= visible ? "" :  'style="display: none;"' %> >
+<% if (hide_prefix) {
+     // Don't do anything
+   } else { %>
+   <div class="row" <%= visible ? "" :  'style="display: none;"' %> >
+<% } %>
   <div id="hl_<%= id %>"
 	   class="controls controls-row span12  <%= level === 1 ? "well well-small hl1" : "hl" + level %>">
 	<div class="btn-group span1">
@@ -126,7 +130,9 @@
 	</span>
   </div>
   <div class="row headline-edit"></div>
+<% if (hide_prefix) { } else { %>
 </div>
+<% } %>
 </script>
 
 <!-- Edit part of a Headline: -->

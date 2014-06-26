@@ -116,14 +116,24 @@ var OrgView = function(document_div_id, divid_headlines) {
   // ------------------------------------------------------------
   // - - - - - Headlines:
 
-  this.render_headline = function(headline, always_render) {
+  this.render_headline = function(headline,
+								  always_render,
+								  protect_any_edit_fields) {
 	var div	 = $( '#' + this.make_headline_id(headline) );
 	if (div === undefined)
 	  return;
 	// alert("caller is " + arguments.callee.caller.toString() + "\n Block is:"
 	//	  + headline.block_html());
-	div.parent().replaceWith( this.make_headline(headline, undefined,
-												 always_render) );
+	if (protect_any_edit_fields) {
+	  div.replaceWith( this.make_headline(headline,
+										  undefined,
+										  always_render,
+										  true) );
+	} else {
+	  div.parent().replaceWith( this.make_headline(headline,
+												   undefined,
+												   always_render) );
+	}
 	// alert(headline.block_html());
   };
 
@@ -155,8 +165,14 @@ var OrgView = function(document_div_id, divid_headlines) {
   this.dontShowBlockRegexp = /^\s*$/;
 
 
-  this.make_headline = function( headline, all_todo_done_states,
-								 force_visible) {
+  this.make_headline = function( headline,
+								 all_todo_done_states,
+								 force_visible,
+								 hide_headline_html_prefix) {
+	// hide_headline_html_prefix:
+	//  Set if needs to update only Headline presentation (because the
+	//  Headline has other stuff visible, typically edit fields.)
+
 	var visible_at_all= headline.visible();
 	var headline_id = headline.id_str();
 
@@ -171,11 +187,8 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 	var title_value	  = headline.title();
 	var text_block	  = headline.block();
-
-	var visible_kids  = headline.visible_children();
-
 	var level		  = headline.level();
-
+	var visible_kids  = headline.visible_children();
 	var block_html	  = '';
 	if (text_block !== undefined &&
 		! this.dontShowBlockRegexp.test(text_block)) {
@@ -186,6 +199,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  { id: headline_id, // ID string for Headline
 		visible: visible_at_all,
 		visible_kids: headline.visible_children(),
+		hide_prefix: hide_headline_html_prefix,
 		level: level,
 		subtree_open_closed: this._make_open_close_button(visible_kids),
 		// Move into Template??
@@ -206,28 +220,26 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   this.render_edit_headline = function(ix, headline) {
 	// Adds a new Headline and renders it as editable.
-	var rendered_html = this.make_edit_headline( headline );
-
 	var div_id	= this.make_headline_id( headline );
 	var div_parent	= $("#" + div_id).parent();
 	var div = div_parent.children(':last');
 	if (! div.is(":visible"))
 	  return;
 
+	var rendered_html = this.make_edit_headline( headline );
+
 	// XXXX If the block text for a Headline is "too" long, hide the
-	// [end of the?] text block by default??? (And have a button to
+	// [end of the?] text block by default?? (And have a button to
 	// show the hidden text.)
 
-	div_parent.addClass("well well-small");
+	this._modify_top_view_for_edit(div_parent, headline);
+	  
 	div.html( rendered_html );
   };
-
 
   this.make_edit_headline = function( headline, all_todo_done_states) {
 	var title_value	  = headline.title();
 	var text_block	  = headline.block() || '';
-
-	// XXXX Also put a frame around H-line + edit fields??
 
 	return compiled_template_edit(
 	  { id: headline.id_str(), // ID string for Headline
@@ -243,13 +255,31 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   this.get_values = function(headline) {
 	var model_str_id = headline.id_str();
-	var title = $('#t_' + model_str_id);
-	var block = $('#b_' + model_str_id);
+	var title_input = $('#t_' + model_str_id);
+	var block_input = $('#b_' + model_str_id);
 
-	return {title: title.val(), block: block.val() };
+	return {title: title_input.val(), block: block_input.val() };
   };
 
+  // Make it visible that a Headline is being edited.
+  // (For now -- put a frame around the Headline and its editing form.)
 
+  // Check so adding/removing frames for level 1 works? What happens
+  // when lusers _change_ levels while editing??
+  this._modify_top_view_for_edit = function(topView, headline) {
+	topView.addClass("well well-small");
+	// if (headline.level() == 1)
+	//   topView.children(':first').removeClass("well well-small");
+  };
+
+  this._modify_top_view_for_end_of_edit = function(topView, headline) {
+	  topView.removeClass("well well-small");
+	// if (headline.level() == 1)
+	//   topView.children(':first').addClass("well well-small");
+  };
+
+  // - - - Move Headline in View only
+  // This must be paired with a call to move a Headline in the model, too!
   this.move_headline = function(headline, to_ix) {
 	var model	  = headline.owner;
 	if (model.length === 0 || headline.index === to_ix)
@@ -280,7 +310,8 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var div_id	= this.make_headline_id( headline );
 	// (Doesn't check if edit is on at all; probably not faster.)
 	var div_parent	= $("#" + div_id).parent();
-	div_parent.removeClass("well well-small");
+	this._modify_top_view_for_end_of_edit(div_parent, headline);
+	// div_parent.removeClass("well well-small");
 	var div = div_parent.children(':last');
 	div_parent.children(':last').html('');
   };
@@ -326,6 +357,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	}
   },
 
+  // XXXX Make this just a hash.. uh, object. Three keys w simple values.
   this._make_open_close_button = function(visible_kids) {
 	var icon;
 	if (visible_kids === 'no_kids') {
@@ -340,8 +372,8 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  icon	= 'icon-caret-right';
 	}
 	// btn-small or btn-mini??
-	return '<a class="btn btn-small open-subtree pull-left"><i class="' + icon +
-	  '"></i></a>';
+	return '<a class="btn btn-small open-subtree pull-left"><i class="'
+	  + icon + '"></i></a>';
   };
 
   // - - - - - Headline:
