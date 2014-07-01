@@ -21,6 +21,63 @@
 // ----------------------------------------------------------------------
 
 
+// TEMP FOR DEBUG:
+
+JSON.stringifyOnce = function(obj, replacer, indent){
+    var printedObjects = [];
+    var printedObjectKeys = [];
+
+    function printOnceReplacer(key, value){
+        if ( printedObjects.length > 2000){ // browsers will not print
+											// more than 20K, I don't
+											// see the point to allow
+											// 2K.. algorithm will not
+											// be fast anyway if we
+											// have too many objects
+          return 'object too long';
+        }
+        var printedObjIndex = false;
+        printedObjects.forEach(function(obj, index){
+            if(obj===value){
+                printedObjIndex = index;
+            }
+        });
+
+        if ( key == ''){ //root element
+             printedObjects.push(obj);
+            printedObjectKeys.push("root");
+             return value;
+        }
+
+        else if(printedObjIndex+"" != "false" && typeof(value)=="object"){
+            if ( printedObjectKeys[printedObjIndex] == "root"){
+                return "(pointer to root)";
+            }else{
+                return "(see "
+				+ ((!!value && !!value.constructor)
+				   ? (value.constructor
+					  ? (value.constructor.name
+						 ? value.constructor.name.toLowerCase()
+						 : "<no set constructor name>")
+					  : "<no set constructor>")
+				   : typeof(value))
+				+ " with key " + printedObjectKeys[printedObjIndex] + ")";
+            }
+        }else{
+
+            var qualifiedKey = key || "(empty key)";
+            printedObjects.push(value);
+            printedObjectKeys.push(qualifiedKey);
+            if(replacer){
+                return replacer(key, value);
+            }else{
+                return value;
+            }
+        }
+    }
+    return JSON.stringify(obj, printOnceReplacer, indent);
+};
+
 // Global variable for model data, replace with some VMC-variant.
 var stored_model     = {};
 var org_controllers  = {};
@@ -68,7 +125,7 @@ $(function() {
       divid_headlines
     );
     // org_controllers[divid_headlines].init_view(view);
-	OrgAddKeyCmds(cmdHandler, org_controllers[divid_headlines], model, view);
+	OrgAddKeyCmds(cmdHandler, org_controllers[divid_headlines]);
   };
 
   var text, data, model;
@@ -203,8 +260,15 @@ var OrgController = function(model, view, commandHandler,
     div.on('click',   '.move-tree-down',  this.move_tree_down_event);
 
     // - - - - - Edit Mode the rest:
+	// (keydown seems more reactive, keypress is better but not
+	//  supported by Chrome (and IE?).
+	//  Sigh... Just support Safari and FF??
+	// )
+	// div.on('keypress','.title_edit',      this.handleTitleKeyEvent);
+    // div.on('keypress','.block_edit',      this.handleBlockKeyEvent);
     div.on('keydown', '.title_edit',      this.handleTitleKeyEvent);
     div.on('keydown', '.block_edit',      this.handleBlockKeyEvent);
+    // div.on('keypress', '.title_edit',      this.temp); // TEST
     div.on('click',   '.save-cmd',        this.saveCommandEvent);
     div.on('click',   '.update-cmd',      this.updateCommandEvent);
     div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
@@ -221,67 +285,61 @@ var OrgController = function(model, view, commandHandler,
 
 
   this.handleTitleKeyEvent = function(event) {
-    var keyCode  = event.which; // (Recommended for jQuery)
-    if (keyCode == 20 || keyCode == 16 || keyCode == 18 || keyCode == 91) {
-      // Ignore shift/control/meta/alt (this event triggers for them.)
-      return;
-    }
-    var model_str_id = event.target.id.slice(2);
-    var ix       = that.model.get_ix_from_id_string( model_str_id );
-    var headline = that.model.headline(ix);
-
-    var metaKey  = (event.altKey || event.metaKey);
-    var ctrlKey  = event.ctrlKey;
-
-	if (that.cmdHandler.handlePrefix(event, metaKey, ctrlKey, keyCode)) {
-      // Like ESC as prefix for 'M-'
-      event.preventDefault();
-      return;
-    }
-
-    var handler  = that.cmdHandler.findKeyCodeFun(event);
-    if (handler &&
-        handler(true, event, ctrlKey, metaKey, keyCode, headline, false))
-      event.preventDefault();
+	console.log("keydown TITLE:");
+	console.log(event);
+	that._handleKeyEvent(event, false);
   };
-
+  
+  // this.temp = function(event) {	// TEST
+  // 	console.log("keypress:" + _.keys(event));
+  // 	// console.log("keypress:" + JSON.stringifyOnce(event));
+  // 	that._handleKeyEvent(event, false);
+  // };
 
   this.handleBlockKeyEvent = function(event) {
     // XXXX Need dynamically increasing no of rows in textarea.
+	that._handleKeyEvent(event, true);
+  };
 
-    var keyCode  = event.which; // (Recommended for jQuery)
+
+  this._handleKeyEvent = function(event, isBlock) {
+	// console.log("CHAR EVENT:");
+	// console.log(event);
+	// (.which is recommended for jQuery. Test Safari/Chrome/Opera too.)
+    var keyCode  = event.which || event.keyCode;
     if (keyCode == 20 || keyCode == 16 || keyCode == 18 || keyCode == 91) {
+	  // This is only for keydown, trying to use keypress instead
       // Ignore shift/control/meta/alt (this event triggers for them.)
       return;
     }
 
-    var model_str_id = event.target.id.slice(2);
-    var ix       = that.model.get_ix_from_id_string( model_str_id );
-    var headline = that.model.headline(ix);
+	// XXXX A mess. Return enum + value to this, instead. Grumble,
+	// want to return 2 params
+	var char_handler = that.cmdHandler.handleChar(event, isBlock)
+	console.log("CHAR HANDLER RETURNED, type " + typeof(char_handler));
+	if (typeof(char_handler) !== 'function') 
+	  console.log("Value: " + JSON.stringify(char_handler));
+	if (typeof(char_handler) == 'function') {
+      var model_str_id = event.target.id.slice(2);
+      var ix       = that.model.get_ix_from_id_string( model_str_id );
+      var headline = that.model.headline(ix);
 
-    var metaKey  = (event.altKey || event.metaKey);
-    var ctrlKey  = event.ctrlKey;
-
-    // Is this key eaten as a command prefix? (C-C, M-, etc)
-    if (that.cmdHandler.handlePrefix(event, metaKey, ctrlKey, keyCode)) {
-      event.preventDefault();
-      return;
-    }
-
-    var handler  = that.cmdHandler.findKeyCodeFun(event, 'block');
-    if (handler &&
-        handler(true, event, ctrlKey, metaKey, keyCode, headline, true)) {
-        // handler(event, ctrlKey, metaKey, keyCode, headline, true)) {
-      event.preventDefault();
+      var metaKey  = (event.altKey || event.metaKey);
+      var ctrlKey  = event.ctrlKey;
+	  if (char_handler(true, event, ctrlKey, metaKey, keyCode, headline,
+					   isBlock))
+		event.preventDefault();
+	  return;
 	}
 
-	// XXXX Push to View!
-    // Temporary fix for height of textarea. Add a delayed event
-    // which updates height after a short time??
-    event.target.style.height = "";
-    event.target.style.height = Math.min(event.target.scrollHeight,
-                                         300) + "px";
+	if (typeof(char_handler) == 'string') {
+	  // XXXX Implement ERROR Message handler!!
+	}
 
+	if (char_handler) {
+	  console.log("NEW -- stop default");
+	  event.preventDefault();	// Code ate char
+	}
   };
 
 
