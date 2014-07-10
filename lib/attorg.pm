@@ -124,6 +124,12 @@ get '/attorg/edit/:file' => require_login sub {
 
 get '/attorg/data/:file' => require_login sub {
   my $file    = params->{file};
+          # {
+          #   'level' => 3,
+          #   'tags' => '',
+          #   'title_text' => 'Run test',
+          #   'todo_state' => 'DONE'
+          # },
 
   say STDERR "GETTING $file";
   return to_json( _get_org_file_data($file) );
