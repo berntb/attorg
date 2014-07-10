@@ -91,23 +91,6 @@
 	   class="controls controls-row span12  <%= level === 1 ? "well well-small hl1" : "hl" + level %>">
 	<div class="btn-group span1">
 	  <%= subtree_open_closed %>
-	  <!-- %
-		 // No. Needs to update open/closed without updating the
-		 // whole template.
-		 if (visible_kids === "no_kids") {
-			// (Can't do return, quits all of template.)
-		 } else {
-			print('<a class="btn btn-small open-subtree pull-left">');
-
-			if (visible_kids === "all_visible") {
-				print('<i class="icon-caret-down"></i></a>');
-			} else if (visible_kids === "some") {
-				print('<i class="icon-angle-down"></i></a>');
-			} else {
-				print('<i class="icon-caret-right"></i></a>');
-			}
-		 }
-	  % -->
 	  <a class="btn btn-mini add-header pull-right">
 		<i class="icon-plus add-header"></i>
 	  </a>
@@ -116,15 +99,12 @@
 		<i class="icon-edit edit-header"></i>
 	  </a>
 	</div>
-	<div class="span2 controls-row">
-	  <select id="l_<%= id %>" class="span1 lvl_select" name="level-select">
-	  <%= level_select_options %>
-	  </select>
-	  <select id="do_<%= id %>" class="span1 todo_select" name="todo">
-		<%= todo_select_options %>
-	  </select>
+	<div class="span1 controls-row">
+	  <b><%= level_spec %></b>
+	  <br>
+	  <i class="todo-spec"><%= todo_spec %></i>
 	</div>
-	<span class="span8 title-text" style="color:<%= color_text %>" >
+	<span class="span9 title-text" style="color:<%= color_text %>" >
 	  <%= title %>
 	  <%= block %>
 	</span>
@@ -203,6 +183,14 @@
 			  </li>
 			</ul>
 		  </div>&nbsp;
+		</div>
+		<div class="span3 controls-row">
+		 <select id="X_<%= id %>" class="span1 lvl_select" name="level-select">
+		 		 <%= level_select_options %>
+		 </select>
+		 <select id="do_<%= id %>" class="span1 todo_select" name="todo">
+		 		 <%= todo_select_options %>
+		 </select>
 		</div>
 	  </div>
 	  <div class="span9">

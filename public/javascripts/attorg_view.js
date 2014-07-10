@@ -195,6 +195,10 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  block_html	  = "<pre>" + headline.block_html() + "</pre>";
 	}
 
+	var todo          = headline.todo();
+	if (todo === '')
+	  todo            = '-'
+
 	return compiled_template_hline(
 	  { id: headline_id, // ID string for Headline
 		visible: visible_at_all,
@@ -202,10 +206,12 @@ var OrgView = function(document_div_id, divid_headlines) {
 		hide_prefix: hide_headline_html_prefix,
 		level: level,
 		subtree_open_closed: this._make_open_close_button(visible_kids),
+		level_spec: "************".substring(0, level),
+		todo_spec: _.escape(todo),
 		// Move into Template??
-		level_select_options: _make_level_select_help(level),
-		todo_select_options: _make_todo_select_help(headline.todo(),
-													all_todo_done_states),
+		// level_select_options: _make_level_select_help(level),
+		// todo_select_options: _make_todo_select_help(headline,
+		// 											all_todo_done_states),
 		// Kludge for setting Bootstrap color:
 		color_text: level_colors[level],
 		title: headline.title_html(),
@@ -237,17 +243,24 @@ var OrgView = function(document_div_id, divid_headlines) {
 	div.html( rendered_html );
   };
 
+
   this.make_edit_headline = function( headline, all_todo_done_states) {
 	var title_value	  = headline.title();
 	var text_block	  = headline.block() || '';
+
+	var level		  = headline.level();
 
 	return compiled_template_edit(
 	  { id: headline.id_str(), // ID string for Headline
 		level: headline.level(),
 		title_text: title_value.replace(/"/g, '&quot;'),
 		block_text: _.escape(text_block),
+		// Move into Template??
+		level: level,
+		level_select_options: _make_level_select_help(level),
+		todo_select_options: _make_todo_select_help(headline,
+													all_todo_done_states),
 	  }) ;
-	return make_edit_headline(headline, all_todo_done_states);
   };
 
   // ------------------------------------------------------------
@@ -466,7 +479,19 @@ var OrgView = function(document_div_id, divid_headlines) {
   // - - - Make TODO-select HTML:
   var _todo_generated = [];
 
-  function _make_todo_select_help(present_state, all_todo_done_states) {
+  function _make_todo_select_help(headline, all_todo_done_states) {
+
+	var present_state = headline.todo();
+	if (all_todo_done_states === undefined) {
+	  // If this is called without a good data structure like this, it
+	  // is a single call. If Headlines are rerendered systematically,
+	  // this is sent in.
+	  // (Caching is done in make_todo_select(), a level higher, so it
+	  // isn't needed here.)
+	  var model         = headline.owner;
+	  all_todo_done_states = model.all_todo_done_states();
+	}
+
 	var todo_items = '<option value="">-</option>';
 	for (var i in all_todo_done_states) {
 	  var state		= all_todo_done_states[i];
@@ -481,14 +506,17 @@ var OrgView = function(document_div_id, divid_headlines) {
 	return todo_items;
   }
 
-  this.make_todo_select = function(present_state, todo_id,
+  this.make_todo_select = function(headline, todo_id,
 								   all_todo_done_states) {
+	// XXXX THIS ISN'T USED ANYMORE! _make_todo_select_help() is used
+	// directly. So no caching is on. :-(
+
 	// Memoizises most of the work.
-	// XXXX When writes code to update TODO-states, need to clear
-	// out this cache!!
+	// XXXX When updates TODO-states, need to clear out this cache!!
+	var present_state = headline.todo();
 	if (! _todo_generated[present_state])
 	  _todo_generated[present_state] = _make_todo_select_help(
-		present_state,
+		headline, // XXXX Changed so sends the present headline.
 		all_todo_done_states
 	  ) + "</select>\n";
 
