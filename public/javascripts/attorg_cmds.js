@@ -13,7 +13,7 @@ var OrgCmdMapper = function() {
   // meta/ctrl key sequences. (Can you add to keyboard on
   // iPad/Android in Safari/Chrome??)
 
-  var keyCommandList = {};
+  // (This is done to easily support C-H A(propos) and C-H K(ey).)
 
 
   // - - - Key translation part:
@@ -47,14 +47,28 @@ var OrgCmdMapper = function() {
   // stores another translation table instead of a name.
   var translationTable = {};
 
-  this.keyFuns = function() { return keyCommandList; };
   this.KeyTranslationTable = function() { return translationTable; };
   this.namesToCommands = function() { return commands; };
   this.commandsToDescriptions = function() { return cmdDescriptions; };
 
 
   // ----------------------------------------------------------------------
+  // Used by commands.
+
+  // XXXX Might be better as a parameter instead -- if the command set
+  // might be used by multiple controllers?
+
+  // Note that C-U (and others?) stores state in an object of this
+  // type, which should be different for different controllers.
+
+  this.setController = function(controller) {
+	this.controller = controller;
+  };
+
+  // ----------------------------------------------------------------------
   // Add a named editor command:
+
+  // Binds functions to use this environment
 
   // Note that for every command there might be a second function.
   // The second one is optional. If it is given, it is called for
@@ -63,9 +77,9 @@ var OrgCmdMapper = function() {
 
   this.addCommand = function(name, description, fun) {
     // If sends in one fun, it is for both text and block.
-     var funs  = [fun];
+     var funs  = [fun.bind(this)];
     if (arguments.length > 3) {
-       funs.push( arguments[3] ); // block fun
+       funs.push( arguments[3].bind(this) ); // block fun
 	}
     name = name.toLowerCase();
     commands[name] = funs;
@@ -173,65 +187,112 @@ var OrgCmdMapper = function() {
 
 
   // - - - - - - - - - - - - -
+  // Dispatch to command:
+
+  // (The code sucks -- and the same for using it. There should be
+  //  some less inelegant way?)
+  this.callCommand = function(commandName, callParams) {
+	
+	var fun = this._getFunctionFromCommand(commandName, callParams.isBlock);
+	if (fun === undefined) {
+	  console.log("Failed to find command: " + commandName);
+	  return undefined;
+	}
+
+	if (callParams.keyboard_p) {
+	  // console.log( "Call parameters:" + commandName);
+	  // console.log( callParams );
+	  var event    = callParams.event;
+	  var keyCode  = event.which || event.keyCode;
+	  var metaKey  = (event.altKey || event.metaKey);
+	  return fun(true, event,
+				 event.ctrlKey, metaKey,  keyCode,
+				 callParams.headline, callParams.isBlock,
+				 callParams.numericalPrefix);
+	}
+
+	// (Probably shouldn't check if control/meta are pressed right now?)
+	return fun(false, callParams,
+			   undefined, undefined, undefined,
+			   callParams.headline, callParams.isBlock,
+			   callParams.numericalPrefix);
+  };
+
+  // - - - - - - - - - - - - -
   // Handle character, try to match a key sequence:
 
-  this.handleChar = function(event, isBlock) {
-	var result = this._handleKeyGetFun(event, isBlock);
-	var code   = result[0];
-	if (code === OrgCmdMapper.CMD_ATE_CHAR)
-	  return true;				// Ignore
-	if (code === OrgCmdMapper.CMD_IGNORED_CHAR)
-	  return false;
-	if (code === OrgCmdMapper.CMD_DISPATCH_FUNCTION) {
-	  // console.log("CHAR -- FUNCTION code:\n" + result[1]);
-	  return result[1];			// Function to execute
-	}
-	return result[1];			// Information or Error, return a string
-  }
-	
-  // XXXX This is done to easily support C-H A(propos) and C-H K(ey).
+  // You can't catch Ctrl-N/-T/-W and M-Left/-Right in Chrome??
+  // And probably even more chars? :-(
+  // Just Do FF/Safari and skip the Chrome/IE garbage for now.
 
-  this._handleKeyGetFun = function(event, isBlock) {
-	// - - - Get key description:
+  // (XXXX Need a "info bar" for C-U and others, which e.g. lists
+  //  error messages and chars written for C-U -?[0-9]+!!)
+
+  this.handleChar = function(event, isBlock) {
+	// Do we have active C-U filtering?
+	if (_characterFilter !== undefined
+		&& _characterFilter(event))
+		return [OrgCmdMapper.CMD_ATE_CHAR, undefined];
+
+	var result = this._handleKeyFindCommand(event);
+	var resultType = result[0];
+
+	if (resultType === OrgCmdMapper.CMD_DISPATCH_FUNCTION) {
+	  var commandName = result[1];
+
+	  // Do we have prefix commands active?
+	  var numericalPrefixValue = this.getPrefixValue();
+	  this.setPrefixValue('');
+	  if (numericalPrefixValue.length)
+		numericalPrefixValue = parseInt(numericalPrefixValue);
+	  else
+		numericalPrefixValue = undefined;
+
+	  // var fun = this._getFunctionFromCommand(commandName, isBlock);
+	  // if (fun === undefined)
+	  // 	return [OrgCmdMapper.CMD_ERROR,
+	  // 			"Can't find command " + commandName];
+
+	  return [resultType, commandName, numericalPrefixValue];
+	}
+
+	// No numerical prefix to normal characters for now:
+	if (resultType !== OrgCmdMapper.CMD_ATE_CHAR) {
+	  _characterFilter = undefined;
+	  this.setPrefixValue('');
+	}
+
+	return result;
+	
+  }
+
+  this._handleKeyFindCommand = function(event) {
+	// Returns: Array with two items.
+	//          [result_code_enum, value (command name/error text/etc)].
 	// (From jQuery, browser compatibility)
     var keyCode   = event.which || event.keyCode;
-	if (keyCode >= 97 && keyCode <= 122)
-	  keyCode -= 32;			// Upper Case for char commands
 
 	// Allow ESC instead of Meta key:
     var metaDescr = (event.altKey || event.metaKey) ? 'M-' : '';
 
-	if (commandKeySeq.length
-		&& commandKeySeq[commandKeySeq.length-1][1] === 'ESC') {
+	if (this.commandKeySeqLength()
+		&& this.commandKeySeqCharDescrLast() === 'ESC') {
 	  if (keyCode == 27) {
-		// Add any special handling of ESC ESC here!
-		console.log("ESC ESC is ignored, add support if you want that");
-		commandKeySeq = [];
-		// XXXX Add error message handling in Model!!
+		this.clearCommandKeySequence();
 		return [OrgCmdMapper.CMD_ERROR, "ESC ESC is not used"];
 	  }
-	  commandKeySeq.pop();
+	  this.getLastCommandKeySequence();
 	  metaDescr = 'M-';
 	}
 	if (keyCode == 27) {
-	  commandKeySeq.push([undefined, 'ESC']);
+	  this.addToCommandKeySequence(undefined, 'ESC');
 	  return [OrgCmdMapper.CMD_ATE_CHAR, undefined];
 	}	  
 
 	// - - -
-	if (keyCode >= 97 && keyCode <= 122)
-	  keyCode -= 32;			// Upper case
-	var keyChar   = String.fromCharCode(keyCode);
-	// Need that to support e.g. M-<, since needs shift on some keyboards.
+	var keyChar   = this._getCharFromEvent(event, true);
+	// Chrome doesn't allow getting every char, whatever I do? :-(
 
-	// Works on FF, not Chrome, for keydown. keypress has the char,
-	// but then it miss lots of stuff. Could get both events and
-	// ignore it for keypress if keydown handled it? :-( Sigh...
-
-	// Just Do FF/Safari and skip the Chrome/IE garbage for now.
-	// (Chrome don't allow catching Ctrl-N/-T/-W anyway, sigh...)
-	// if (event.key !== undefined)
-	//   keyChar = event.key;
 	if (keyCode in keyCodesToNames)
 	  keyChar     = keyCodesToNames[keyCode];
     var ctrlDescr = event.ctrlKey ? 'C-' : '';
@@ -244,8 +305,7 @@ var OrgCmdMapper = function() {
 	// console.log("In " + JSON.stringify(translationTable));
 
 	// Just a normal char:
-	if (this.commandKeySeqLength() == 0
-		&& !(keyDescr in translationTable))
+	if (this.commandKeySeqLength() == 0 && !(keyDescr in translationTable))
 	  return [OrgCmdMapper.CMD_IGNORED_CHAR, undefined];
 
 	// Are we building a Prefix sequence?
@@ -270,9 +330,7 @@ var OrgCmdMapper = function() {
 	  }
 
 	  this.clearCommandKeySequence();
-	  // return [OrgCmdMapper.CMD_DISPATCH_FUNCTION, fun];
-	  return [OrgCmdMapper.CMD_DISPATCH_FUNCTION,
-	  		  this.getFunctionFromCommand(dispatchTo, isBlock)];
+	  return [OrgCmdMapper.CMD_DISPATCH_FUNCTION, dispatchTo];
 	}
 
 	// - - - Prefix sequence. (I.e. not something to dispatch to)
@@ -282,29 +340,52 @@ var OrgCmdMapper = function() {
   };
 
 
-  // XXXX Change so first returns a name. This is used to get method.
-  this.getFunctionFromCommand  = function(commandName, isBlock) {
-	console.log("GET FUN: " + commandName);
-	if (! (commandName in commands))
+  // Look up the corresponding code to a command name
+  // (Optionally, return the code for the block.)
+  this._getFunctionFromCommand  = function(commandName, isBlock) {
+	console.log("----- Get fun for command: " + commandName);
+	var name = commandName.toLowerCase();
+	if (! (name in commands))
 	  return undefined;
-	var funList = commands[commandName];
+	var funList = commands[name];
 	console.log("Has " + funList.length + " funs. Block value is " + isBlock);
 	if (isBlock && funList.length > 1)
       return funList[1];
 	return funList[0];
   };
 
-  // - - - Handle prefix commands
+
+  // - - - Extract char-as-a-string from an Event:
+  this._getCharFromEvent = function(event, upperCase_p) {
+	// (From jQuery, browser compatibility)
+    var keyCode   = event.which || event.keyCode;
+	// console.log("Key code " + keyCode + ", event:");
+	// console.log(event);
+	if (upperCase_p && keyCode >= 97 && keyCode <= 122)
+	  keyCode -= 32;
+	if (keyCode < 32)
+	  return undefined;
+	var attemptedChar = String.fromCharCode(keyCode);
+	// Gets keyCode 173 for '-', '=' for '+', etc.
+	if (event.key.length) {
+	  if (keyCode > 127)
+		return event.key;
+	  if (keyCode < 65 && event.key !== attemptedChar)
+		return event.key;
+	}
+
+	return attemptedChar;
+	
+  };
+	
+
+  // - - - Handle prefix commands state:
+  // (i.e. C-X C-S, saves the C-X.)
   var commandKeySeq = [];
 
-  this.clearCommandKeySequence = function() {
-	commandKeySeq = [];
-  };
+  //Accessors:
   this.commandKeySeqLength = function() {
 	return commandKeySeq.length;
-  };
-  this.addToCommandKeySequence = function(dispatchTable, description) {
-	commandKeySeq.push( [dispatchTable, description]);
   };
   this.commandKeySeqTableAt = function (ix) {
 	return commandKeySeq[ix][0];
@@ -312,6 +393,42 @@ var OrgCmdMapper = function() {
   this.commandKeySeqTableLast = function (ix) {
 	return this.commandKeySeqTableAt(this.commandKeySeqLength()-1);
   };
+  this.commandKeySeqCharDescrAt = function (ix) {
+	return commandKeySeq[ix][1];
+  };
+  this.commandKeySeqCharDescrLast = function (ix) {
+	return this.commandKeySeqCharDescrAt(this.commandKeySeqLength()-1);
+  };
+
+  // The rest modifies the state:
+  this.clearCommandKeySequence = function() {
+	commandKeySeq = [];
+  };
+  this.getLastCommandKeySequence = function() {
+	return commandKeySeq.pop();
+  };
+  this.addToCommandKeySequence = function(dispatchTable, description) {
+	commandKeySeq.push( [dispatchTable, description]);
+  };
+
+  // - - - Handle numerical prefix modifier:
+  // (i.e. C-U, C-U - 2 3, C-U 2 3)
+  var numericalPrefixSeq = '';
+
+  // Later, if needed, allow multiple of these:
+  var _characterFilter = undefined;
+  this.setCharacterFilter = function(funHandler) {
+	_characterFilter = funHandler;
+  };
+
+  // (N B -- stores as string here :-) )
+  this.getPrefixValue = function(value) {
+	return numericalPrefixSeq;
+  }
+  this.setPrefixValue = function(value) {
+	numericalPrefixSeq = value;
+  }
+  
 
 
   // - - - - - - - - - - -
@@ -322,7 +439,6 @@ var OrgCmdMapper = function() {
 	  for(var c in commandKeySeq) {
 		description = c[1] + ", " + description;
 	  }
-	  console.log("Command description " + description);
 	}
 	return description;
   };

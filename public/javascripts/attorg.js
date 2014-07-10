@@ -199,8 +199,9 @@ var OrgController = function(model, view, commandHandler,
   // ------------------------------------------------------------
   this.view  = view;
   this.model = model;
-  // XXXX Should replace the command handler later:
   this.cmdHandler      = commandHandler;
+  commandHandler.setController(this);
+
 
   this.document_div_id = document_div_id;
   this.divid_headlines = divid_headlines;
@@ -245,8 +246,6 @@ var OrgController = function(model, view, commandHandler,
 
     // XXXXX Move implementation to Cmd implementation.
 
-    div.on('change',  '.lvl_select',      this.levelChangeEvent);
-    div.on('change',  '.todo_select',     this.todoChangeEvent);
     div.on('click',   '.open-subtree',    this.openCloseHeadlineEvent);
 
     div.on('dblclick','.title-text',      this.dblClickHeadingEvent);
@@ -264,20 +263,59 @@ var OrgController = function(model, view, commandHandler,
 	//  supported by Chrome (and IE?).
 	//  Sigh... Just support Safari and FF??
 	// )
+    div.on('change',  '.lvl_select',      this.levelChangeEvent);
+    div.on('change',  '.todo_select',     this.todoChangeEvent);
+
 	// div.on('keypress','.title_edit',      this.handleTitleKeyEvent);
     // div.on('keypress','.block_edit',      this.handleBlockKeyEvent);
     div.on('keydown', '.title_edit',      this.handleTitleKeyEvent);
     div.on('keydown', '.block_edit',      this.handleBlockKeyEvent);
-    // div.on('keypress', '.title_edit',      this.temp); // TEST
+
     div.on('click',   '.save-cmd',        this.saveCommandEvent);
     div.on('click',   '.update-cmd',      this.updateCommandEvent);
     div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
 
     div.on('click',   '.delete-header',   this.deleteHeadingEvent);
 
+	// Rotate value of TODO-text:
+	div.on('click',   '.todo-spec',       this.todoRotateEvent);
+
     // Bind search event:
     $("#" + this.divid_search).submit( this.searchEvent );
   };
+
+
+
+  // - - - - - - - - - - - - - - - - - -
+  // Search Headlines from UI
+  // (Show part of tree, based on regexp search.)
+
+  // XXXX Use same/similar for tag search too.
+
+  // XXXX C-S, M-C-S, C-R, M-C-R searches just forward to next, from
+  // present editing place.
+
+  // XXXX Needs:
+  // 1. Call some update fun for View??
+  // 2. Save previous state, to return it if button clicked.
+  //    (Throw away that state if changes visible data in certain ways?)
+
+  this.searchEvent = function(event) {
+    var div        = $('#' + that.divid_search + '_text');
+    var regexp     = new RegExp( div.val() );
+    alert( regexp );
+    for(var i = 0; i < that.model.length; i++) {
+      var headline = that.model.headline(i);
+      if (headline.level() === 1 ||
+          headline.compareTitleRegexp( regexp ) ||
+          headline.compareBlockRegexp( regexp ) )
+        headline.visible(true);
+      else
+        headline.visible(false);
+    }
+    event.preventDefault();
+    return false;
+  }
 
 
   // - - - - - - - - - - - - - - - - - -
@@ -313,32 +351,63 @@ var OrgController = function(model, view, commandHandler,
       return;
     }
 
-	// XXXX A mess. Return enum + value to this, instead. Grumble,
-	// want to return 2 params
-	var char_handler = that.cmdHandler.handleChar(event, isBlock)
-	console.log("CHAR HANDLER RETURNED, type " + typeof(char_handler));
-	if (typeof(char_handler) !== 'function') 
-	  console.log("Value: " + JSON.stringify(char_handler));
-	if (typeof(char_handler) == 'function') {
+	// Use ECMAScript fun for unpacking array/struct?
+	var charResult = that.cmdHandler.handleChar(event, isBlock)
+	var resultFlag = charResult[0];
+
+	// TEMP:
+	if (resultFlag !== OrgCmdMapper.CMD_ATE_CHAR
+		&& resultFlag !== OrgCmdMapper.CMD_IGNORED_CHAR)
+	  console.log("CHAR HANDLER RETURNED, type " + resultFlag);
+
+	if (resultFlag === OrgCmdMapper.CMD_ATE_CHAR) {
+	  event.preventDefault();	// Char is _part_ of a cmd
+	  return;
+	}
+	// Just let the char be handled:
+	if (resultFlag === OrgCmdMapper.CMD_IGNORED_CHAR)
+	  return;
+
+	var value = charResult[1];
+
+	if (resultFlag === OrgCmdMapper.CMD_DISPATCH_FUNCTION)  {
+	  console.log("Execute: " + value);
+	  // var cmdFun = charResult[2];
+	  var numericalPrefix = charResult[2];
+	  if (numericalPrefix !== undefined)
+	  	console.log("Numerical prefix " + numericalPrefix);
+
       var model_str_id = event.target.id.slice(2);
       var ix       = that.model.get_ix_from_id_string( model_str_id );
       var headline = that.model.headline(ix);
 
-      var metaKey  = (event.altKey || event.metaKey);
-      var ctrlKey  = event.ctrlKey;
-	  if (char_handler(true, event, ctrlKey, metaKey, keyCode, headline,
-					   isBlock))
+	  // 'value' here is command name.
+	  if (that.cmdHandler.callCommand(value,
+									  {
+										keyboard_p: true,
+										event:      event,
+										headline:   headline,
+										isBlock:    isBlock,
+										numericalPrefix: numericalPrefix
+									  })
+		 ) {
 		event.preventDefault();
+	  }
+
+	  // This is really simpler...
+      // var metaKey  = (event.altKey || event.metaKey);
+      // var ctrlKey  = event.ctrlKey;
+	  // if (cmdFun(true, event, ctrlKey, metaKey, keyCode, headline, isBlock,
+	  // 			 numericalPrefix))
+	  // event.preventDefault();
 	  return;
 	}
 
-	if (typeof(char_handler) == 'string') {
-	  // XXXX Implement ERROR Message handler!!
-	}
-
-	if (char_handler) {
-	  console.log("NEW -- stop default");
-	  event.preventDefault();	// Code ate char
+	// XXXXX Do more stuff here!!
+	if (resultFlag === OrgCmdMapper.CMD_INFO)  {
+	  console.log("LOG INFO: " + value);
+	} else if (resultFlag === OrgCmdMapper.CMD_ERROR)  {
+	  console.log("ERROR: " + value);
 	}
   };
 
@@ -391,15 +460,28 @@ var OrgController = function(model, view, commandHandler,
     // alert( model_str_id + ", " + headline.todo() + " --> " +
     //        this.value);
 
+	console.log("New todo " + this.value);
     if ( this.value !== headline.todo() ) {
       headline.todo( this.value );
       // that.model.dirty(i, 'todo');
-      that.view.render_headline( headline );
-
-	  // XXXX Re-parse the headline, by way of the server.
+      that.view.render_headline( headline, true, true );
     }
   };
 
+  this.todoRotateEvent = function(event) {
+	// XXXX This is the same as the C-C C-T command!
+	// Need a good way of calling that command in one line!
+	// Also, this is ugly -- don't repeat :-(
+	var model_str_id = $(this).parent().parent().attr('id').slice(3);
+	console.log(model_str_id);
+	console.log(_.keys(model_str_id));
+    var i = that.model.get_ix_from_id_string( model_str_id );
+    var headline = that.model.headline(i);
+
+	that.cmdHandler.callCommand("TodoRotate",
+								{ headline: headline });
+
+  };
 
   // ------------------------------------------------------------
   // non-Edit button events:
@@ -499,6 +581,7 @@ var OrgController = function(model, view, commandHandler,
       that.view.setSelectTitle( headline );
     }
   };
+
 
   // - - - - - - - - - - - - - - - - - -
   // Help routines
@@ -692,7 +775,7 @@ var OrgController = function(model, view, commandHandler,
 
   this.saveAndGotoIndex = function(headline, goIx, focusOnBlock) {
     // Saves any opened edit headline and opens another in Edit:
-    if (this.view.has_headline_edit_on(headline)) {
+    if (headline !== undefined && this.view.has_headline_edit_on(headline)) {
       this.updateEditedHeadline(headline);
       this.view.close_edit_headline( headline );
     }
@@ -708,25 +791,6 @@ var OrgController = function(model, view, commandHandler,
       this.view.setFocusTitle( nextHeadline );
   };
   
-
-  // - - - - - - - - - - - - - - - - - -
-  this.searchEvent = function(event) {
-    var div        = $('#' + that.divid_search + '_text');
-    var regexp     = new RegExp( div.val() );
-    alert( regexp );
-    for(var i = 0; i < that.model.length; i++) {
-      var headline = that.model.headline(i);
-      if (headline.level() === 1 ||
-          headline.compareTitleRegexp( regexp ) ||
-          headline.compareBlockRegexp( regexp ) )
-        headline.visible(true);
-      else
-        headline.visible(false);
-    }
-    event.preventDefault();
-    return false;
-  }
-
 
   // - - - - - - - - - - - - - - - - - -
   // Help routines for the button command events:
@@ -790,9 +854,8 @@ var OrgController = function(model, view, commandHandler,
   this.update_headline_title_block = function(headline, title, block) {
     var modified = false;
     if (title !== undefined && title !== headline.title()) {
-	  console.log(JSON.stringify(
-		Object.getOwnPropertyNames(headline.headline))
-				 );
+	  console.log("UPDATE:");
+	  console.log( headline );
       headline.title( title );
 	  // alert("HEADLINE UPDATE " + JSON.stringify(headline.headline));
       that.model.dirty(headline.index, 'title');

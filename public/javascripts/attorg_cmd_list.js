@@ -3,24 +3,24 @@
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Commands for Attorg:
 
-// XXXX Needs to support numerical prefix like: C-U -12 <cmd>
-
+// Note -- all the commands will get 'this' bound to the command
+// Handler object and this.controller will be the controller.
 
 // Remove model/view from these
-function OrgAddKeyCmds(cmdHandler, ctrller) {
+function OrgAddKeyCmds(cmdHandler) {
 
   cmdHandler.addCommand(
 	"X-return",					// Like Ctrl-/Meta-Return
 	"Description",
 
 	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
-      var view        = ctrller.view;
+      var view        = this.controller.view;
       console.log("In headline CR, before meta test");
-      ctrller.updateEditedHeadline(headline);
+      this.controller.updateEditedHeadline(headline);
       view.close_edit_headline( headline );
       var ix = headline.index;
       if (ctrl) {
-        ctrller._insertAndRenderHeading(ix+1, headline.level() );
+        this.controller._insertAndRenderHeading(ix+1, headline.level() );
         return true;
       }
       if (meta) {
@@ -29,7 +29,7 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
         // should open new Headline _after_ the tree. (Don't move
         // either the block or the text to the right of
         // the cursor to the new Headline).
-        ctrller._insertAndRenderHeading(ix+1, headline.level() );
+        this.controller._insertAndRenderHeading(ix+1, headline.level() );
         return true;
       }
       return true;
@@ -38,16 +38,16 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
       console.log("In block CR, before meta test");
       if (ctrl) {
-        ctrller.updateEditedHeadline(headline);
-        ctrller.view.close_edit_headline( headline );
+        this.controller.updateEditedHeadline(headline);
+        this.controller.view.close_edit_headline( headline );
         return true;
       }          
       if (!meta) return false;
 
-      ctrller.updateEditedHeadline(headline);
-      ctrller.view.close_edit_headline( headline );
+      this.controller.updateEditedHeadline(headline);
+      this.controller.view.close_edit_headline( headline );
       var ix     = headline.index;
-      ctrller._insertAndRenderHeading(ix+1, headline.level() );
+      this.controller._insertAndRenderHeading(ix+1, headline.level() );
       return true;
     }
   );
@@ -59,7 +59,7 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 
 	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
       console.log("Skip editing.");
-      ctrller.view.close_edit_headline( headline );
+      this.controller.view.close_edit_headline( headline );
       return true;
     }
   );
@@ -70,7 +70,7 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 	"Description",
 
 	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
-      var hide_action  = ctrller.updateTreeVisibility( headline );
+      var hide_action  = this.controller.updateTreeVisibility( headline );
       if (!event.shiftKey)
         return true;
 
@@ -79,7 +79,7 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
       // we can keep the present field under editing visible.)
       var ix           = headline.index;
       var i;
-      var model        = ctrller.model;
+      var model        = this.controller.model;
       var hidden       = false;
       var shown        = false;
       var top_headlines= [];
@@ -99,10 +99,10 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
       if (hide_action === 'kids') {
         // Just one or the other:
         if (shown && !hidden) {
-          ctrller.updateTreeVisibility( headline, 'hide' );
+          this.controller.updateTreeVisibility( headline, 'hide' );
           hide_action = 'hide';
         } else {
-          ctrller.updateTreeVisibility( headline, 'all' );
+          this.controller.updateTreeVisibility( headline, 'all' );
           hide_action = 'all';
         }
       }
@@ -118,7 +118,7 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
       console.log("Shift-TAB action:" + hide_action);
 
       for(i = 0; i < top_headlines.length; i++)
-        ctrller.updateTreeVisibility(top_headlines[i], hide_action);
+        this.controller.updateTreeVisibility(top_headlines[i], hide_action);
       return true;
     });
 
@@ -127,7 +127,7 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 	"MoveLevelUp",				// "C-C C-U"
 	"Description",
 	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
-      var model    = ctrller.model;
+      var model    = this.controller.model;
       var ix       = headline.index;
       var level    = headline.level();
 
@@ -138,7 +138,8 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
           // Save and close old Editing:
           nxtH.visible(true);
           // XXXXX Anything else here???
-          ctrller.saveAndGotoIndex(headline, i); // Should go block or hline??
+		   // Should go block or hline??
+          this.controller.saveAndGotoIndex(headline, i);
           return true;
         }
       }
@@ -151,14 +152,21 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
   cmdHandler.addCommand(
 	"MovePrevious",				// 'C-80, up, C-up'
 	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
-      var model        = ctrller.model;
-
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+      var model        = this.controller.model;
       var ix           = headline.index;
+
+	  // If we have a negative C-U prefix number, make it 'movenext':
+	  // XXXX
+	  // this.getCommandHandler(name)(parameters) and call functionality.
+	  // (getCommandHandler() must always return a function, even if
+	  // it only logs an error.)
+
       for(var i = ix-1; i >= 0; i--) {
         if (model.headline(i).visible()) {
           // Save and close old Editing:
-          ctrller.saveAndGotoIndex(headline, i, true);
+          this.controller.saveAndGotoIndex(headline, i, true);
           break;
         }
       }
@@ -170,7 +178,7 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
         return false;         // Don't use 'up' in Block
 
       // Just go to Title:
-      ctrller.view.setFocusTitle( headline );
+      this.controller.view.setFocusTitle( headline );
       return true;
 	}
   );
@@ -180,7 +188,7 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 	"Description",
 
 	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
-      ctrller.view.setFocusBlock( headline );
+      this.controller.view.setFocusBlock( headline );
       return true;
     },
     // Block:
@@ -189,12 +197,12 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
         return false;         // Don't use 'down' in Block
 
       // C-N in Block goes to next Visible Headline:
-      var model        = ctrller.model;
+      var model        = this.controller.model;
 
       var ix           = headline.index;
       for(var i = ix+1; i < model.length; i++) {
         if (model.headline(i).visible()) {
-          ctrller.saveAndGotoIndex(headline, i, false);
+          this.controller.saveAndGotoIndex(headline, i, false);
           break;
         }
       }
@@ -213,9 +221,9 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 
       if (event.shiftKey) {
         var tree = headline.findSubTree();
-        ctrller.levelChangeSubtree(tree[0], tree[1], -1);
+        this.controller.levelChangeSubtree(tree[0], tree[1], -1);
       } else {
-        ctrller.levelChange(headline, headline.level()-1 );
+        this.controller.levelChange(headline, headline.level()-1 );
       }
       return true;
 	}
@@ -230,9 +238,9 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
       // If shift, moves the whole subtree.
       if (event.shiftKey) {
         var tree = headline.findSubTree();
-        ctrller.levelChangeSubtree(tree[0], tree[1], 1);
+        this.controller.levelChangeSubtree(tree[0], tree[1], 1);
       } else {
-        ctrller.levelChange(headline, headline.level()+1 );
+        this.controller.levelChange(headline, headline.level()+1 );
       }
       return true;
 	}
@@ -250,11 +258,11 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
         var thisTree  = headline.findSubTree();
         var prevTree  = headline.findPrevSubTree();
         if (prevTree !== undefined && thisTree !== undefined)
-          ctrller.moveHeadlineTree( prevTree[0], prevTree[1], // From
-                                 thisTree[1]               // After this
+          this.controller.moveHeadlineTree( prevTree[0], prevTree[1], // From
+											thisTree[1]         // After this
                                );
       } else
-        ctrller.moveHeadlineUp( headline ); // Move single headline:
+        this.controller.moveHeadlineUp( headline ); // Move single headline:
       return true;
 	}
   );
@@ -269,13 +277,13 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
         var thisTree  = headline.findSubTree();
         var nextTree  = headline.findNextSubTree();
         if (nextTree !== undefined && thisTree !== undefined)
-          ctrller.moveHeadlineTree( nextTree[0], nextTree[1], // From
-									thisTree[0]-1             // After this
+          this.controller.moveHeadlineTree( nextTree[0], nextTree[1], // From
+											thisTree[0]-1       // After this
 								  );
       } else {
         // (Yeah, not really org-mode to move a single Headline by
         // default and the whole tree with shift-M-down.)
-        ctrller.moveHeadlineDown( headline );
+        this.controller.moveHeadlineDown( headline );
       }
       return true;
 	}
@@ -284,8 +292,6 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 
   // ----------------------------------------------------------------------
   // New generation commands:
-
-
 
   cmdHandler.addCommand(
 	"SetMark",
@@ -299,16 +305,111 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 
 
   cmdHandler.addCommand(
+	"TodoRotate",
+	"Rotate the value of the TODO",
+
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+      console.log("In TodoRotate");
+
+	  var todoNow  = headline.todo();
+	  var model    = this.controller.model;
+	  var all_todo_done_states = model.all_todo_done_states();
+	  var i = -1;
+	  if (todoNow !== '') {
+		for(i = 0; i < all_todo_done_states.length; i++) {
+		  if (all_todo_done_states[i] === todoNow)
+			break;
+		}
+	  }
+	  i++;
+	  var newState;
+	  if (i >= all_todo_done_states.length)
+		newState = '';
+	  else
+		newState =  all_todo_done_states[i];
+
+	  console.log("New state " + newState);
+	  headline.todo(newState);
+	  this.controller.view.render_headline( headline, true, true );
+	  
+
+	  return true;
+	}
+  );
+
+
+  cmdHandler.addCommand(
+	"NumberPrefix",				// C-U
+	"Description",
+
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+	  var inChar = this._getCharFromEvent(event, true);
+
+	  var flagNoCharsYet;
+	  if (inChar >= '1' && inChar <= '9') {
+		flagNoCharsYet = false;
+		// Starts C-U sequence with C-\d instead.
+		this.setPrefixValue(inChar);
+	  } else {
+		// This will make C-U \d+ overwrite this '4':
+		flagNoCharsYet = true;
+		this.setPrefixValue('4');
+	  }
+
+	  var handlerObj =  this;
+	  this.setCharacterFilter(
+		function(charEvent) {
+		  var ctrlKey  = event.ctrlKey;
+		  var inChar = handlerObj._getCharFromEvent(charEvent, true);
+		  console.log("C-U filter checks " + inChar);
+		  if (ctrlKey && inChar === 'U') {
+			flagNoCharsYet = false;
+			var existingValue = handlerObj.getPrefixValue();
+			var newValue = parseInt(existingValue, 10) * 4;
+		  	handlerObj.setPrefixValue( newValue.toString() );
+		  	return true;
+		  }
+		  if (flagNoCharsYet && inChar === '-') {
+		  	flagNoCharsYet = false;
+		  	handlerObj.setPrefixValue('-');
+		  	return true;
+		  }
+		  // N B -- this doesn't check if 
+		  if (inChar >= '0' && inChar <= '9') {
+		  	if (flagNoCharsYet) {
+		  	  flagNoCharsYet = false;
+		  	  handlerObj.setPrefixValue(inChar);
+		  	} else
+			  handlerObj.setPrefixValue(handlerObj.getPrefixValue() + inChar);
+
+			// console.log("C-U " + handlerObj.getPrefixValue());
+		  	return true;		// Means -- took this char.
+		  }
+
+		  // No more collecting characters:
+		  handlerObj.setCharacterFilter( undefined );
+
+		  return false;
+		}
+	  );
+
+	  return true;
+	}
+  );
+  
+
+  cmdHandler.addCommand(
 	"Return",
 	"Description",
 
 	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
       console.log("In headline CR, before meta test");
-      ctrller.updateEditedHeadline(headline);
-      ctrller.view.close_edit_headline( headline );
+      this.controller.updateEditedHeadline(headline);
+      this.controller.view.close_edit_headline( headline );
       var ix = headline.index;
       if (ctrl) {
-        ctrller._insertAndRenderHeading(ix+1, headline.level() );
+        this.controller._insertAndRenderHeading(ix+1, headline.level() );
         return true;
       }
       if (meta) {
@@ -317,16 +418,56 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
         // should open new Headline _after_ the tree. (Don't move
         // either the block or the text to the right of
         // the cursor to the new Headline).
-        ctrller._insertAndRenderHeading(ix+1, headline.level() );
+        this.controller._insertAndRenderHeading(ix+1, headline.level() );
         return true;
       }
       return true;
     },
 	// Block case:
 	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+      if (ctrl) {
+		console.log("In headline CR, before meta test");
+		this.controller.updateEditedHeadline(headline);
+		this.controller.view.close_edit_headline( headline );
+		return true;
+	  }
 	  return false				// Ignore
 	}
   );
+
+
+  cmdHandler.addCommand(
+	"ScrollTop",
+	"Description",
+
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	  var model = this.controller.model;
+	  if (model.length) {
+		  this.controller.saveAndGotoIndex(headline, 0, false);
+	  }
+	  $("html, body").animate({ scrollTop: 0 }, "slow");
+	  return true;
+	}
+  );
+
+  cmdHandler.addCommand(
+	"ScrollBot",
+	"Description",
+
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	  var model = this.controller.model;
+	  if (model.length) {
+		// XXXX Make more than the last one visible???
+		var nextHeadline = this.controller.model.headline(model.length-1);
+		nextHeadline.visible(true);
+		this.controller.saveAndGotoIndex(headline, model.length-1, false);
+		var height = $(document).height();
+		$("html, body").animate({ scrollTop: height }, "slow");
+	  }
+	  return true;
+	}
+  );
+
 
 
   // ----------------------------------------------------------------------
@@ -337,16 +478,6 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
 
   // cmdHandler.addKeyCode("X-return",    "X-CR");
   // cmdHandler.addKeyCode("Break",       "C-G");
-  // cmdHandler.addKeyCode("OpenClose",   "X-TAB");
-  // cmdHandler.addKeyCode("MoveLevelUp", "C-C C-U");
-  // cmdHandler.addKeyCode("MovePrevious","C-80, up, C-up");
-  // cmdHandler.addKeyCode("MoveNext",    "C-N, down, C-down");
-
-
-  // cmdHandler.addKeyCode("ShiftLeft",   "M-left");
-  // cmdHandler.addKeyCode("ShiftRight",  "M-right");
-  // cmdHandler.addKeyCode("MoveTreeUp",  "M-up");
-  // cmdHandler.addKeyCode("MoveTreeDown","M-down");
 
   cmdHandler.addKeyCommand("Return",       "CR");
   cmdHandler.addKeyCommand("Return",       "C-CR");
@@ -358,8 +489,8 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
   cmdHandler.addKeyCommand("OpenClose",    "S-TAB");
   cmdHandler.addKeyCommand("OpenClose",    "M-S-TAB");
   cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-U");
-  cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-P");
-  cmdHandler.addKeyCommand("MovePrevious", "C-P");
+  cmdHandler.addKeyCommand("MovePrevious", "C-C C-P");
+  cmdHandler.addKeyCommand("MovePrevious", "C-P"); // Later, just move line
   cmdHandler.addKeyCommand("MovePrevious", "up");
   cmdHandler.addKeyCommand("MovePrevious", "C-up");
   cmdHandler.addKeyCommand("MoveNext",     "C-N");
@@ -367,19 +498,35 @@ function OrgAddKeyCmds(cmdHandler, ctrller) {
   cmdHandler.addKeyCommand("MoveNext",     "C-down");
 
   // Lots of keyboards needs shift to write '<', so... :-(
-  // cmdHandler.addKeyCommand("ScrollTop",     "M-<");
-  // cmdHandler.addKeyCommand("ScrollTop",     "S-M-<");
-  // cmdHandler.addKeyCommand("ScrollBot",     "M->");
-  // cmdHandler.addKeyCommand("ScrollTop",     "S-M->");
+  cmdHandler.addKeyCommand("ScrollTop",     "M-<");
+  cmdHandler.addKeyCommand("ScrollTop",     "S-M-<");
+  cmdHandler.addKeyCommand("ScrollBot",     "M->");
+  cmdHandler.addKeyCommand("ScrollBot",     "S-M->");
 
   // Set Mark, C-X C-X, [copy/paste??]
   cmdHandler.addKeyCommand("SetMark",      "C-space");
 
- // cmdHandler.addKeyCommand("numberPrefix",  "C-U");
+  cmdHandler.addKeyCommand("TodoRotate",   "C-C C-T");
 
 
   cmdHandler.addKeyCommand("ShiftLeft",    "M-left");
+  cmdHandler.addKeyCommand("ShiftLeft",    "M-S-left");
   cmdHandler.addKeyCommand("ShiftRight",   "M-right");
+  cmdHandler.addKeyCommand("ShiftRight",   "M-S-right");
+
   cmdHandler.addKeyCommand("MoveTreeUp",   "M-up");
   cmdHandler.addKeyCommand("MoveTreeDown", "M-down");
+
+  cmdHandler.addKeyCommand("NumberPrefix", "C-U");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-0");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-1");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-2");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-3");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-4");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-5");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-6");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-7");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-8");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-9");
+
 };
