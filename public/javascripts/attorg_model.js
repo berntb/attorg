@@ -26,7 +26,7 @@ var OrgModel = function(documentName, org_data,
 
   OrgModelSuper.apply(this, arguments);
 
-  // XXXXX Move the specific logic for View/Controller/Model here.
+  // XXXXX Move the specific logic for View/Controller/Model here??
   // Then write tests for it.
 
   // Need to call Controller/View for changes (e.g. opemed/closed
@@ -150,7 +150,7 @@ var OrgModelSuper = function(documentName, org_data,
 	// XXXX Need to handle sub parts of title/block.
 	return headline_data = {
       level: (spec.level ? spec.level : 1),
-      todo_state: (spec.todo ? spec.todo : ''),
+      todo_state: (spec.todo_state ? spec.todo_state : ''),
       title_text: (spec.title_text ? spec.title_text : ''),
       block: (spec.block ? spec.block : ''),
       tags: (spec.tags ? spec.tags : ''),
@@ -774,7 +774,7 @@ OrgHeadline.prototype = {
         if (parts !== null && typeof(parts) == 'object' && parts.length) {
           try {
             txt     = _.escape(parts[2]);
-            console.log(parts[1]);
+            // console.log(parts[1]);
             tmp     = '<a href="' + parts[1] + '">' + txt + '</a>';
             value   = tmp;
           } catch(duh) { value = "ERROR WITH LINK:" + value};
