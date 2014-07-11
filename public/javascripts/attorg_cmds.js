@@ -104,44 +104,63 @@ var OrgCmdMapper = function() {
 	  return undefined;
 	}
 
-	var keySpec = this._parseKeySPec(cmdKeySpec);
-	if (keySpec === undefined)
-	  // XXXX Error handling how??
+	var keyCodeSpecs = cmdKeySpec.split(/\s*,\s*/);
+	if (keyCodeSpecs.length === 0) {
+	  // Shouldn't happen
+	  console.log("Internal configuration error, command " + name + "\n"
+				  + "Bad spec: " + cmdKeySpec);
+	  alert("Internal configuration error, command " + name + "\n"
+			+ "Bad spec: " + cmdKeySpec);
 	  return undefined;
+	}
 
-	// - - - Insertion into dispatch tables
-	var seqLen  = keySpec.length;
-
-	var tTable = translationTable;
-	var c;
-	for(var i = 0; i < seqLen-1; i++) {
-	  c = keySpec[i];
-	  console.log("Logging " + c);
-	  if (c in tTable) {
-		if (typeof tTable[c] == "string") {
-		  console.log("Specifying cmd " + JSON.stringify(cmdKeySpec)
-					  + ", but another command at " + (i+1)
-					  + " has a subseq to " + c);
-		  return undefined;
-		}
-		tTable = tTable[c];
-	  } else {
-		var val = {};
-		tTable[c] = val;
-		tTable = val;
+	for(var ix = 0; ix <  keyCodeSpecs.length; ix++) {
+	  var charKeySeq = keyCodeSpecs[ix];
+	  // console.log("For " + name + ", going to add " + charKeySeq);
+	  var keySpec = this._parseKeySPec(charKeySeq);
+	  if (keySpec === undefined) {
+		// XXXX Error handling how??
+		console.log("Failed parsing command for " + name + ", "
+					+ charKeySeq + ", in " + cmdKeySpec);
+		return undefined;
 	  }
+
+	  // - - - Insertion into dispatch tables
+	  var seqLen  = keySpec.length;
+
+	  var tTable = translationTable;
+	  var c;
+	  for(var i = 0; i < seqLen-1; i++) {
+		c = keySpec[i];
+		// console.log(name + ": Logging " + c);
+		if (c in tTable) {
+		  if (typeof tTable[c] == "string") {
+			console.log("Specifying cmd " + JSON.stringify(cmdKeySpec)
+						+ ", but another command at " + (i+1)
+						+ " has a subseq to " + c);
+			return undefined;
+		  }
+		  tTable = tTable[c];
+		} else {
+		  // console.log("For " + name + ", adding table for " + c);
+		  var val = {};
+		  tTable[c] = val;
+		  tTable = val;
+		}
+	  }
+
+	  c = keySpec[seqLen-1];
+	  if (c in tTable) {
+		// Should just replace and give a log message instead??
+		console.log("Another command has the same seq as " + cmdKeySpec);
+		return undefined;
+	  }
+
+	  tTable[c] = name;
+	  // console.log("After inserting for " + name + "\n"
+	  // 			+ JSON.stringify(translationTable));
 	}
 
-	c = keySpec[seqLen-1];
-	if (c in tTable) {
-	  // Should just replace and give a log message instead??
-	  console.log("Another command has the same seq as " + cmdKeySpec);
-	  return undefined;
-	}
-
-	tTable[c] = name;
-	// console.log("After inserting for " + name + "\n"
-	// 			+ JSON.stringify(translationTable));
 	return true;
   };
 

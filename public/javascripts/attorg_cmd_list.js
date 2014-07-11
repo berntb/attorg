@@ -158,6 +158,17 @@ function OrgAddKeyCmds(cmdHandler) {
       var ix           = headline.index;
 
 	  // If we have a negative C-U prefix number, make it 'movenext':
+	  if (number !== undefined && number < 0) {
+		return this.callCommand('MoveNext',
+								{
+								  keyboard_p: true,
+								  event:      event,
+								  headline:   headline,
+								  isBlock:    block_p,
+								  numericalPrefix: -number
+								});
+	  }
+
 	  // XXXX
 	  // this.getCommandHandler(name)(parameters) and call functionality.
 	  // (getCommandHandler() must always return a function, even if
@@ -173,9 +184,21 @@ function OrgAddKeyCmds(cmdHandler) {
       return true;
     },
     // Block:
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
       if (keycode === 38 && !ctrl)
         return false;         // Don't use 'up' in Block
+
+	  if (number !== undefined && number < 0) {
+		return this.callCommand('MoveNext',
+								{
+								  keyboard_p: true,
+								  event:      event,
+								  headline:   headline,
+								  isBlock:    block_p,
+								  numericalPrefix: -number
+								});
+	  }
 
       // Just go to Title:
       this.controller.view.setFocusTitle( headline );
@@ -187,27 +210,77 @@ function OrgAddKeyCmds(cmdHandler) {
 	"MoveNext",					// "C-N, down, C-down"
 	"Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
-      this.controller.view.setFocusBlock( headline );
-      return true;
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+	  if (number !== undefined && number < 0) {
+		return this.callCommand('MovePrevious',
+								{
+								  keyboard_p: true,
+								  event:      event,
+								  headline:   headline,
+								  isBlock:    block_p,
+								  numericalPrefix: -number
+								});
+	  }
+
+	  number           = (number === undefined) ? 1 : number;
+	  this.controller.view.setFocusBlock( headline );
+	  if (number === 1)
+		return true;
+
+	  // Call itself, but from block
+	  return this.callCommand('MoveNext',
+								{
+								  keyboard_p: true,
+								  event:      event,
+								  headline:   headline,
+								  isBlock:    true,
+								  numericalPrefix: number-1
+								});
     },
     // Block:
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
-      if (keycode === 40 && !ctrl)
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+      if (block_p && keycode === 40 && !ctrl)
         return false;         // Don't use 'down' in Block
+
+	  if (number !== undefined && number < 0) {
+		return this.callCommand('MovePrevious',
+								{
+								  keyboard_p: true,
+								  event:      event,
+								  headline:   headline,
+								  isBlock:    block_p,
+								  numericalPrefix: -number
+								});
+	  }
 
       // C-N in Block goes to next Visible Headline:
       var model        = this.controller.model;
 
-      var ix           = headline.index;
-      for(var i = ix+1; i < model.length; i++) {
-        if (model.headline(i).visible()) {
-          this.controller.saveAndGotoIndex(headline, i, false);
-          break;
-        }
-      }
-      return true;
-
+	  // XXXX Make some form of extracted operand out of this
+	  // kludge. Looks horribly.
+	  // findNextVisibleAfter(index) ??
+	  // Or repeat a function automatically??
+	  number           = (number === undefined) ? 1 : number;
+	  var i            = headline.index;
+	  var lastFound    = undefined;
+	  while(1) {
+		for(i = i+1; i < model.length; i++) {
+          if (model.headline(i).visible())
+			break;
+		}
+		if (i >= model.length) {
+		  if (lastFound !== undefined)
+			this.controller.saveAndGotoIndex(headline, lastFound, false);
+		  return true;
+		}
+		if (--number <= 0) {
+		  this.controller.saveAndGotoIndex(headline, i, false);
+		  return true;
+		}
+		lastFound      = i;
+	  }
 	}
   );
 
@@ -479,29 +552,21 @@ function OrgAddKeyCmds(cmdHandler) {
   // cmdHandler.addKeyCode("X-return",    "X-CR");
   // cmdHandler.addKeyCode("Break",       "C-G");
 
-  cmdHandler.addKeyCommand("Return",       "CR");
-  cmdHandler.addKeyCommand("Return",       "C-CR");
-  cmdHandler.addKeyCommand("Return",       "M-CR");
+  cmdHandler.addKeyCommand("Return",       "CR, C-CR, M-CR");
   // This should open a new Headline after any subs of lower level
   // cmdHandler.addKeyCommand("controlReturn","C-CR");
   cmdHandler.addKeyCommand("Break",        "C-G");
-  cmdHandler.addKeyCommand("OpenClose",    "TAB");
-  cmdHandler.addKeyCommand("OpenClose",    "S-TAB");
-  cmdHandler.addKeyCommand("OpenClose",    "M-S-TAB");
+  cmdHandler.addKeyCommand("OpenClose",    "TAB, S-TAB, M-S-TAB");
   cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-U");
   cmdHandler.addKeyCommand("MovePrevious", "C-C C-P");
-  cmdHandler.addKeyCommand("MovePrevious", "C-P"); // Later, just move line
-  cmdHandler.addKeyCommand("MovePrevious", "up");
+  cmdHandler.addKeyCommand("MovePrevious", "C-P, up");
   cmdHandler.addKeyCommand("MovePrevious", "C-up");
-  cmdHandler.addKeyCommand("MoveNext",     "C-N");
-  cmdHandler.addKeyCommand("MoveNext",     "down");
+  cmdHandler.addKeyCommand("MoveNext",     "C-N, down");
   cmdHandler.addKeyCommand("MoveNext",     "C-down");
 
   // Lots of keyboards needs shift to write '<', so... :-(
-  cmdHandler.addKeyCommand("ScrollTop",     "M-<");
-  cmdHandler.addKeyCommand("ScrollTop",     "S-M-<");
-  cmdHandler.addKeyCommand("ScrollBot",     "M->");
-  cmdHandler.addKeyCommand("ScrollBot",     "S-M->");
+  cmdHandler.addKeyCommand("ScrollTop",     "M-<, S-M-<");
+  cmdHandler.addKeyCommand("ScrollBot",     "M->, S-M->");
 
   // Set Mark, C-X C-X, [copy/paste??]
   cmdHandler.addKeyCommand("SetMark",      "C-space");
@@ -518,15 +583,6 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("MoveTreeDown", "M-down");
 
   cmdHandler.addKeyCommand("NumberPrefix", "C-U");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-0");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-1");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-2");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-3");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-4");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-5");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-6");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-7");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-8");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-9");
-
+  cmdHandler.addKeyCommand("NumberPrefix", "C-0, C-1, C-2, C-3, C-4");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-5, C-6, C-7, C-8, C-9");
 };
