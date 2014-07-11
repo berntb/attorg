@@ -62,11 +62,12 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   // A kludge to override Bootstrap. The colors are from org-faces.el
   // for a light background. They doesn't seem to be exactly as my Emacs
-  // installation, but...
-  var level_colors = [
+  // installation, but... well, easy to change. :-)
+  var levelColors = [
 	'none',
 	'#0000FF',					  // 1 Blue1
-	'#ffb90f',					  // Darkgoldenrod1
+	'#ffb90f',					  // Darkgoldenrod1 (A bit bad -- the
+	                              //   highlight (gold) is too close.)
 	'#a020f0',					  // Purple
 	'#b22222',					  // Firebrick
 	'#228b22',					  // 5 ForestGreen
@@ -77,6 +78,12 @@ var OrgView = function(document_div_id, divid_headlines) {
 	'#808080',
   ];
 
+
+  // If set, will highlight text in text/block:
+  this._hiliteRegex = undefined;
+
+
+  // ----------------------------------------------------------------------
   this.render_all = function (model_data) {
 	var div	 = $("#" + this.divid_headlines);
 	if (div === undefined)
@@ -113,7 +120,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   };
 
 
-  // ------------------------------------------------------------
+  // ----------------------------------------------------------------------
   // - - - - - Headlines:
 
   this.render_headline = function(headline,
@@ -164,6 +171,20 @@ var OrgView = function(document_div_id, divid_headlines) {
   // etc. (Modal editing in Emacs... :-( :-) )
   this.dontShowBlockRegexp = /^\s*$/;
 
+  // this.highLightRegexp = undefined;
+
+  // this.setHighlightRegexp = function( regexp ) {
+	// 1. Reset all existing highlights.
+	// 2. Go over and redraw all visible Headlines
+	//    2.1. Just call normal Redraw, that should show highlights
+	//    2.2. This implies code in the templates, searching/modifying text
+	//    2.3. Since the places for HTML highlight markup must not be escaped
+	//    2.4. Need som form of marking 
+	// 3. Need to CLEAR a search, too
+	//    3.1. New button, close to search field
+	//    3.2. Just a small routine that turns of search and clears the search
+  // };
+
 
   this.make_headline = function( headline,
 								 all_todo_done_states,
@@ -213,15 +234,16 @@ var OrgView = function(document_div_id, divid_headlines) {
 		// todo_select_options: _make_todo_select_help(headline,
 		// 											all_todo_done_states),
 		// Kludge for setting Bootstrap color:
-		color_text: level_colors[level],
+		color_text: levelColors[level],
 		title: headline.title_html(),
-		block: block_html
+		block: block_html,
+		hiliteRegex: this.getHighlightRegex(),
 	  });
   };
 
 
 
-  // ------------------------------------------------------------
+  // ----------------------------------------------------------------------
   // Edit Headline:
 
   this.render_edit_headline = function(ix, headline) {
@@ -263,8 +285,20 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  }) ;
   };
 
-  // ------------------------------------------------------------
+
+  // ----------------------------------------------------------------------
   // Utilities:
+
+  // - - -
+  // Getter/Setter for what-to-Highlight regexp:
+  // (Work is done in templates.)
+  this.setHighlightRegex = function (rx) {
+	this._hiliteRegex = rx;
+  };
+  this.getHighlightRegex = function () {
+	return this._hiliteRegex;
+  };
+
 
   this.get_values = function(headline) {
 	var model_str_id = headline.id_str();
@@ -358,6 +392,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   // XXXX Have code both here and in Template. :-( Just use one way.
   this.fixOpenCloseFromTo = function(from_ix, to_ix, model) {
 	// Changes the open/closed flags for Headlines.
+	// console.log("Update from " + from_ix + " to " + to_ix);
 
 	// This assumes the open/closed data in the input data is set up
 	for(var ix = from_ix; ix <= to_ix; ix++) {
@@ -370,11 +405,13 @@ var OrgView = function(document_div_id, divid_headlines) {
 	}
   },
 
+
   // XXXX Make this just a hash.. uh, object. Three keys w simple values.
   this._make_open_close_button = function(visible_kids) {
 	var icon;
 	if (visible_kids === 'no_kids') {
-	  return '<span class="open-subtree pull-left" style="display: none;"></span>';
+	  return '<span class="open-subtree pull-left"'
+		+ ' style="display: none;"></span>';
 	  // return '<button type="button" class="btn btn-mini open-subtree" ' +
 	  //	' disabled>-</button>';
 	} else if (visible_kids === 'all_visible') {

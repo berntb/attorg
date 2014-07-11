@@ -28,10 +28,16 @@
       <li><a href="/info">Help and command list</a></li>
     </ul>
     <a class="brand pull-left" href="#"></a>
-    <form class="navbar-search pull-right" id="org_edit_search">
-      <input type="text" class="search-query" id="org_edit_search_text"
-      placeholder="Search regexp">
-    </form>
+	<div class="pull-right">
+	  <!-- Vertically align these, looks horribly :-( -->
+      <form class="navbar-search" id="org_edit_search">
+		<input type="text" class="search-query input-small"
+			   id="org_edit_search_text" placeholder="Search">
+      </form>
+	  <a class="btn btn-medium clear-search">
+		<i class="icon-asterisk" id="org_edit_search_clear"></i>
+	  </a>
+	</div>
   </div>
 </div>
 
@@ -105,8 +111,8 @@
 	  <i class="todo-spec"><%= todo_spec %></i>
 	</div>
 	<span class="span9 title-text" style="color:<%= color_text %>" >
-	  <%= title %>
-	  <%= block %>
+	  <%= (hiliteRegex === undefined) ? title : title.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
+	  <%= (hiliteRegex === undefined) ? block : block.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
 	</span>
   </div>
   <div class="row headline-edit"></div>

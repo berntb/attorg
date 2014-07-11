@@ -282,6 +282,7 @@ var OrgController = function(model, view, commandHandler,
 
     // Bind search event:
     $("#" + this.divid_search).submit( this.searchEvent );
+	$('.clear-search').click( this.searchEventClear );
   };
 
 
@@ -295,25 +296,104 @@ var OrgController = function(model, view, commandHandler,
   // XXXX C-S, M-C-S, C-R, M-C-R searches just forward to next, from
   // present editing place.
 
-  // XXXX Needs:
-  // 1. Call some update fun for View??
-  // 2. Save previous state, to return it if button clicked.
-  //    (Throw away that state if changes visible data in certain ways?)
+  this.searchEventClear = function() {
+	var hadHilight = that.view.getHighlightRegex() !== undefined;
+	// Should cache previous open/closed states and reset them??
+	// If so, should probably _not_ reset those which had open/closed
+	// changed after last search.
+	// (Won't put this on the todo for now.)
+
+	// Reset search field:
+	$('#' + that.divid_search + '_text').val('');
+
+	that.searchEvent(undefined);
+
+	// Cache present place this were at before search, then go back
+	// there when Clears search. But, well, the application don't have
+	// a concept of present place?!
+  };
 
   this.searchEvent = function(event) {
+	if (event !== undefined)
+      event.preventDefault();
+
+	function escapeRegExp(str) {
+	  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+	}
+
     var div        = $('#' + that.divid_search + '_text');
-    var regexp     = new RegExp( div.val() );
-    alert( regexp );
-    for(var i = 0; i < that.model.length; i++) {
-      var headline = that.model.headline(i);
-      if (headline.level() === 1 ||
-          headline.compareTitleRegexp( regexp ) ||
-          headline.compareBlockRegexp( regexp ) )
+	var escapedStr = escapeRegExp(div.val());
+    var regexp     = new RegExp( escapedStr );
+	var openCloseds= [];		// Quick 2nd loop
+
+	var i, headline; // , gotHit = false;
+
+	var hadHilight = that.view.getHighlightRegex() !== undefined;
+
+	// Are we just clearing out the Search?
+	if (/^\s*$/.test(escapedStr)) {
+	  regexp       = undefined;
+	  that.view.setHighlightRegex( undefined );
+	} else
+	  that.view.setHighlightRegex( new RegExp(escapedStr, "g") );
+
+    for(i = 0; i < that.model.length; i++) {
+      headline     = that.model.headline(i);
+      if (headline.level() === 1) {
+		headline.visible(true);
+		if (i > 0)
+		  openCloseds.push(i);
+		that.view.render_headline(headline, true, true);
+		continue;
+	  }
+	  
+      if (regexp !== undefined &&
+		  (headline.compareTitleRegexp(regexp)
+           || headline.compareBlockRegexp(regexp)) ) {
+		// console.log(headline.level() + ": " + i + ":  " + headline.title());
+		// gotHit     = true;
         headline.visible(true);
-      else
+		that.view.render_headline(headline, true, true);
+
+		// Make all superior visible, too:
+		while(headline.level() > 1) {
+		  headline = that.model.headline(headline.findDirectOwner());
+		  headline.visible(true);
+		}
+      } else {
         headline.visible(false);
+
+		// Must rerender all headlines, since they might have old highlights
+		// Store if there is a hit as flags, so no need to check that again!
+		if (hadHilight)
+		  that.view.render_headline( headline, true, true );
+	  }
     }
-    event.preventDefault();
+
+	// (If 1st isnt level 1. But if first is level 3, then there are
+	// lvl 2 before first level 1? Fix for next Version.)
+	that._updateOpenCloseAroundChanged(0);
+	for(i = 1; i < openCloseds.length; i++) {
+	  that._updateOpenCloseAroundChanged(openCloseds[i]);
+	}
+
+	// for(i = 1; i < that.model.length; i++) {
+	//   headline     = that.model.headline(i);
+	//   if (headline.level() === 1) {
+	// 	// console.log(headline.level() + ": " + i + ":  " + headline.title());
+	// 	that._updateOpenCloseAroundChanged(i);
+	//   }
+	// }
+
+
+	// Only bother with highlighting if we didn't get a hit:
+	// (No, if luser has active search and changes a Headline, it
+	//  should be highlighted.)
+	// if (gotHit === false)
+	//   that.view.setHighlightRegex( undefined );
+
+	if (event !== undefined)
+      event.preventDefault();
     return false;
   }
 
@@ -323,7 +403,7 @@ var OrgController = function(model, view, commandHandler,
 
 
   this.handleTitleKeyEvent = function(event) {
-	console.log("keydown TITLE:");
+	// console.log("keydown TITLE:");
 	console.log(event);
 	that._handleKeyEvent(event, false);
   };
@@ -665,6 +745,7 @@ var OrgController = function(model, view, commandHandler,
 
 
   // XXXXX Too complex, this must be neater and more automatic. :-(
+  // And, if anything, moved to model.
   this._updateOpenCloseAroundChanged = function(ix) {
     if (ix < 0) ix  = 0;
     if (ix >= this.model.length)
@@ -674,9 +755,16 @@ var OrgController = function(model, view, commandHandler,
     var headline    = this.model.headline(ix);
     var startStop;
     if (ix > 0) {
+	  // (ix > 0 ==> Except for first index.)
       startStop     = this.model.headline(ix-1).updateVisibleInHierarchy();
+	  // console.log("from-to: " + startStop);
+	  // console.log(startStop[0]+" "+this.model.headline(startStop[0]).title());
+	  // console.log(startStop[1]+" "+this.model.headline(startStop[1]).title());
       if (startStop[1] < ix) {
         var sStop2  = headline.updateVisibleInHierarchy();
+		// console.log("AND from-to: " + sStop2);
+		// console.log(sStop2[0] +" "+ this.model.headline(sStop2[0]).title());
+		// console.log(sStop2[1] +" "+ this.model.headline(sStop2[1]).title());
         startStop[1]= sStop2[1];
       }
     } else {
@@ -854,8 +942,8 @@ var OrgController = function(model, view, commandHandler,
   this.update_headline_title_block = function(headline, title, block) {
     var modified = false;
     if (title !== undefined && title !== headline.title()) {
-	  console.log("UPDATE:");
-	  console.log( headline );
+	  // console.log("UPDATE headline:");
+	  // console.log( headline );
       headline.title( title );
 	  // alert("HEADLINE UPDATE " + JSON.stringify(headline.headline));
       that.model.dirty(headline.index, 'title');
@@ -881,14 +969,12 @@ var OrgController = function(model, view, commandHandler,
     if (modified) {
 	  // Will be replaced
       that.view.render_headline( headline );
-	  that._update_headline_delayed( headline );
+	  that.update_headline_delayed( headline );
 	}
   };
 
 
-  // XXXX Move to Model, for f-cks sake!!
-  // Add a callback which updates the Headline from the server.
-  this._update_headline_delayed = function(headline) {
+  this.update_headline_delayed = function(headline) {
 	// XXXX Need Model function to decide if a Headline/block has
 	// Org things that needs parsing (only server side).
 
@@ -897,10 +983,6 @@ var OrgController = function(model, view, commandHandler,
 
 	var modified_ix   = headline.increment_modified_locally();
 	var id            = headline.id_str();
-
-	// Sets a flag that an update from the net is expected.  If
-	// there is no network contact, this flag will hang around and
-	// can be updated later. XXXX
 
 	// Help fun to find Headline in Model, when the reply coming
 	// back from the server:
