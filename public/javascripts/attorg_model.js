@@ -311,6 +311,9 @@ var OrgModelSuper = function(documentName, org_data,
   };
 
 
+
+
+  // ----------------------------------------------------------------------
   // - - - - - - - - - - - - -
   // Set up any input data:
   // (XXXX When change so stores objects, update this.)
@@ -656,6 +659,9 @@ OrgHeadline.prototype = {
     // Find visible/hidden for a Headline set. Call this
     // after changing the hierarchy and/or visible status of
     // Headlines.
+
+	// XXXX Has a bug :-(
+	// Fails when later, but not first, is hidden.
 
     // Returns: [first_updated, last_updated].
 

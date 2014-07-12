@@ -4,7 +4,7 @@ body { padding-top: 40px; }
 /* Set colors similar to default emacs config: */
 .hl1 {
     margin-left:   0px;
-    /* margin-top: 8px; Hardly needed if we use Bootstrap-well */
+    /* margin-top: 8px; Not needed if we use Bootstrap-well */
     /* padding: 3px; */
 }
 .hl2 {

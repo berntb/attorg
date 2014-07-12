@@ -171,21 +171,6 @@ var OrgView = function(document_div_id, divid_headlines) {
   // etc. (Modal editing in Emacs... :-( :-) )
   this.dontShowBlockRegexp = /^\s*$/;
 
-  // this.highLightRegexp = undefined;
-
-  // this.setHighlightRegexp = function( regexp ) {
-	// 1. Reset all existing highlights.
-	// 2. Go over and redraw all visible Headlines
-	//    2.1. Just call normal Redraw, that should show highlights
-	//    2.2. This implies code in the templates, searching/modifying text
-	//    2.3. Since the places for HTML highlight markup must not be escaped
-	//    2.4. Need som form of marking 
-	// 3. Need to CLEAR a search, too
-	//    3.1. New button, close to search field
-	//    3.2. Just a small routine that turns of search and clears the search
-  // };
-
-
   this.make_headline = function( headline,
 								 all_todo_done_states,
 								 force_visible,
@@ -408,22 +393,24 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   // XXXX Make this just a hash.. uh, object. Three keys w simple values.
   this._make_open_close_button = function(visible_kids) {
-	var icon;
+	var icon, xaClass = '';
 	if (visible_kids === 'no_kids') {
-	  return '<span class="open-subtree pull-left"'
-		+ ' style="display: none;"></span>';
+	  // return '<span class="open-subtree pull-left"'
+	  // 	+ ' style="display: none;"></span>';
 	  // return '<button type="button" class="btn btn-mini open-subtree" ' +
 	  //	' disabled>-</button>';
+	  icon    = 'icon-circle-blank';
+	  xaClass = " disabled ";
 	} else if (visible_kids === 'all_visible') {
-	  icon	= 'icon-caret-down';
+	  icon	  = 'icon-caret-down';
 	} else if (visible_kids === 'some') {
-	  icon	= 'icon-angle-down';
+	  icon	  = 'icon-angle-down';
 	} else {
-	  icon	= 'icon-caret-right';
+	  icon	  = 'icon-caret-right';
 	}
 	// btn-small or btn-mini??
-	return '<a class="btn btn-small open-subtree pull-left"><i class="'
-	  + icon + '"></i></a>';
+	return '<a class="btn btn-small open-subtree pull-left' + xaClass + '">'
+	  + '<i class="' + icon + '"></i></a>';
   };
 
   // - - - - - Headline:

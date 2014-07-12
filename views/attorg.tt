@@ -95,22 +95,22 @@
 <% } %>
   <div id="hl_<%= id %>"
 	   class="controls controls-row span12  <%= level === 1 ? "well well-small hl1" : "hl" + level %>">
-	<div class="btn-group span1">
+	<div class="btn-toolbar span2">
 	  <%= subtree_open_closed %>
-	  <a class="btn btn-mini add-header pull-right">
-		<i class="icon-plus add-header"></i>
-	  </a>
-	  <br>
-	  <a class="btn btn-mini edit-header pull-right">
+	  <button class=" todo-spec btn-mini btn pull-right" type="button">
+		<%= todo_spec %>
+	  </button>
+	  <div class="btn-group">
+	  <a class="btn btn-mini edit-header">
 		<i class="icon-edit edit-header"></i>
 	  </a>
-	</div>
-	<div class="span1 controls-row">
-	  <b><%= level_spec %></b>
-	  <br>
-	  <i class="todo-spec"><%= todo_spec %></i>
+	  <a class="btn btn-mini add-header">
+		<i class="icon-plus add-header"></i>
+	  </a>
+	  </div>
 	</div>
 	<span class="span9 title-text" style="color:<%= color_text %>" >
+	  <b><%= level_spec %></b>
 	  <%= (hiliteRegex === undefined) ? title : title.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
 	  <%= (hiliteRegex === undefined) ? block : block.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
 	</span>

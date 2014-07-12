@@ -884,16 +884,18 @@ var OrgController = function(model, view, commandHandler,
   // Help routines for the button command events:
 
   this._getHeadlineIxForButtonEvent = function(event) {
-    // (A Font Awesome strangeness.  New buttons sometimes use the
-    // <a> in buttons as target and sometimes the <i> thingie??
-    // Sigh... :-(
-    // So I reuse this to get the ID also from Headline text.)
+    // (A Font Awesome or Botstrap 2 strangeness?  New buttons
+    //  sometimes use the <a> in buttons as target and sometimes the
+    //  <i> thingie??
+    //  So I reuse this to get the ID also from Headline text.)
     var gparent     = event.target.parentNode;
     var model_str_id= gparent.id;
     if (! model_str_id)
       model_str_id  = gparent.parentNode.id;
     if (! model_str_id)
       model_str_id  = gparent.parentNode.parentNode.id;
+    if (! model_str_id)
+      model_str_id  = gparent.parentNode.parentNode.parentNode.id;
     var model_id    = this.view.make_model_id_from_hldiv(model_str_id);
     return this.model.get_ix_from_id_string( model_id );
   };
