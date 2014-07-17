@@ -94,6 +94,8 @@ var OrgCmdMapper = function() {
   this.addKeyCommand = function(name_in, cmdKeySpec) {
 	var name = name_in.toLowerCase();
 
+	console.log("Cmd " + name_in + ", key seqs: " + cmdKeySpec);
+
 	if (! (name in commands) ) {
 	  // Oh oh.
 	  // XXXX How should an error like this be handled??
@@ -104,7 +106,7 @@ var OrgCmdMapper = function() {
 	  return undefined;
 	}
 
-	var keyCodeSpecs = cmdKeySpec.split(/\s*,\s*/);
+	var keyCodeSpecs = cmdKeySpec.split(/\s*,,\s*/);
 	if (keyCodeSpecs.length === 0) {
 	  // Shouldn't happen
 	  console.log("Internal configuration error, command " + name + "\n"
@@ -172,8 +174,7 @@ var OrgCmdMapper = function() {
 
 	var out = [];
 
-	var rx = /^((?:[MSC]-)*)([-_<>A-Z0-9^]+)$/;
-	console.log("Seq " + JSON.stringify(keycodeArr) + "\n");
+	var rx = /^((?:[MSC]-)*)([-_<>A-Z0-9^,\\]+)$/;
 
 	for (var i=0; i < keycodeArr.length; i++) {
 	  var keySpec = keycodeArr[i];

@@ -93,7 +93,7 @@ sub _parse_org_headline {
 
   # Title specifications and Block specs
   # say STDERR Dumper [$data->[1]->{title_subs}, $data->[1]->{block_parts}];
-  return [$data->[1]->{title_subs}, $data->[1]->{block_parts}];
+  return $data->[1]; # [$data->[1]->{title_subs}, $data->[1]->{block_parts}];
 }
 
 

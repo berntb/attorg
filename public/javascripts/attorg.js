@@ -280,12 +280,81 @@ var OrgController = function(model, view, commandHandler,
 	// Rotate value of TODO-text:
 	div.on('click',   '.todo-spec',       this.todoRotateEvent);
 
+	// Internal links:
+	div.on('click',   '.internal_link',   this.jumpToLink);
+	// Priority:
+	div.on('click',   '.prio_link',       this.changePriority);
+
     // Bind search event:
     $("#" + this.divid_search).submit( this.searchEvent );
 	$('.clear-search').click( this.searchEventClear );
   };
 
+  
+  // - - - - - - - - - - - - - - - - - -
 
+  this.changePriority = function(event) {
+	event.preventDefault();
+
+	// - - - Get clicked Headline.
+	var headlineID = event.target.parentNode.parentNode.parentNode.id.slice(3);
+	console.log(headlineID);
+    var ix         = that.model.get_ix_from_id_string( headlineID );
+    var headline   = that.model.headline(ix);
+
+	headline.togglePriority();
+	that.view.render_headline(headline, true, true);
+  };
+
+
+  // - - - - - - - - - - - - - - - - - -
+
+  this.jumpToLink = function(event) {
+	event.preventDefault();
+	// - - - Get clicked Headline.
+
+	// (If this is in edit mode and the text is clicked, should close
+	//  it when goes to target Headline.)
+	var headlineID = event.target.parentNode.parentNode.id.slice(3);
+    var ix         = that.model.get_ix_from_id_string( headlineID );
+    var headline   = that.model.headline(ix);
+
+	// - - - Get what to find:
+	var result     = /href="#(.*)" +class=/.exec(event.target.outerHTML);
+	if (result   === null) {
+	  alert("Failed to get that link target?!\nInternal error?");
+	  return;
+	}
+	var toFind     = result[1];
+	var escapedStr = escapeRegExp(toFind);
+	// N B -- Radio links are not case sensitive, but these are.
+	var regexp     = new RegExp(escapedStr); // Substring instead??
+	// console.log("Matched " + toFind);
+
+	// - - - Find Headline (or its block) with that text:
+	var i;
+    for(i = 0; i < that.model.length; i++) {
+	  if (i === ix)
+		continue;
+
+      var hlineLoop = that.model.headline(i);
+	  if (hlineLoop.compareTitleRegexp(regexp)
+		  || hlineLoop.compareBlockRegexp(regexp) ) {
+		console.log("Found case:" + i);
+
+		// Emacs doesn't make block visible.
+		if (! hlineLoop.visible())
+		  that._makeHeadlineAndSuperiorsVisible(hlineLoop);
+
+		that.saveAndGotoIndex(headline, hlineLoop.index);
+		return;
+	  }
+	}
+
+	// alert: Can't find it
+	alert("Can't find a Headline with text " + toFind
+		  + "\n(XXXX <<Ask if it should be added>>");
+  };
 
   // - - - - - - - - - - - - - - - - - -
   // Search Headlines from UI
@@ -314,19 +383,12 @@ var OrgController = function(model, view, commandHandler,
   };
 
   this.searchEvent = function(event) {
-	if (event !== undefined)
-      event.preventDefault();
-
-	function escapeRegExp(str) {
-	  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-	}
-
     var div        = $('#' + that.divid_search + '_text');
 	var escapedStr = escapeRegExp(div.val());
     var regexp     = new RegExp( escapedStr );
 	var openCloseds= [];		// Quick 2nd loop
 
-	var i, headline; // , gotHit = false;
+	var i, headline;
 
 	var hadHilight = that.view.getHighlightRegex() !== undefined;
 
@@ -343,6 +405,7 @@ var OrgController = function(model, view, commandHandler,
 		headline.visible(true);
 		if (i > 0)
 		  openCloseds.push(i);
+		// Renders so any hits get hilighted
 		that.view.render_headline(headline, true, true);
 		continue;
 	  }
@@ -351,7 +414,10 @@ var OrgController = function(model, view, commandHandler,
 		  (headline.compareTitleRegexp(regexp)
            || headline.compareBlockRegexp(regexp)) ) {
 		// console.log(headline.level() + ": " + i + ":  " + headline.title());
-		// gotHit     = true;
+
+		// (Reimplements _makeHeadlineAndSuperiorsVisible here. This
+		// is so the same hierarchy won't get open/closed recalculated
+		// for every hit.)
         headline.visible(true);
 		that.view.render_headline(headline, true, true);
 
@@ -377,21 +443,6 @@ var OrgController = function(model, view, commandHandler,
 	  that._updateOpenCloseAroundChanged(openCloseds[i]);
 	}
 
-	// for(i = 1; i < that.model.length; i++) {
-	//   headline     = that.model.headline(i);
-	//   if (headline.level() === 1) {
-	// 	// console.log(headline.level() + ": " + i + ":  " + headline.title());
-	// 	that._updateOpenCloseAroundChanged(i);
-	//   }
-	// }
-
-
-	// Only bother with highlighting if we didn't get a hit:
-	// (No, if luser has active search and changes a Headline, it
-	//  should be highlighted.)
-	// if (gotHit === false)
-	//   that.view.setHighlightRegex( undefined );
-
 	if (event !== undefined)
       event.preventDefault();
     return false;
@@ -403,8 +454,7 @@ var OrgController = function(model, view, commandHandler,
 
 
   this.handleTitleKeyEvent = function(event) {
-	// console.log("keydown TITLE:");
-	console.log(event);
+	// console.log(event);
 	that._handleKeyEvent(event, false);
   };
   
@@ -435,7 +485,7 @@ var OrgController = function(model, view, commandHandler,
 	var charResult = that.cmdHandler.handleChar(event, isBlock)
 	var resultFlag = charResult[0];
 
-	// TEMP:
+	// XXXX Test, remove:
 	if (resultFlag !== OrgCmdMapper.CMD_ATE_CHAR
 		&& resultFlag !== OrgCmdMapper.CMD_IGNORED_CHAR)
 	  console.log("CHAR HANDLER RETURNED, type " + resultFlag);
@@ -597,6 +647,7 @@ var OrgController = function(model, view, commandHandler,
     that.view.setFocusTitle( headline );
   };
 
+
   this.addHeadingEvent = function(event) {
     event.stopPropagation();  // Gets two adds, otherwise
     var i = that._getHeadlineIxForButtonEvent( event );
@@ -606,6 +657,7 @@ var OrgController = function(model, view, commandHandler,
 
     that._insertAndRenderHeading(i+1, level);
   };
+
 
   this.move_tree_up_event = function(event) {
     var headline = that._headlineFromMenuEvent(event);
@@ -619,6 +671,8 @@ var OrgController = function(model, view, commandHandler,
                              thisTree[1]               // After this
                            );
   };
+
+
   this.move_tree_down_event = function(event) {
     var headline = that._headlineFromMenuEvent(event);
     var thisTree  = headline.findSubTree();
@@ -631,6 +685,7 @@ var OrgController = function(model, view, commandHandler,
                              thisTree[0]-1             // After this
                            );
   };
+
 
   this.deleteHeadingEvent = function(event) {
     // (Sigh, put ID:s in a few more Elements??)
@@ -652,6 +707,7 @@ var OrgController = function(model, view, commandHandler,
       that._updateOpenCloseAroundChanged(i ? i-1 : 0);
   };
 
+
   this.dblClickHeadingEvent = function(event) {
     var i = that._getHeadlineIxForButtonEvent( event );
     var headline = that.model.headline(i);
@@ -663,12 +719,36 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
-  // - - - - - - - - - - - - - - - - - -
+  // ----------------------------------------------------------------------
   // Help routines
 
-  // Help routine, makes a Headline visible in a nice Emacsy way.
-  // (That means showing all children for superior Headline.)
+  // - - - - - - - - - - - - - - - - - -
+  // Used by Search, et al:
+  function escapeRegExp(str) {
+	return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+  }
 
+
+  // - - - - - - - - - - - - - - - - - -
+  this._makeHeadlineAndSuperiorsVisible = function(headline) {
+	headline.visible(true);
+
+	// Make all superior visible, too:
+	var iterHeadline = headline;
+	while(iterHeadline.level() > 1) {
+	  iterHeadline = that.model.headline(iterHeadline.findDirectOwner());
+	  if (! iterHeadline.visible() )
+		iterHeadline.visible(true);
+	}
+
+	this._updateOpenCloseAroundChanged(iterHeadline.index);
+  };
+
+
+
+  // - - - - - - - - - - - - - - - - - -
+  // Make a Headline visible in a nice Emacsy way.
+  // (That means showing all children for superior Headline.)
   this.updateTreeVisibility = function(headline, toShow) {
     // If toShow is set (one of 'kids', 'all' or 'hide'), it is
     // used. Otherwise, visibility of the subtree beneath the
@@ -704,6 +784,8 @@ var OrgController = function(model, view, commandHandler,
     return 'all';
   };
 
+
+  // - - - - - - - - - - - - - - - - - -
   // updates opened/closed icons after a Headline change
   this.levelChange = function(headline, new_level) {
     // if (headline.level() === 1)
@@ -722,6 +804,7 @@ var OrgController = function(model, view, commandHandler,
 
   };
 
+  // - - - - - - - - - - - - - - - - - -
   // updates opened/closed icons after a Headline change
   this.levelChangeSubtree = function(first, last, diff) {
     for(var i = first; i < last; i++) {
@@ -744,8 +827,9 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
+  // - - - - - - - - - - - - - - - - - -
   // XXXXX Too complex, this must be neater and more automatic. :-(
-  // And, if anything, moved to model.
+  // And, if anything, moved to model. Or somewhere else.
   this._updateOpenCloseAroundChanged = function(ix) {
     if (ix < 0) ix  = 0;
     if (ix >= this.model.length)
@@ -781,6 +865,8 @@ var OrgController = function(model, view, commandHandler,
     return startStop;         // The subtree
   };
 
+
+  // - - - - - - - - - - - - - - - - - -
   this.moveHeadlineUp = function(headline) {
     var index  = headline.index;
     if (index === 0) return;  // Nothing to see here...
@@ -799,6 +885,7 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
+  // - - - - - - - - - - - - - - - - - -
   this.moveHeadlineDown = function(headline) {
     var index  = headline.index;
     if (index+1 >= that.model.length) return; // Nothing to see here...
@@ -817,6 +904,7 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
+  // - - - - - - - - - - - - - - - - - -
   this.moveHeadlineTree = function(fromStart, fromEnd, toAfterThis) {
     // Move a range of Headlines to another place.
     var i, no, headline;
@@ -861,6 +949,7 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
+  // - - - - - - - - - - - - - - - - - -
   this.saveAndGotoIndex = function(headline, goIx, focusOnBlock) {
     // Saves any opened edit headline and opens another in Edit:
     if (headline !== undefined && this.view.has_headline_edit_on(headline)) {
@@ -917,6 +1006,7 @@ var OrgController = function(model, view, commandHandler,
     return headline;
   };
 
+
   this._insertAndRenderHeading = function(ix, level) {
     var headline = this.model.new_headline(ix, { level: level } );
     this.view.render_new_headline(ix, headline );
@@ -926,6 +1016,7 @@ var OrgController = function(model, view, commandHandler,
 	this.model.dirty(-1, undefined);
   }
 
+
   // Help method which updates a Headline from Edit fields:
   this.saveHeadlineFromModelID = function(model_str_id) {
     var i = that.model.get_ix_from_id_string( model_str_id );
@@ -934,11 +1025,13 @@ var OrgController = function(model, view, commandHandler,
     return this.updateEditedHeadline(headline);
   };
 
+
   this.updateEditedHeadline = function(headline) {
 	var values = that.view.get_values(headline);
     that.update_headline_title_block(headline, values.title, values.block);
     return headline;
   };
+
 
   // Help method which updates a Headline with title/block values:
   this.update_headline_title_block = function(headline, title, block) {
@@ -1018,20 +1111,23 @@ var OrgController = function(model, view, commandHandler,
 	  var headline = look_up.headline;
 
 	  // - - - Update!
+	  // XXXX Most of this is repeated from the Model! Fix.
 	  var data = JSON.parse(reply);
 	  headline.modified_locally(undefined);
 
-	  // alert("Got update reply for id " + id
-	  // 	  + ", ix " + ix
-	  // 	  // + "\nAll data:\n" + data
-	  // 	  + "\nLen:\n" + data.length
-	  // 	  + "\nTitle subs :\n" + data[0] // );
-	  // 	  + "\nBlock subs :\n" + data[1]
-	  // 	 );
-	  if (data[0] && data[0] !== undefined)
-		headline.headline.title_subs = data[0];
-	  if (data[1]  && data[1] !== undefined)
-		headline.headline.block_parts = data[1];
+	  // console.log(data);
+	  var block_parts = data.block_parts;
+	  var priority    = data.priority;
+	  if (data.title_subs)
+		headline.headline.title_subs = data.title_subs;
+	  if (data.block_parts)
+		headline.headline.block_parts = data.block_parts;
+	  if (data.priority)
+		headline.priority(data.priority);
+	  // This might also be updated:
+	  if (data.title_text)
+		headline.title(data.title_text);
+	  
 	  that.view.render_headline( headline );
 	};
 

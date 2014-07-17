@@ -111,6 +111,11 @@
 	</div>
 	<span class="span9 title-text" style="color:<%= color_text %>" >
 	  <b><%= level_spec %></b>
+	  <% if (priority !== '') { %>
+	    <a class="prio_link" title="" href="ChangePriority:">
+		  <b style="color: black;">[<%= priority %>]</b>
+		</a>
+	  <% } %>
 	  <%= (hiliteRegex === undefined) ? title : title.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
 	  <%= (hiliteRegex === undefined) ? block : block.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
 	</span>

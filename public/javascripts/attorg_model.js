@@ -154,6 +154,7 @@ var OrgModelSuper = function(documentName, org_data,
       title_text: (spec.title_text ? spec.title_text : ''),
       block: (spec.block ? spec.block : ''),
       tags: (spec.tags ? spec.tags : ''),
+	  priority: (spec.priority ? spec.priority : ''),
 	  title_subs: spec.title_subs,
 	  block_parts: spec.block_parts, // Should have same name as title part
 	  block_indent: spec.block_indent ? spec.block_indent : 0,
@@ -401,6 +402,55 @@ OrgHeadline.prototype = {
 	}
     return this.headline.todo_state;
   },
+  priority: function() {
+	// XXXX Check value when it is set!!
+    if (arguments.length > 0) {
+      this.headline.priority = arguments[0];
+	  this.owner.dirty();
+	}
+	// console.log("PRI ");
+	// console.log(this);
+    return this.headline.priority;
+  },
+
+  togglePriority: function( toLower ) {
+	// if 'toLower' is set, it will start with highest priority and go
+	// lower. Otherwise, the opposite.
+	var now     = this.priority();
+	var choices = this.owner.priorities();
+	if (choices.length === 0) {
+	  return '';				// Uhh...??
+	}
+	this.owner.dirty();
+
+	if (now === '') {
+	  now = toLower ? choices[0] : choices[choices.length-1];
+	  this.priority( now );
+	  return now;
+	}
+	for(var i = 0; i < choices.length; i++) {
+	  if (now === choices[i]) {
+		// Update value
+		now   = '';
+		if (toLower) {
+		  if (i < choices.length-1)
+			now = this.priority( choices[i+1] );
+		} else {
+		  if (i)
+			now = this.priority( choices[i-1] );
+		}
+		this.priority( now );
+		return now;
+	  }
+	}
+
+	// List of available values was changed or program error??
+	console.log("ERROR!! FAILED TO FIND Priority " + now + "?!");
+	this.priority( choices[0] );
+	return choices[0];
+  },
+
+
   level: function() {
     if (arguments.length > 0) {
       // XXXX Check so numeric??
@@ -414,6 +464,7 @@ OrgHeadline.prototype = {
 	  return 10;
     return level;
   },
+
 
   // ------------------------------------------------------------
   // Has local changes been done, not yet parsed by server?
@@ -470,11 +521,9 @@ OrgHeadline.prototype = {
   // Also, any Headline moved to the top must be set as visible. (Not
   // here, the Controller must do that and call the View.)
 
+
   // ------------------------------------------------------------
   // This part implements (in)visible subsets of the headlines.
-
-  // 2nd version of Visible implementation -- cache results for
-  // speed. Half as readable, but less slow. :-(
 
   visible: function() {
     // XXXX Add so Level 1 is always visible??
@@ -776,34 +825,16 @@ OrgHeadline.prototype = {
           value   = _.escape(value);
         }
       } else if (type  === "Org::Element::Link") {
-        parts = /^\s*\[\[([^\[]*)\]\[(.*)\]\]\s*$/.exec(value);
-        if (parts !== null && typeof(parts) == 'object' && parts.length) {
-          try {
-            txt     = _.escape(parts[2]);
-            // console.log(parts[1]);
-            tmp     = '<a href="' + parts[1] + '">' + txt + '</a>';
-            value   = tmp;
-          } catch(duh) { value = "ERROR WITH LINK:" + value};
-        } else {
-          parts = /^\s*\[\[([^\[]*)\]\s*\]\s*$/.exec(value);
-          if (parts !== null && typeof(parts) == 'object' && parts.length){
-            try {
-              txt   =  _.escape(parts[1]);
-              tmp   = '<a href="' + parts[1] + '">' + txt + '</a>';
-              value = tmp;
-            } catch(duh) { value = "ERROR WITH LINK:" + value};
-          }
-        }
+		value = OrgHeadline.prototype._encode_link_subcase(value);
       } else if (type  === "Org::Element::Target") {
 		// In Emacs: <<target name>>
 		// Implement internal links in the document with JS. The
 		// "obvious way" (normal internal HTML links) is not good,
 		// since you need to open Headlines to show the hidden part.
-
-		// N B internal links aren't supported by Org::Parser!
+		// XXXX Implement!!
 		value = " [Target TBI] ";
 	  } else if (type  === "Org::Element::RadioTarget") {
-		// In Emacs: <<<target name>>>
+		// In Emacs: <<<target name>>> ;; Radio Target.
 		// With this, ALL OCCURENCES of the text (Headlines, blocks)
 		// should be links to this place.
 		// (N B In Emacs, Radio Target links are updated (1) on load
@@ -817,11 +848,68 @@ OrgHeadline.prototype = {
 					+ value + "\nPlease implement");
 	  }
 
-      // XXXX Add dates here!!
+      // XXXX Add dates (timestamps, deadlines etc), properties et al...
+
       collected  += value;
     }
 
     return collected;
   },
+
+  _RegexpTestStartIsURL: /^[a-z][-+a-z]:/,
+
+  _encode_link_subcase: function(link) {
+	// This parse out [[Org][links]] to HTML.
+	// (Javascript catches internal_link clicks and jumps to the right place.)
+	var testURL     = OrgHeadline.prototype._RegexpTestStartIsURL;
+	var txt, tmp, err;
+	// console.log("Checks for links:" + link);
+
+	var parts = /^\s*\[\[([^\[]*)\]\[(.*)\]\]\s*$/.exec(link);
+    if (parts !== null && typeof(parts) == 'object' && parts.length) {
+      try {
+        txt     = _.escape(parts[2]);
+		// - - - Normal URL:
+		if (testURL.test(parts[1])) {
+		  console.log("Normal link:" + parts[1]);
+          tmp  += '<a href="' + encodeURI(parts[1]) + '">' + txt + '</a>';
+          return tmp;
+		}
+		// - - - Internal link:
+		console.log("Internal link:" + parts[1]);
+		// The 'href' part is just so hower-URL look ok
+		tmp     = '<a href="#' + _.escape(parts[1]) + '"'
+		  + ' class="internal_link" title="">'
+		  + txt + '</a>';
+		console.log("INTERNAL LINK " + tmp);
+		return tmp;
+      } catch(err) {return "ERROR " + err + " FOR LINK:" + _.escape(link);};
+    } else {
+	  // Just one item, which is both text and link:
+      parts = /^\s*\[\[([^\[]*)\]\s*\]\s*$/.exec(link);
+      if (parts !== null && typeof(parts) == 'object' && parts.length) {
+        try {
+		  // - - - Normal URL:
+		  txt   =  _.escape(parts[1]);
+		  if (testURL.test(parts[1])) {
+			tmp = '<a href="' + parts[1] + '">' + txt + '</a>';
+			return tmp;
+		  }
+		  // - - - Internal link:
+		  console.log("Internal link, 1 part:" + parts[1]);
+		  // The 'href' part is just so hower-URL look ok
+		  tmp   = '<a href="#' + _.escape(parts[1]) + '"'
+			+ ' class="internal_link" title="">'
+			+ txt + '</a>';
+		  console.log("INTERNAL LINK, 1 PART: " + tmp);
+		  return tmp;
+		  
+        } catch(err) { return "ERR " + err + " FOR LINK:" + _.escape(link) };
+      }
+    }
+
+	return "(ERROR PARSING LINK: " + _.escape(link) + ")";
+  },
+
 
 };

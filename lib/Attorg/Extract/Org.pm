@@ -91,6 +91,9 @@ sub trav {
                 };
   $hdr_spec->{todo_state} = $el->todo_state
     if $el->todo_state && length($el->todo_state);
+  $hdr_spec->{priority} = $el->priority
+	  if $el->priority;
+
   push @$store, $hdr_spec;
 
   # say ${pre}, "-" x 60;
@@ -125,8 +128,8 @@ sub trav {
   my @blocks;
   for my $kid (@{$el->{children}}) {
     if ($kid->isa('Org::Element::Headline')) {
- trav($kid, $store, $indent + 2);
-      next;
+	  trav($kid, $store, $indent + 2);
+	  next;
     }
     # Not Headline: A list of parts of the text block.
     # (This will always come before the Headline kids, so a straight

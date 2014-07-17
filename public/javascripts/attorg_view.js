@@ -214,14 +214,11 @@ var OrgView = function(document_div_id, divid_headlines) {
 		subtree_open_closed: this._make_open_close_button(visible_kids),
 		level_spec: "************".substring(0, level),
 		todo_spec: _.escape(todo),
-		// Move into Template??
-		// level_select_options: _make_level_select_help(level),
-		// todo_select_options: _make_todo_select_help(headline,
-		// 											all_todo_done_states),
-		// Kludge for setting Bootstrap color:
+		// Kludge for setting (Bootstrap) color:
 		color_text: levelColors[level],
 		title: headline.title_html(),
 		block: block_html,
+		priority: headline.priority(),
 		hiliteRegex: this.getHighlightRegex(),
 	  });
   };

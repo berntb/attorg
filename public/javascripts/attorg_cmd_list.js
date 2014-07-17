@@ -509,6 +509,99 @@ function OrgAddKeyCmds(cmdHandler) {
   );
 
 
+  // ----------------------------------------------------------------------
+  // Priority modification commands:
+
+  function _fixPriorities(model, view, headline, priOffset) {
+	var choices = model.priorities();
+	console.log(choices);
+	if (priOffset < 0 || priOffset >= choices.length) {
+	  headline.priority('');
+	} else {
+	  headline.priority( choices[priOffset] );
+	}
+
+	view.render_headline(headline, true, true);
+  }
+
+
+  cmdHandler.addCommand(
+	"HighPrio",
+	"Description",
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+	  console.log("High priority command");
+	  _fixPriorities(this.controller.model, this.controller.view, headline, 0);
+	  return true;
+	});
+
+  cmdHandler.addCommand(
+	"MediumPrio",
+	"Description",
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+	  console.log("Medium priority command");
+	  _fixPriorities(this.controller.model, this.controller.view, headline, 1);
+
+	  return true;
+	});
+
+  cmdHandler.addCommand(
+	"LowPrio",
+	"Description",
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+	  console.log("Medium priority command");
+	  _fixPriorities(this.controller.model, this.controller.view, headline, 2);
+
+	  return true;
+	});
+
+  cmdHandler.addCommand(
+	"ClearPrio",
+	"Description",
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+	  console.log("Medium priority command");
+	  _fixPriorities(this.controller.model, this.controller.view, headline,-1);
+	  return true;
+	});
+
+
+  cmdHandler.addCommand(
+	"PrioLower",
+	"Description",
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+	  console.log("Lower priority");
+	  headline.togglePriority(true);
+	  this.controller.view.render_headline(headline, true, true);
+	  return true;
+	},
+	function() {
+	  return false;				// Do nothing in block
+	});
+
+  cmdHandler.addCommand(
+	"PrioHigher",
+	"Description",
+	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+			 number) {
+	  console.log("Increase priority");
+	  headline.togglePriority();
+	  this.controller.view.render_headline(headline, true, true);
+
+	  return true;
+	},
+  	function() {
+	  return false;				// Do nothing in block
+	});
+
+
+
+  // ----------------------------------------------------------------------
+  // Go top/bot:
+
   cmdHandler.addCommand(
 	"ScrollTop",
 	"Description",
@@ -549,24 +642,26 @@ function OrgAddKeyCmds(cmdHandler) {
   // XXXX Move these into a data structure later!  (In the end, it
   // should be user configurable.)
 
+  // XXXX If no control/meta, should 'shift-A' be same as 'A'??
+
   // cmdHandler.addKeyCode("X-return",    "X-CR");
   // cmdHandler.addKeyCode("Break",       "C-G");
 
-  cmdHandler.addKeyCommand("Return",       "CR, C-CR, M-CR");
+  cmdHandler.addKeyCommand("Return",       "CR,, C-CR,, M-CR");
   // This should open a new Headline after any subs of lower level
   // cmdHandler.addKeyCommand("controlReturn","C-CR");
   cmdHandler.addKeyCommand("Break",        "C-G");
-  cmdHandler.addKeyCommand("OpenClose",    "TAB, S-TAB, M-S-TAB");
+  cmdHandler.addKeyCommand("OpenClose",    "TAB,, S-TAB,, M-S-TAB");
   cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-U");
   cmdHandler.addKeyCommand("MovePrevious", "C-C C-P");
-  cmdHandler.addKeyCommand("MovePrevious", "C-P, up");
+  cmdHandler.addKeyCommand("MovePrevious", "C-P,, up");
   cmdHandler.addKeyCommand("MovePrevious", "C-up");
-  cmdHandler.addKeyCommand("MoveNext",     "C-N, down");
+  cmdHandler.addKeyCommand("MoveNext",     "C-N,, down");
   cmdHandler.addKeyCommand("MoveNext",     "C-down");
 
   // Lots of keyboards needs shift to write '<', so... :-(
-  cmdHandler.addKeyCommand("ScrollTop",     "M-<, S-M-<");
-  cmdHandler.addKeyCommand("ScrollBot",     "M->, S-M->");
+  cmdHandler.addKeyCommand("ScrollTop",     "M-<,, S-M-<");
+  cmdHandler.addKeyCommand("ScrollBot",     "M->,, S-M->");
 
   // Set Mark, C-X C-X, [copy/paste??]
   cmdHandler.addKeyCommand("SetMark",      "C-space");
@@ -582,7 +677,18 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("MoveTreeUp",   "M-up");
   cmdHandler.addKeyCommand("MoveTreeDown", "M-down");
 
+  // XXXX Support shift-up, shift-down on Headline (not block)
+  // too. (S-down goes from highest priority to lower.)
+  cmdHandler.addKeyCommand("HighPrio",     "C-C , A,, C-C , S-A");
+  cmdHandler.addKeyCommand("MediumPrio",   "C-C , B,, C-C , S-B");
+  cmdHandler.addKeyCommand("LowPrio",      "C-C , C,, C-C , S-C");
+  cmdHandler.addKeyCommand("ClearPrio",    "C-C , \\ ");
+  cmdHandler.addKeyCommand("PrioLower",    "S-up");
+  cmdHandler.addKeyCommand("PrioHigher",   "S-down");
+  
+
+
   cmdHandler.addKeyCommand("NumberPrefix", "C-U");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-0, C-1, C-2, C-3, C-4");
-  cmdHandler.addKeyCommand("NumberPrefix", "C-5, C-6, C-7, C-8, C-9");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-0,, C-1,, C-2,, C-3,, C-4");
+  cmdHandler.addKeyCommand("NumberPrefix", "C-5,, C-6,, C-7,, C-8,, C-9");
 };
