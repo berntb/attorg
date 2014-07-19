@@ -9,11 +9,11 @@
 // Remove model/view from these
 function OrgAddKeyCmds(cmdHandler) {
 
-  cmdHandler.addCommand(
-	"X-return",					// Like Ctrl-/Meta-Return
-	"Description",
+  cmdHandler.addACommand({
+	name:  "X-return",			// (Like Ctrl-/Meta-Return)
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       var view        = this.controller.view;
       console.log("In headline CR, before meta test");
       this.controller.updateEditedHeadline(headline);
@@ -35,7 +35,7 @@ function OrgAddKeyCmds(cmdHandler) {
       return true;
     },
 	// Block case:
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       console.log("In block CR, before meta test");
       if (ctrl) {
         this.controller.updateEditedHeadline(headline);
@@ -50,26 +50,24 @@ function OrgAddKeyCmds(cmdHandler) {
       this.controller._insertAndRenderHeading(ix+1, headline.level() );
       return true;
     }
-  );
+  });
 
-
-  cmdHandler.addCommand(
-	"Break",					// Ctrl-G
-	"Description",
-
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+  cmdHandler.addACommand({
+	name:  "Break",
+	docum: "Description",
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       console.log("Skip editing.");
       this.controller.view.close_edit_headline( headline );
       return true;
     }
-  );
+  });
 
   
-  cmdHandler.addCommand(
-	"OpenClose",				// TAB and shift-TAB
-	"Description",
+  cmdHandler.addACommand({
+	name:  "OpenClose",			// (TAB and shift-TAB)
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       var hide_action  = this.controller.updateTreeVisibility( headline );
       if (!event.shiftKey)
         return true;
@@ -120,13 +118,14 @@ function OrgAddKeyCmds(cmdHandler) {
       for(i = 0; i < top_headlines.length; i++)
         this.controller.updateTreeVisibility(top_headlines[i], hide_action);
       return true;
-    });
+    }
+  });
 
 
-  cmdHandler.addCommand(
-	"MoveLevelUp",				// "C-C C-U"
-	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+  cmdHandler.addACommand({
+	name:  "MoveLevelUp",		// ("C-C C-U" style)
+	docum: "Description",
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       var model    = this.controller.model;
       var ix       = headline.index;
       var level    = headline.level();
@@ -146,33 +145,29 @@ function OrgAddKeyCmds(cmdHandler) {
       // XXXX Move somewhere else??
       return true;
 	}
-  );
+  });
 
 
-  cmdHandler.addCommand(
-	"MovePrevious",				// 'C-80, up, C-up'
-	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+  cmdHandler.addACommand({
+	name:  "MovePrevious",				// 'C-80, up, C-up'
+	docum: "Description",
+	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
       var model        = this.controller.model;
       var ix           = headline.index;
+	  console.log("Move Previous: Got number " + number);
 
 	  // If we have a negative C-U prefix number, make it 'movenext':
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MoveNext',
 								{
-								  keyboard_p: true,
+								  charEvent: true,
 								  event:      event,
 								  headline:   headline,
 								  isBlock:    block_p,
 								  numericalPrefix: -number
 								});
 	  }
-
-	  // XXXX
-	  // this.getCommandHandler(name)(parameters) and call functionality.
-	  // (getCommandHandler() must always return a function, even if
-	  // it only logs an error.)
 
       for(var i = ix-1; i >= 0; i--) {
         if (model.headline(i).visible()) {
@@ -184,15 +179,15 @@ function OrgAddKeyCmds(cmdHandler) {
       return true;
     },
     // Block:
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
       if (keycode === 38 && !ctrl)
         return false;         // Don't use 'up' in Block
 
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MoveNext',
 								{
-								  keyboard_p: true,
+								  charEvent: true,
 								  event:      event,
 								  headline:   headline,
 								  isBlock:    block_p,
@@ -204,18 +199,18 @@ function OrgAddKeyCmds(cmdHandler) {
       this.controller.view.setFocusTitle( headline );
       return true;
 	}
-  );
+  });
 
-  cmdHandler.addCommand(
-	"MoveNext",					// "C-N, down, C-down"
-	"Description",
+  cmdHandler.addACommand({
+	name:  "MoveNext",					// ("C-N, down, C-down")
+	docum: "Move to next (visible) item",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+	text: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+				   number) {
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MovePrevious',
 								{
-								  keyboard_p: true,
+								  charEvent: true,
 								  event:      event,
 								  headline:   headline,
 								  isBlock:    block_p,
@@ -231,7 +226,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  // Call itself, but from block
 	  return this.callCommand('MoveNext',
 								{
-								  keyboard_p: true,
+								  charEvent: true,
 								  event:      event,
 								  headline:   headline,
 								  isBlock:    true,
@@ -239,15 +234,15 @@ function OrgAddKeyCmds(cmdHandler) {
 								});
     },
     // Block:
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
       if (block_p && keycode === 40 && !ctrl)
         return false;         // Don't use 'down' in Block
 
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MovePrevious',
 								{
-								  keyboard_p: true,
+								  charEvent: true,
 								  event:      event,
 								  headline:   headline,
 								  isBlock:    block_p,
@@ -282,14 +277,14 @@ function OrgAddKeyCmds(cmdHandler) {
 		lastFound      = i;
 	  }
 	}
-  );
+  });
 
 
-  cmdHandler.addCommand(
-	"ShiftLeft",				// "M-left"
-	"Description",
+  cmdHandler.addACommand({
+	name:  "ShiftLeft",			// ("M-left")
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       if (headline.level() === 1)   return true;          // No change
 
       if (event.shiftKey) {
@@ -300,14 +295,14 @@ function OrgAddKeyCmds(cmdHandler) {
       }
       return true;
 	}
-  );
+  });
 
 
-  cmdHandler.addCommand(
-	"ShiftRight",				// "M-right"
-	"Description",
+  cmdHandler.addACommand({
+	name:  "ShiftRight",		// ("M-right")
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       // If shift, moves the whole subtree.
       if (event.shiftKey) {
         var tree = headline.findSubTree();
@@ -317,14 +312,14 @@ function OrgAddKeyCmds(cmdHandler) {
       }
       return true;
 	}
-  );
+  });
 
 
-  cmdHandler.addCommand(
-	"MoveTreeUp",				// "M-up"
-	"Description",
+  cmdHandler.addACommand({
+	name:  "MoveTreeUp",				// "M-up"
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       var ix = headline.index;
       if (event.shiftKey) {
         // Just temp to test:
@@ -338,14 +333,14 @@ function OrgAddKeyCmds(cmdHandler) {
         this.controller.moveHeadlineUp( headline ); // Move single headline:
       return true;
 	}
-  );
+  });
 
 
-  cmdHandler.addCommand(
-	"MoveTreeDown",				// "M-down"
-	"Description",
+  cmdHandler.addACommand({
+	name:  "MoveTreeDown",				// "M-down"
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       if (event.shiftKey) {
         var thisTree  = headline.findSubTree();
         var nextTree  = headline.findNextSubTree();
@@ -360,28 +355,29 @@ function OrgAddKeyCmds(cmdHandler) {
       }
       return true;
 	}
-  );
+  });
 
 
   // ----------------------------------------------------------------------
   // New generation commands:
 
-  cmdHandler.addCommand(
-	"SetMark",
-	"Description",
+  cmdHandler.addACommand({
+	name:  "SetMark",
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	// Puts mark on whole Headline
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       console.log("In SetMark");
 	  return true;
 	}
-  );
+  });
 
 
-  cmdHandler.addCommand(
-	"TodoRotate",
-	"Rotate the value of the TODO",
+  cmdHandler.addACommand({
+	name:  "TodoRotate",
+	docum: "Rotate the value of the TODO",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       console.log("In TodoRotate");
 
 	  var todoNow  = headline.todo();
@@ -408,15 +404,15 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	  return true;
 	}
-  );
+  });
 
 
-  cmdHandler.addCommand(
-	"NumberPrefix",				// C-U
-	"Description",
+  cmdHandler.addACommand({
+	name:  "NumberPrefix",				// C-U
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+				   number) {
 	  var inChar = this._getCharFromEvent(event, true);
 
 	  var flagNoCharsYet;
@@ -469,14 +465,14 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	  return true;
 	}
-  );
+  });
   
 
-  cmdHandler.addCommand(
-	"Return",
-	"Description",
+  cmdHandler.addACommand({
+	name:  "Return",
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	text: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       console.log("In headline CR, before meta test");
       this.controller.updateEditedHeadline(headline);
       this.controller.view.close_edit_headline( headline );
@@ -497,7 +493,7 @@ function OrgAddKeyCmds(cmdHandler) {
       return true;
     },
 	// Block case:
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
       if (ctrl) {
 		console.log("In headline CR, before meta test");
 		this.controller.updateEditedHeadline(headline);
@@ -506,7 +502,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  }
 	  return false				// Ignore
 	}
-  );
+  });
 
 
   // ----------------------------------------------------------------------
@@ -525,88 +521,95 @@ function OrgAddKeyCmds(cmdHandler) {
   }
 
 
-  cmdHandler.addCommand(
-	"HighPrio",
-	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+  cmdHandler.addACommand({
+	name:  "HighPrio",
+	docum: "Description",
+
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  console.log("High priority command");
 	  _fixPriorities(this.controller.model, this.controller.view, headline, 0);
 	  return true;
-	});
+	}
+  });
 
-  cmdHandler.addCommand(
-	"MediumPrio",
-	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
+  cmdHandler.addACommand({
+	name:  "MediumPrio",
+	docum: "Description",
+
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 			 number) {
 	  console.log("Medium priority command");
 	  _fixPriorities(this.controller.model, this.controller.view, headline, 1);
 
 	  return true;
-	});
+	}
+  });
 
-  cmdHandler.addCommand(
-	"LowPrio",
-	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+  cmdHandler.addACommand({
+	name:  "LowPrio",
+	docum: "Description",
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+				   number) {
 	  console.log("Medium priority command");
 	  _fixPriorities(this.controller.model, this.controller.view, headline, 2);
 
 	  return true;
-	});
+	}
+  });
 
-  cmdHandler.addCommand(
-	"ClearPrio",
-	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+  cmdHandler.addACommand({
+	name:  "ClearPrio",
+	docum: "Description",
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
 	  console.log("Medium priority command");
 	  _fixPriorities(this.controller.model, this.controller.view, headline,-1);
 	  return true;
-	});
+	}
+  });
 
 
-  cmdHandler.addCommand(
-	"PrioLower",
-	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+  cmdHandler.addACommand({
+	name:  "PrioLower",			// (shift-UP, but not in block)
+	docum: "Description",
+	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
 	  console.log("Lower priority");
 	  headline.togglePriority(true);
 	  this.controller.view.render_headline(headline, true, true);
 	  return true;
 	},
-	function() {
+	block: function() {
 	  return false;				// Do nothing in block
-	});
+	}
+  });
 
-  cmdHandler.addCommand(
-	"PrioHigher",
-	"Description",
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p,
-			 number) {
+  cmdHandler.addACommand({
+	name: "PrioHigher",			// (shift-down)
+	docum: "Description",
+	text: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+				   number) {
 	  console.log("Increase priority");
 	  headline.togglePriority();
 	  this.controller.view.render_headline(headline, true, true);
 
 	  return true;
 	},
-  	function() {
+  	block: function() {
 	  return false;				// Do nothing in block
-	});
+	}
+  });
 
 
 
   // ----------------------------------------------------------------------
   // Go top/bot:
 
-  cmdHandler.addCommand(
-	"ScrollTop",
-	"Description",
+  cmdHandler.addACommand({
+	name:  "ScrollTop",
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  var model = this.controller.model;
 	  if (model.length) {
 		  this.controller.saveAndGotoIndex(headline, 0, false);
@@ -614,13 +617,13 @@ function OrgAddKeyCmds(cmdHandler) {
 	  $("html, body").animate({ scrollTop: 0 }, "slow");
 	  return true;
 	}
-  );
+  });
 
-  cmdHandler.addCommand(
-	"ScrollBot",
-	"Description",
+  cmdHandler.addACommand({
+	name:  "ScrollBot",
+	docum: "Description",
 
-	function(keyboard_p, event, ctrl, meta, keycode, headline, block_p) {
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  var model = this.controller.model;
 	  if (model.length) {
 		// XXXX Make more than the last one visible???
@@ -632,7 +635,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  }
 	  return true;
 	}
-  );
+  });
 
 
 
@@ -653,11 +656,9 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("Break",        "C-G");
   cmdHandler.addKeyCommand("OpenClose",    "TAB,, S-TAB,, M-S-TAB");
   cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-U");
-  cmdHandler.addKeyCommand("MovePrevious", "C-C C-P");
-  cmdHandler.addKeyCommand("MovePrevious", "C-P,, up");
+  cmdHandler.addKeyCommand("MovePrevious", "C-C C-P,, C-P,, up");
   cmdHandler.addKeyCommand("MovePrevious", "C-up");
-  cmdHandler.addKeyCommand("MoveNext",     "C-N,, down");
-  cmdHandler.addKeyCommand("MoveNext",     "C-down");
+  cmdHandler.addKeyCommand("MoveNext",     "C-N,, down,, C-down");
 
   // Lots of keyboards needs shift to write '<', so... :-(
   cmdHandler.addKeyCommand("ScrollTop",     "M-<,, S-M-<");

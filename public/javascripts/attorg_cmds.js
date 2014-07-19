@@ -75,15 +75,23 @@ var OrgCmdMapper = function() {
   // commands in text blocks (while the first is called for Headlines)
   // (If a handler is 'undefined', it won't be called)
 
-  this.addCommand = function(name, description, fun) {
-    // If sends in one fun, it is for both text and block.
-     var funs  = [fun.bind(this)];
-    if (arguments.length > 3) {
-       funs.push( arguments[3].bind(this) ); // block fun
-	}
-    name = name.toLowerCase();
-    commands[name] = funs;
-    cmdDescriptions[name] = description;
+
+  // Specification parameters like this, so it is extensible:
+  this.addACommand = function( spec ) {
+	var name     = spec.name.toLowerCase();
+	var document = spec.docum;	// Documentation
+	var fun      = spec.text || spec.both;
+	var blockFun = spec.block;
+	var numericalHandling = spec.numericalAsMultipleCalls;
+
+	var funs = [fun.bind(this)];
+	if (blockFun)
+	  console.log("-----------------\nCMD: " + name + " has blockfun!");
+	if (blockFun)
+	  funs.push( blockFun.bind(this) );
+
+	commands[name] = funs;
+	cmdDescriptions[name] = document;
 	return true;
   };
 
