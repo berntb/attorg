@@ -362,6 +362,19 @@ function OrgAddKeyCmds(cmdHandler) {
   // New generation commands:
 
   cmdHandler.addACommand({
+	name:  "DelHeadline",
+	docum: "Description",
+
+	// Puts mark on whole Headline
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+      console.log("In DelHeadline");
+	  return true;
+	}
+  });
+
+
+
+  cmdHandler.addACommand({
 	name:  "SetMark",
 	docum: "Description",
 
@@ -686,6 +699,8 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("ClearPrio",    "C-C , \\ ");
   cmdHandler.addKeyCommand("PrioLower",    "S-up");
   cmdHandler.addKeyCommand("PrioHigher",   "S-down");
+
+  cmdHandler.addKeyCommand("DelHeadline",  "C-K");
   
 
 

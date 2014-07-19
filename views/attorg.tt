@@ -147,6 +147,18 @@
 			</a>
 			<ul class="dropdown-menu">
 			  <li>
+				<a class=""><i class="icon-coffee"></i> Not implemented yet:
+				</a>
+			  </li>
+			  <!-- Move all commands over to this format: -->
+			  <li>
+				<a class="attorg-menu-cmd" data_command="DelHeadline">
+				  <i class="icon-trash"></i> Delete
+				</a>
+			  </li>
+			  <li class="divider"></li>
+
+			  <li>
 				<a class="delete-header">
 				  <i class="icon-trash"></i> Delete
 				</a>

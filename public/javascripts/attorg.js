@@ -251,6 +251,11 @@ var OrgController = function(model, view, commandHandler,
     div.on('dblclick','.title-text',      this.dblClickHeadingEvent);
 
     // - - - - - Menu in Edit Mode:
+
+	// (New generation -- forward Menu choices to commands.)
+    div.on('click',   '.attorg-menu-cmd', this.handleMenuCommand);
+
+
     div.on('click',   '.move-header-up',  this.move_up_event);
     div.on('click',   '.move-header-down',this.move_down_event);
     div.on('click',   '.edit-header',     this.editHeadingEvent);
@@ -542,6 +547,7 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
+
   this.saveCommandEvent = function(event) {
     // (Sigh, put ID:s in a few more Elements??)
     var edit_div = event.target.parentNode.parentNode.parentNode.parentNode;
@@ -599,9 +605,6 @@ var OrgController = function(model, view, commandHandler,
   };
 
   this.todoRotateEvent = function(event) {
-	// XXXX This is the same as the C-C C-T command!
-	// Need a good way of calling that command in one line!
-	// Also, this is ugly -- don't repeat :-(
 	var model_str_id = $(this).parent().parent().attr('id').slice(3);
 	console.log(model_str_id);
 	console.log(_.keys(model_str_id));
@@ -615,6 +618,23 @@ var OrgController = function(model, view, commandHandler,
 
   // ------------------------------------------------------------
   // non-Edit button events:
+
+  // XXXXX MOVE ALL MENU COMMANDS INTO THIS FORMAT!!
+  // (But do consider that all implemented commands can be sent 
+  this.handleMenuCommand  = function(event) {
+    // (Sigh, put ID:s in a few more Elements??)
+    var headline  = that._headlineFromMenuEvent(event);
+	var attorgCmd = $(event.target).attr("data_command");
+	console.log(event);
+	console.log("Event target:" + event.target.data_command);
+	console.log("Att:" + menuCommand);
+
+	// XXXX Should I add C-U number prefixes here??
+	// When needed, allow a series of commands too. (Trivial, split on ",").
+	that.cmdHandler.callCommand(attorgCmd,
+								{ headline: headline });
+  };
+
 
   this.openCloseHeadlineEvent = function(event) {
     var i = that._getHeadlineIxForButtonEvent( event );
