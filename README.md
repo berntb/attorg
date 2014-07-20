@@ -10,11 +10,11 @@ From the choosen name, the obvious goal is less to replace Org Mode, more to hav
 Notes
 -----
 
-Attorg is far from done and is a bit stalled, since it now really needs lots of love from someone with taste -- both in the UI and the UX department. I don't know any Emacs users with those skills.
+Attorg is far from done and is a bit stalled, since it now really needs lots of love from someone with taste -- both in the UI and the UX department. I don't know any Emacs users with those skills. I went to templates on the user side, to make this less painful.
 
-Attorg use the Perl Dancer framework server side and on the client side jQuery, Twitter Bootstrap and Font Awesome.
+Attorg use the Perl Dancer framework server side and on the client side jQuery, Twitter Bootstrap 2.3.2 and Font Awesome.
 
-This upload is probably not really possible to clone -- it is done in a hurry, because I promised. I'll try to clean this up some of the coming weekends.
+This upload is probably still not possible to clone -- it is done in a hurry, because I promised. I'll try to clean this up some of the coming weekends.
 
 License
 -------
