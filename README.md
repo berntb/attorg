@@ -14,7 +14,7 @@ Attorg is far from done and is a bit stalled, since it now really needs lots of 
 
 Attorg use the Perl Dancer framework server side and on the client side jQuery, Twitter Bootstrap 2.3.2 and Font Awesome.
 
-This upload is probably still not possible to clone -- it is done in a hurry, because I promised. I'll try to clean this up some of the coming weekends.
+This upload is probably still not possible to clone -- it is too early, done in a hurry, because I promised.
 
 License
 -------
