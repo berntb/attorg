@@ -12,7 +12,9 @@ Notes
 
 Attorg is far from done and is a bit stalled, since it now really needs lots of love from someone with taste -- both in the UI and the UX department. I don't know any Emacs users with those skills. I went to templates on the user side, to make this less painful.
 
-Attorg use the Perl Dancer framework server side and on the client side jQuery, Twitter Bootstrap 2.3.2 and Font Awesome.
+Attorg use the Perl Dancer framework server side and on the client side jQuery, Twitter Bootstrap 2.3.2 and Font Awesome. It should probably be moved to Bootstrap 3 only.
+
+The most important part of the infrastructure is the Org::Parser from CPAN, from the ever productive Mr Steven Haryanto. Thanks!
 
 This upload is probably still not possible to clone -- it is too early, done in a hurry, because I promised.
 
