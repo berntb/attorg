@@ -72,6 +72,7 @@ sub trav {
   if ($el->isa('Org::Document')) {
     push @$store, { document    => 1,
                     todo_states => $el->todo_states,
+                    tags        => $el->tags,
                     done_states => $el->done_states,
                     priorities  => $el->priorities,
                     drawer_names=> $el->drawer_names,
@@ -89,9 +90,11 @@ sub trav {
                   # is_done   => $el->is_done ? 1 : 0,
                   # todo_state=> $el->todo_state // '',
                 };
-  $hdr_spec->{todo_state} = $el->todo_state
+  $hdr_spec->{tags}      = $el->tags
+    if $el->tags && length($el->tags);
+  $hdr_spec->{todo_state}= $el->todo_state
     if $el->todo_state && length($el->todo_state);
-  $hdr_spec->{priority} = $el->priority
+  $hdr_spec->{priority}  = $el->priority
 	  if $el->priority;
 
   push @$store, $hdr_spec;
