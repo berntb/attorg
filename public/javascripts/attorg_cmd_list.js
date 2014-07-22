@@ -184,6 +184,7 @@ function OrgAddKeyCmds(cmdHandler) {
       if (keycode === 38 && !ctrl)
         return false;         // Don't use 'up' in Block
 
+	  // Negative number prefix? Go other way
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MoveNext',
 								{
@@ -195,8 +196,19 @@ function OrgAddKeyCmds(cmdHandler) {
 								});
 	  }
 
-      // Just go to Title:
-      this.controller.view.setFocusTitle( headline );
+      // If this is config, go to previous (no title text):
+	  if (headline.is_config())
+		return this.callCommand('MovePrevious',
+								{
+								  charEvent: true,
+								  event:      event,
+								  headline:   headline,
+								  isBlock:    false,
+								  numericalPrefix: 1
+								});
+
+	  // Just go to Title of this:
+	  this.controller.view.setFocusTitle( headline );
       return true;
 	}
   });
@@ -316,12 +328,49 @@ function OrgAddKeyCmds(cmdHandler) {
 
 
   cmdHandler.addACommand({
-	name:  "MoveTreeUp",				// "M-up"
+	name:  "HeadlineUp",	// ("M-up")
 	docum: "Description",
 
-	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+	// XXXX Implement moving multiple lines with C-U
+
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+				   number) {
+
+      this.controller.moveHeadlineUp( headline ); // Move single headline:
+	  return true;
+	}
+  });
+
+  cmdHandler.addACommand({
+	name:  "MoveTreeUp",		// "M-S-up"
+	docum: "Description",
+
+	// XXXX Must open/close better. Confused with open arrows if moves:
+	// * A
+	// * B moved up, then down
+	// ** C
+	// ** D
+
+	// XXXX Implement moving multiple lines with C-U
+
+	// XXXX Need to split this into two, so can use as command
+	// names. (For menu use, M-X, etc.)
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+				   number) {
       var ix = headline.index;
-      if (event.shiftKey) {
+	  // Name this one 'HeadlineUp' and then have:
+	  // if (charEvent && event.shiftKey) {
+	  //   return this.callCommand('MoveTreeUp',
+	  // 						  {
+	  // 							charEvent: true,
+	  // 							event:      event,
+	  // 							headline:   headline,
+	  // 							isBlock:    block_p,
+	  // 							numericalPrefix: number
+	  // 						  });
+	  // }
+      if (charEvent && event.shiftKey) {
+
         // Just temp to test:
         var thisTree  = headline.findSubTree();
         var prevTree  = headline.findPrevSubTree();
@@ -330,6 +379,7 @@ function OrgAddKeyCmds(cmdHandler) {
 											thisTree[1]         // After this
                                );
       } else
+		console.log("XXXXXXXXX FAIL");
         this.controller.moveHeadlineUp( headline ); // Move single headline:
       return true;
 	}
@@ -365,9 +415,30 @@ function OrgAddKeyCmds(cmdHandler) {
 	name:  "DelHeadline",
 	docum: "Description",
 
+	// XXXX Support C-U number!1
+
 	// Puts mark on whole Headline
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      console.log("In DelHeadline");
+
+	  var model    = this.controller.model;
+	  var view     = this.controller.view;
+
+      if (headline.visible_children() !== 'all_visible')
+		// && (headline.level() === 1 || i === 0) ) Too many cases for now
+		// Show kids -- they'll even disappear(!) if at first place...
+		headline.change_children_visible(true);
+
+      view.delete_headline( headline );
+      headline.delete();
+
+      if (model.length > 0)
+		this.controller._updateOpenCloseAroundChanged(i ? i-1 : 0);
+
+	  if (charEvent) {
+		// XXXXX
+		// Open editing for next visible Headline!!
+	  }
+
 	  return true;
 	}
   });
@@ -688,7 +759,8 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("ShiftRight",   "M-right");
   cmdHandler.addKeyCommand("ShiftRight",   "M-S-right");
 
-  cmdHandler.addKeyCommand("MoveTreeUp",   "M-up");
+  cmdHandler.addKeyCommand("HeadlineUp",   "M-up");
+  cmdHandler.addKeyCommand("MoveTreeUp",   "M-S-up");
   cmdHandler.addKeyCommand("MoveTreeDown", "M-down");
 
   // XXXX Support shift-up, shift-down on Headline (not block)

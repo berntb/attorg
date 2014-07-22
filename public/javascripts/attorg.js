@@ -280,7 +280,7 @@ var OrgController = function(model, view, commandHandler,
     div.on('click',   '.update-cmd',      this.updateCommandEvent);
     div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
 
-    div.on('click',   '.delete-header',   this.deleteHeadingEvent);
+    // div.on('click',   '.delete-header',   this.deleteHeadingEvent);
 
 	// Rotate value of TODO-text:
 	div.on('click',   '.todo-spec',       this.todoRotateEvent);
@@ -622,12 +622,15 @@ var OrgController = function(model, view, commandHandler,
   // XXXXX MOVE ALL MENU COMMANDS INTO THIS FORMAT!!
   // (But do consider that all implemented commands can be sent 
   this.handleMenuCommand  = function(event) {
+	// XXXX Disallow most commands (change level etc) for config
+	// statements!!
+
     // (Sigh, put ID:s in a few more Elements??)
     var headline  = that._headlineFromMenuEvent(event);
-	var attorgCmd = $(event.target).attr("data_command");
+	var attorgCmd = $(event.target).attr("data-command");
 	console.log(event);
-	console.log("Event target:" + event.target.data_command);
-	console.log("Att:" + menuCommand);
+	console.log("Event target:" + event.target["data-command"]);
+	console.log("Att:" + attorgCmd);
 
 	// XXXX Should I add C-U number prefixes here??
 	// When needed, allow a series of commands too. (Trivial, split on ",").
@@ -707,34 +710,16 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
-  this.deleteHeadingEvent = function(event) {
-    // (Sigh, put ID:s in a few more Elements??)
-    var headline = that._headlineFromMenuEvent(event);
-    var i        = headline.index;
-
-    // XXXX Modal query if really want to delete?
-    // (Better -- add 'undo' in the next version.)
-
-    if (headline.visible_children() !== 'all_visible')
-      // && (headline.level() === 1 || i === 0) ) Too many cases for now
-      // Show kids -- they'll even disappear(!) if at first place...
-      headline.change_children_visible(true);
-
-    that.view.delete_headline( headline );
-    headline.delete();
-
-    if (that.model.length > 0)
-      that._updateOpenCloseAroundChanged(i ? i-1 : 0);
-  };
-
-
   this.dblClickHeadingEvent = function(event) {
     var i = that._getHeadlineIxForButtonEvent( event );
     var headline = that.model.headline(i);
 
     if (! that.view.has_headline_edit_on(headline)) {
       that.view.render_edit_headline(i, headline);
-      that.view.setSelectTitle( headline );
+	  if (headline.is_config())
+		that.view.setFocusBlock( headline );
+	  else
+		that.view.setSelectTitle( headline );
     }
   };
 
@@ -982,7 +967,7 @@ var OrgController = function(model, view, commandHandler,
     if (! that.view.has_headline_edit_on(nextHeadline))
       that.view.render_edit_headline(goIx, nextHeadline);
 
-    if (focusOnBlock)
+    if (focusOnBlock || nextHeadline.is_config() )
       this.view.setFocusBlock( nextHeadline );
     else
       this.view.setFocusTitle( nextHeadline );

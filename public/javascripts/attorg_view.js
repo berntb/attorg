@@ -216,7 +216,8 @@ var OrgView = function(document_div_id, divid_headlines) {
 		todo_spec: _.escape(todo),
 		// Kludge for setting (Bootstrap) color:
 		color_text: levelColors[level],
-		title: headline.title_html(),
+		title: headline.is_config() ? "--CONFIG--" : headline.title_html(),
+		config: headline.is_config(),
 		block: block_html,
 		priority: headline.priority(),
 		hiliteRegex: this.getHighlightRegex(),
@@ -261,6 +262,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 		block_text: _.escape(text_block),
 		// Move into Template??
 		level: level,
+		config: headline.is_config(),
 		level_select_options: _make_level_select_help(level),
 		todo_select_options: _make_todo_select_help(headline,
 													all_todo_done_states),

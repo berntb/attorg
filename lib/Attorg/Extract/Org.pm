@@ -82,6 +82,21 @@ sub trav {
     }
   }
 
+  # say STDERR "GOT HEADING TYPE ", ref($el);
+  if ($el->isa('Org::Element::Setting')) {
+	my $cfg = { level     => 1,
+				config    => 1,
+				block     => $el->_str(),
+			  };
+
+	# This is parsed and handled by Org::Parser
+	push @$store, $cfg;
+
+	# No kids allowed to this, for now.
+	return;
+  }
+
+
   return                          if ! $el->isa('Org::Element::Headline');
 
   my $hdr_spec= { level     => $el->level,
@@ -129,8 +144,11 @@ sub trav {
   return                                 if ! exists $el->{children};
 
   my @blocks;
+  my $present_config_statement;
   for my $kid (@{$el->{children}}) {
-    if ($kid->isa('Org::Element::Headline')) {
+	my $type  = ref($kid);
+
+    if ($type eq 'Org::Element::Headline') {
 	  trav($kid, $store, $indent + 2);
 	  next;
     }
@@ -138,10 +156,41 @@ sub trav {
     # (This will always come before the Headline kids, so a straight
     # print will work for testing. Neat.)
     # XXXX Need to do special handling for any types??
-	my $block = [ ref($kid), $kid->as_string() ];
-	if (ref($kid) eq "Org::Element::Text") {
-		my $style = $kid->style();
-		push @$block, $style             if $style && length($style);
+
+	# Configuration.
+	# (Org::Parser handles this itself. Just make it a fake headline.)
+	if ($type eq 'Org::Element::Setting') {
+	  # XXXX
+	  # Should add limitation -- the next Headline must be level 1?
+	  # (Or add an empty level 1 if there are levels > 1 after a Config
+	  #  statement?)
+	  # For now, if someone has config options between \*\*+ and \*\*+
+	  # they should get motivation to fix it... :-)
+	  my $cfg = { level     => 1,
+				  config    => 1,
+				  block     => $kid->_str(),
+			  };
+
+	  # N B -- adds extra Headline here. Kludge, kludge.
+	  push @$store, $cfg;
+	  $present_config_statement = $cfg;
+	  next;
+	}
+
+	if ($present_config_statement) {
+	  if ($type eq "Org::Element::Text") {
+		# Save text as part of extra config statement:
+		$present_config_statement->{block} .= $kid->as_string;
+		next;
+	  } else {
+		$present_config_statement = undef;
+	  }
+	}
+
+	my $block = [ $type, $kid->as_string() ];
+	if ($type eq "Org::Element::Text") {
+	  my $style = $kid->style();
+	  push @$block, $style             if $style && length($style);
 	}
 
     push @blocks, $block;

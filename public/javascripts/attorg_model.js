@@ -149,16 +149,17 @@ var OrgModelSuper = function(documentName, org_data,
   function _make_headline_from_data_structure(spec) {
 	// XXXX Need to handle sub parts of title/block.
 	return headline_data = {
-      level: (spec.level ? spec.level : 1),
-      todo_state: (spec.todo_state ? spec.todo_state : ''),
-      title_text: (spec.title_text ? spec.title_text : ''),
-      block: (spec.block ? spec.block : ''),
-      tags: (spec.tags ? spec.tags : ''),
+	  level:  (spec.level ? spec.level : 1),
+	  config: (spec.config ? true : false ),
+	  todo_state: (spec.todo_state ? spec.todo_state : ''),
+	  title_text: (spec.title_text ? spec.title_text : ''),
+	  block: (spec.block ? spec.block : ''),
+	  tags: (spec.tags ? spec.tags : ''),
 	  priority: (spec.priority ? spec.priority : ''),
 	  title_subs: spec.title_subs,
 	  block_parts: spec.block_parts, // Should have same name as title part
 	  block_indent: spec.block_indent ? spec.block_indent : 0,
-    };
+	};
   }
 
   this.new_headline = function(ix, spec) {
@@ -465,6 +466,13 @@ OrgHeadline.prototype = {
     return level;
   },
 
+
+  is_config: function() {
+	if (arguments.length > 0) {
+      this.headline.config = arguments[0] ? true : false;
+    }
+    return this.headline.config;
+  },
 
   // ------------------------------------------------------------
   // Has local changes been done, not yet parsed by server?

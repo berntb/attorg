@@ -146,24 +146,20 @@
 			  Cmds<i class="icon-large icon-caret-down"></i>
 			</a>
 			<ul class="dropdown-menu">
-			  <li>
-				<a class=""><i class="icon-coffee"></i> Not implemented yet:
-				</a>
-			  </li>
 			  <!-- Move all commands over to this format: -->
 			  <li>
-				<a class="attorg-menu-cmd" data_command="DelHeadline">
+				<a class="attorg-menu-cmd" data-command="DelHeadline">
 				  <i class="icon-trash"></i> Delete
 				</a>
 			  </li>
+			  <li>
+				<a class="attorg-menu-cmd"  data-command="MoveHeadlineUp">
+				  <i class="icon-angle-up"></i> Move Up
+				</a>
+			  </li>
+
 			  <li class="divider"></li>
 
-			  <li>
-				<a class="delete-header">
-				  <i class="icon-trash"></i> Delete
-				</a>
-			  </li>
-			  <li class="divider"></li>
 			  <li>
 				<a class="move-header-up">
 				  <i class="icon-angle-up"></i> Move Up
@@ -217,8 +213,9 @@
 		</div>
 	  </div>
 	  <div class="span9">
+		<% if (config) console.log("CONFIG!!"); %>
 		<input type="text" value="<%= title_text %>" id="t_<%= id %>"
-			   class="span9 title_edit"><br>
+			   class="span9 title_edit" <%= config ? 'disabled' : '' %>><br>
 <textarea id="b_<%= id %>" cols="73" rows="5" class="span9 block_edit">
 <%= block_text %></textarea>
 	  </div>
