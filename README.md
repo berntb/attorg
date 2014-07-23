@@ -35,6 +35,7 @@ The full TODO list is... well, long. :-) I hope to get Attorg to where it is use
 Here is what I think is the minimum viable feature list still needed to make Attorg useful for browsing Org documents and minimal editing.
 
 + Installability, cough.
++ Documentation. And preferably C-h k, C-h a.
 + It should now be possible to extend Attorg with templates and buttons/menus. The templates needs to be extracted to a separate file and I should ask for best template language to use (presently it is Underscore.js.)
 + The command/key sequence table should be put into a separate file.
 + Data sources should be configurable for users. At least one Git or Dropbox.
