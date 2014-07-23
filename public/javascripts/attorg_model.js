@@ -185,6 +185,44 @@ var OrgModelSuper = function(documentName, org_data,
   }
 
 
+  this.findHeadlinesFrom = function(ix, howMany, loopDirection, testFun) {
+	// Loop up/down list of headlines to find next to fulfill a condition
+	// Returns [index, undefined] if succesful.
+	// Otherwise [last_index, how_many_were_found]
+	// So call it like this:
+	// var foundSpec = model.findHeadlinesFrom(
+	//     offsetIx, 4, function(headline) {
+	//            return headline.visible() ? true : false;
+	//     }
+	// );
+	var number= this.all_data.length;
+
+	var i     = ix;
+	var found = 0;
+	var limit, way, headline;
+	var last  = ix;
+	if (loopDirection > 0)
+	  way     = 1;
+	else
+	  way     = -1;
+	
+	while(true) {
+	  if ( (way < 0 && i == 0) || (way > 0 && i+1 >= number) ) {
+		// Failure
+		return [last, found];
+	  }
+
+	  i      += way;
+	  headline= this.headline(i);
+	  if (testFun(headline)) {
+		if (++found >= howMany)
+		  return [i, undefined];
+		last  = i;
+	  }
+	}
+  };
+
+
   // - - -
   this.moveHeadline = function(ix_from, ix_to, dont_refresh_ids) {
     // N B -- this doesn't do anything with existing objects. Keep

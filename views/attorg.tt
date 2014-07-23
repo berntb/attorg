@@ -153,34 +153,28 @@
 				</a>
 			  </li>
 			  <li>
-				<a class="attorg-menu-cmd"  data-command="MoveHeadlineUp">
-				  <i class="icon-angle-up"></i> Move Up
-				</a>
-			  </li>
-
-			  <li class="divider"></li>
-
-			  <li>
-				<a class="move-header-up">
+				<a class="attorg-menu-cmd"  data-command="HeadlineUp">
 				  <i class="icon-angle-up"></i> Move Up
 				</a>
 			  </li>
 			  <li>
-				<a class="move-header-down">
+				<a class="attorg-menu-cmd" data-command="HeadlineDown">
 				  <i class="icon-angle-down"></i> Move Down
 				</a>
 			  </li>
 			  <li>
-				<a class="move-tree-up">
+				<a class="attorg-menu-cmd" data-command="MoveTreeUp">
 				  <i class="icon-chevron-up"></i> Move Subtree Up
 				</a>
 			  </li>
 			  <li>
-				<a class="move-tree-down">
+				<a class="attorg-menu-cmd" data-command="MoveTreeDown">
 				  <i class="icon-chevron-down"></i> Move Subtree Down
 				</a>
 			  </li>
+
 			  <li class="divider"></li>
+
 			  <li>
 				<a class=""><i class="icon-coffee"></i> Not implemented yet:
 				</a>

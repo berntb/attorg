@@ -256,16 +256,12 @@ var OrgController = function(model, view, commandHandler,
     div.on('click',   '.attorg-menu-cmd', this.handleMenuCommand);
 
 
-    div.on('click',   '.move-header-up',  this.move_up_event);
-    div.on('click',   '.move-header-down',this.move_down_event);
     div.on('click',   '.edit-header',     this.editHeadingEvent);
     div.on('click',   '.add-header',      this.addHeadingEvent);
-    div.on('click',   '.move-tree-up',    this.move_tree_up_event);
-    div.on('click',   '.move-tree-down',  this.move_tree_down_event);
 
     // - - - - - Edit Mode the rest:
 	// (keydown seems more reactive, keypress is better but not
-	//  supported by Chrome (and IE?).
+	//  supported by Chrome (and IE?) -- arrow keys, C-N, etc. :-(
 	//  Sigh... Just support Safari and FF??
 	// )
     div.on('change',  '.lvl_select',      this.levelChangeEvent);
@@ -647,18 +643,6 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
-  this.move_up_event = function(event) {
-    // Needs to set visibile for those it moves around, if e.g. a
-    // 2nd level is moved up above a 3rd level which isn't visible.
-    var headline = that._headlineFromMenuEvent(event);
-    that.moveHeadlineUp( headline );
-  };
-  this.move_down_event = function(event) {
-    var headline = that._headlineFromMenuEvent(event);
-    that.moveHeadlineDown( headline );
-  };
-
-
   this.editHeadingEvent = function(event) {
     var i = that._getHeadlineIxForButtonEvent( event );
     var headline = that.model.headline(i);
@@ -679,34 +663,6 @@ var OrgController = function(model, view, commandHandler,
     level = headline_before.level(); // Set at same level as previous
 
     that._insertAndRenderHeading(i+1, level);
-  };
-
-
-  this.move_tree_up_event = function(event) {
-    var headline = that._headlineFromMenuEvent(event);
-    var thisTree  = headline.findSubTree();
-    var prevTree  = headline.findPrevSubTree();
-    console.log(headline.index + ", tree:" + thisTree );
-    console.log("      PREV:" + prevTree );
-    console.log("      NEXT:" + headline.findNextSubTree());
-    if (prevTree !== undefined && thisTree !== undefined)
-      that.moveHeadlineTree( prevTree[0], prevTree[1], // From
-                             thisTree[1]               // After this
-                           );
-  };
-
-
-  this.move_tree_down_event = function(event) {
-    var headline = that._headlineFromMenuEvent(event);
-    var thisTree  = headline.findSubTree();
-    var nextTree  = headline.findNextSubTree();
-    console.log(headline.index + ", tree:" + thisTree);
-    console.log("      PREV:" + headline.findPrevSubTree());
-    console.log("      NEXT:" + nextTree);
-    if (nextTree !== undefined && thisTree !== undefined)
-      that.moveHeadlineTree( nextTree[0], nextTree[1], // From
-                             thisTree[0]-1             // After this
-                           );
   };
 
 

@@ -14,52 +14,52 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      var view        = this.controller.view;
-      console.log("In headline CR, before meta test");
-      this.controller.updateEditedHeadline(headline);
-      view.close_edit_headline( headline );
-      var ix = headline.index;
-      if (ctrl) {
-        this.controller._insertAndRenderHeading(ix+1, headline.level() );
-        return true;
-      }
-      if (meta) {
-        // XXXX Copy how it is in Emacs??
-        // I.e., if the Headlines subtree is fully closed, M-CR
-        // should open new Headline _after_ the tree. (Don't move
-        // either the block or the text to the right of
-        // the cursor to the new Headline).
-        this.controller._insertAndRenderHeading(ix+1, headline.level() );
-        return true;
-      }
-      return true;
-    },
+	  var view		  = this.controller.view;
+	  console.log("In headline CR, before meta test");
+	  this.controller.updateEditedHeadline(headline);
+	  view.close_edit_headline( headline );
+	  var ix = headline.index;
+	  if (ctrl) {
+		this.controller._insertAndRenderHeading(ix+1, headline.level() );
+		return true;
+	  }
+	  if (meta) {
+		// XXXX Copy how it is in Emacs??
+		// I.e., if the Headlines subtree is fully closed, M-CR
+		// should open new Headline _after_ the tree. (Don't move
+		// either the block or the text to the right of
+		// the cursor to the new Headline).
+		this.controller._insertAndRenderHeading(ix+1, headline.level() );
+		return true;
+	  }
+	  return true;
+	},
 	// Block case:
 	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      console.log("In block CR, before meta test");
-      if (ctrl) {
-        this.controller.updateEditedHeadline(headline);
-        this.controller.view.close_edit_headline( headline );
-        return true;
-      }          
-      if (!meta) return false;
+	  console.log("In block CR, before meta test");
+	  if (ctrl) {
+		this.controller.updateEditedHeadline(headline);
+		this.controller.view.close_edit_headline( headline );
+		return true;
+	  }			 
+	  if (!meta) return false;
 
-      this.controller.updateEditedHeadline(headline);
-      this.controller.view.close_edit_headline( headline );
-      var ix     = headline.index;
-      this.controller._insertAndRenderHeading(ix+1, headline.level() );
-      return true;
-    }
+	  this.controller.updateEditedHeadline(headline);
+	  this.controller.view.close_edit_headline( headline );
+	  var ix	 = headline.index;
+	  this.controller._insertAndRenderHeading(ix+1, headline.level() );
+	  return true;
+	}
   });
 
   cmdHandler.addACommand({
 	name:  "Break",
 	docum: "Description",
 	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      console.log("Skip editing.");
-      this.controller.view.close_edit_headline( headline );
-      return true;
-    }
+	  console.log("Skip editing.");
+	  this.controller.view.close_edit_headline( headline );
+	  return true;
+	}
   });
 
   
@@ -68,57 +68,57 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      var hide_action  = this.controller.updateTreeVisibility( headline );
-      if (!event.shiftKey)
-        return true;
+	  var hide_action  = this.controller.updateTreeVisibility( headline );
+	  if (!event.shiftKey)
+		return true;
 
-      // Difference from Emacs -- just show all after present
-      // position.  (Later -- find out how to do scrolling so
-      // we can keep the present field under editing visible.)
-      var ix           = headline.index;
-      var i;
-      var model        = this.controller.model;
-      var hidden       = false;
-      var shown        = false;
-      var top_headlines= [];
-      for(i = ix+1; i < model.length; i++) {
-        var later_hline= model.headline(i);
-        if (later_hline.visible())
-          shown = true;
-        else
-          hidden = true;
-        if (later_hline.level() === 1)
-          top_headlines.push( later_hline );
-      }
-      // XXXX Should have logic for only showing children??
+	  // Difference from Emacs -- just show all after present
+	  // position.	(Later -- find out how to do scrolling so
+	  // we can keep the present field under editing visible.)
+	  var ix		   = headline.index;
+	  var i;
+	  var model		   = this.controller.model;
+	  var hidden	   = false;
+	  var shown		   = false;
+	  var top_headlines= [];
+	  for(i = ix+1; i < model.length; i++) {
+		var later_hline= model.headline(i);
+		if (later_hline.visible())
+		  shown = true;
+		else
+		  hidden = true;
+		if (later_hline.level() === 1)
+		  top_headlines.push( later_hline );
+	  }
+	  // XXXX Should have logic for only showing children??
 
-      // XXXX BUGGY -- will hide when editing non-level 1!! XXXX
+	  // XXXX BUGGY -- will hide when editing non-level 1!! XXXX
 
-      if (hide_action === 'kids') {
-        // Just one or the other:
-        if (shown && !hidden) {
-          this.controller.updateTreeVisibility( headline, 'hide' );
-          hide_action = 'hide';
-        } else {
-          this.controller.updateTreeVisibility( headline, 'all' );
-          hide_action = 'all';
-        }
-      }
+	  if (hide_action === 'kids') {
+		// Just one or the other:
+		if (shown && !hidden) {
+		  this.controller.updateTreeVisibility( headline, 'hide' );
+		  hide_action = 'hide';
+		} else {
+		  this.controller.updateTreeVisibility( headline, 'all' );
+		  hide_action = 'all';
+		}
+	  }
 
-      if (hide_action === '') {
-        if (hidden === false)
-          hide_action = 'hide';
-        else {
-          hide_action = 'all';
-        }
-      }
+	  if (hide_action === '') {
+		if (hidden === false)
+		  hide_action = 'hide';
+		else {
+		  hide_action = 'all';
+		}
+	  }
 
-      console.log("Shift-TAB action:" + hide_action);
+	  console.log("Shift-TAB action:" + hide_action);
 
-      for(i = 0; i < top_headlines.length; i++)
-        this.controller.updateTreeVisibility(top_headlines[i], hide_action);
-      return true;
-    }
+	  for(i = 0; i < top_headlines.length; i++)
+		this.controller.updateTreeVisibility(top_headlines[i], hide_action);
+	  return true;
+	}
   });
 
 
@@ -126,24 +126,24 @@ function OrgAddKeyCmds(cmdHandler) {
 	name:  "MoveLevelUp",		// ("C-C C-U" style)
 	docum: "Description",
 	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      var model    = this.controller.model;
-      var ix       = headline.index;
-      var level    = headline.level();
+	  var model	   = this.controller.model;
+	  var ix	   = headline.index;
+	  var level	   = headline.level();
 
-      // XXXX FIX, 1/2 written
-      for(var i = ix-1; i >= 0; i--) {
-        var nxtH       = model.headline(i);
-        if (nxtH.level() < level) {
-          // Save and close old Editing:
-          nxtH.visible(true);
-          // XXXXX Anything else here???
+	  // XXXX FIX, 1/2 written
+	  for(var i = ix-1; i >= 0; i--) {
+		var nxtH	   = model.headline(i);
+		if (nxtH.level() < level) {
+		  // Save and close old Editing:
+		  nxtH.visible(true);
+		  // XXXXX Anything else here???
 		   // Should go block or hline??
-          this.controller.saveAndGotoIndex(headline, i);
-          return true;
-        }
-      }
-      // XXXX Move somewhere else??
-      return true;
+		  this.controller.saveAndGotoIndex(headline, i);
+		  return true;
+		}
+	  }
+	  // XXXX Move somewhere else??
+	  return true;
 	}
   });
 
@@ -153,63 +153,67 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
-      var model        = this.controller.model;
-      var ix           = headline.index;
-	  console.log("Move Previous: Got number " + number);
-
 	  // If we have a negative C-U prefix number, make it 'movenext':
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MoveNext',
 								{
 								  charEvent: true,
-								  event:      event,
-								  headline:   headline,
-								  isBlock:    block_p,
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  block_p,
 								  numericalPrefix: -number
 								});
 	  }
 
-      for(var i = ix-1; i >= 0; i--) {
-        if (model.headline(i).visible()) {
-          // Save and close old Editing:
-          this.controller.saveAndGotoIndex(headline, i, true);
-          break;
-        }
-      }
-      return true;
-    },
-    // Block:
+	  var model		   = this.controller.model;
+	  var ix		   = headline.index;
+	  var numOfHlines  = number === undefined ? 1 : number;
+	  var foundSpec	   = model.findHeadlinesFrom(
+		ix, numOfHlines, -1, function(headline) {
+		  return headline.visible() ? true : false;
+		}
+	  );
+	  console.log("FOUND SPEC FROM " + ix + " GOT TO:" + foundSpec);
+	  if (foundSpec[0] != ix)
+		this.controller.saveAndGotoIndex(headline, foundSpec[0], true);
+
+	  return true;
+	},
+	// Block:
 	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
-      if (keycode === 38 && !ctrl)
-        return false;         // Don't use 'up' in Block
+	  if (keycode === 38 && !ctrl)
+		return false;		  // Don't use 'up' in Block
 
 	  // Negative number prefix? Go other way
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MoveNext',
 								{
 								  charEvent: true,
-								  event:      event,
-								  headline:   headline,
-								  isBlock:    block_p,
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  block_p,
 								  numericalPrefix: -number
 								});
 	  }
 
-      // If this is config, go to previous (no title text):
-	  if (headline.is_config())
+	  // If this is config, go to previous (no title text). And if we
+	  // have a numerical prefix, jump so many Headlines (yes, that
+	  // means that C-U 1 C-P goes to previous Headline.)
+	  if (headline.is_config() || number !== undefined)
 		return this.callCommand('MovePrevious',
 								{
 								  charEvent: true,
-								  event:      event,
-								  headline:   headline,
-								  isBlock:    false,
-								  numericalPrefix: 1
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  false,
+								  numericalPrefix: number
 								});
 
 	  // Just go to Title of this:
 	  this.controller.view.setFocusTitle( headline );
-      return true;
+	  
+	  return true;
 	}
   });
 
@@ -223,71 +227,59 @@ function OrgAddKeyCmds(cmdHandler) {
 		return this.callCommand('MovePrevious',
 								{
 								  charEvent: true,
-								  event:      event,
-								  headline:   headline,
-								  isBlock:    block_p,
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  block_p,
 								  numericalPrefix: -number
 								});
 	  }
 
-	  number           = (number === undefined) ? 1 : number;
-	  this.controller.view.setFocusBlock( headline );
-	  if (number === 1)
+	  if (number === undefined) {
+		this.controller.view.setFocusBlock( headline );
 		return true;
+	  }
 
-	  // Call itself, but from block
+	  // Call itself, for Block:
+	  // N B -- C-U 1 goes to next Headline, C-U 2 goes to next-next.
 	  return this.callCommand('MoveNext',
 								{
 								  charEvent: true,
-								  event:      event,
-								  headline:   headline,
-								  isBlock:    true,
-								  numericalPrefix: number-1
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  true,
+								  numericalPrefix: number
 								});
-    },
-    // Block:
+	},
+	// Block:
 	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
-      if (block_p && keycode === 40 && !ctrl)
-        return false;         // Don't use 'down' in Block
+	  if (block_p && keycode === 40 && !ctrl)
+		return false;		  // Don't use 'down' in Block
 
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MovePrevious',
 								{
 								  charEvent: true,
-								  event:      event,
-								  headline:   headline,
-								  isBlock:    block_p,
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  block_p,
 								  numericalPrefix: -number
 								});
 	  }
 
-      // C-N in Block goes to next Visible Headline:
-      var model        = this.controller.model;
-
-	  // XXXX Make some form of extracted operand out of this
-	  // kludge. Looks horribly.
-	  // findNextVisibleAfter(index) ??
-	  // Or repeat a function automatically??
-	  number           = (number === undefined) ? 1 : number;
-	  var i            = headline.index;
-	  var lastFound    = undefined;
-	  while(1) {
-		for(i = i+1; i < model.length; i++) {
-          if (model.headline(i).visible())
-			break;
+	  // C-N in Block goes to next Visible Headline:
+	  var model		   = this.controller.model;
+	  var ix		   = headline.index;
+	  var numOfHlines  = number === undefined ? 1 : number;
+	  var foundSpec	   = model.findHeadlinesFrom(
+		ix, numOfHlines, 1, function(headline) {
+		  return headline.visible() ? true : false;
 		}
-		if (i >= model.length) {
-		  if (lastFound !== undefined)
-			this.controller.saveAndGotoIndex(headline, lastFound, false);
-		  return true;
-		}
-		if (--number <= 0) {
-		  this.controller.saveAndGotoIndex(headline, i, false);
-		  return true;
-		}
-		lastFound      = i;
-	  }
+	  );
+	  console.log("FOUND SPEC FROM " + ix + " GOT TO:" + foundSpec);
+	  if (foundSpec[0] != ix)
+		this.controller.saveAndGotoIndex(headline, foundSpec[0], false);
+	  return true;
 	}
   });
 
@@ -297,15 +289,15 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      if (headline.level() === 1)   return true;          // No change
+	  if (headline.level() === 1)	return true;		  // No change
 
-      if (event.shiftKey) {
-        var tree = headline.findSubTree();
-        this.controller.levelChangeSubtree(tree[0], tree[1], -1);
-      } else {
-        this.controller.levelChange(headline, headline.level()-1 );
-      }
-      return true;
+	  if (event.shiftKey) {
+		var tree = headline.findSubTree();
+		this.controller.levelChangeSubtree(tree[0], tree[1], -1);
+	  } else {
+		this.controller.levelChange(headline, headline.level()-1 );
+	  }
+	  return true;
 	}
   });
 
@@ -315,34 +307,20 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      // If shift, moves the whole subtree.
-      if (event.shiftKey) {
-        var tree = headline.findSubTree();
-        this.controller.levelChangeSubtree(tree[0], tree[1], 1);
-      } else {
-        this.controller.levelChange(headline, headline.level()+1 );
-      }
-      return true;
-	}
-  });
-
-
-  cmdHandler.addACommand({
-	name:  "HeadlineUp",	// ("M-up")
-	docum: "Description",
-
-	// XXXX Implement moving multiple lines with C-U
-
-	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
-				   number) {
-
-      this.controller.moveHeadlineUp( headline ); // Move single headline:
+	  // If shift, moves the whole subtree.
+	  if (event.shiftKey) {
+		var tree = headline.findSubTree();
+		this.controller.levelChangeSubtree(tree[0], tree[1], 1);
+	  } else {
+		this.controller.levelChange(headline, headline.level()+1 );
+	  }
 	  return true;
 	}
   });
 
+
   cmdHandler.addACommand({
-	name:  "MoveTreeUp",		// "M-S-up"
+	name:  "HeadlineUp",		// ("M-up")
 	docum: "Description",
 
 	// XXXX Must open/close better. Confused with open arrows if moves:
@@ -351,37 +329,42 @@ function OrgAddKeyCmds(cmdHandler) {
 	// ** C
 	// ** D
 
+	autoMove: true,				// XXXX Implement
+
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+	  this.controller.moveHeadlineUp( headline ); // Move single headline:
+	  return true;
+	}
+  });
+  cmdHandler.addACommand({
+	name:  "HeadlineDown",		// ("M-down")
+	docum: "Description",
+
+	autoMove: true,				// XXXX Implement
+
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+	  this.controller.moveHeadlineDown( headline ); // Move single headline:
+	  return true;
+	}
+  });
+
+  cmdHandler.addACommand({
+	name:  "MoveTreeUp",		// "M-S-up"
+	docum: "Description",
+
 	// XXXX Implement moving multiple lines with C-U
 
 	// XXXX Need to split this into two, so can use as command
 	// names. (For menu use, M-X, etc.)
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 				   number) {
-      var ix = headline.index;
-	  // Name this one 'HeadlineUp' and then have:
-	  // if (charEvent && event.shiftKey) {
-	  //   return this.callCommand('MoveTreeUp',
-	  // 						  {
-	  // 							charEvent: true,
-	  // 							event:      event,
-	  // 							headline:   headline,
-	  // 							isBlock:    block_p,
-	  // 							numericalPrefix: number
-	  // 						  });
-	  // }
-      if (charEvent && event.shiftKey) {
-
-        // Just temp to test:
-        var thisTree  = headline.findSubTree();
-        var prevTree  = headline.findPrevSubTree();
-        if (prevTree !== undefined && thisTree !== undefined)
-          this.controller.moveHeadlineTree( prevTree[0], prevTree[1], // From
-											thisTree[1]         // After this
-                               );
-      } else
-		console.log("XXXXXXXXX FAIL");
-        this.controller.moveHeadlineUp( headline ); // Move single headline:
-      return true;
+	  var thisTree	= headline.findSubTree();
+	  var prevTree	= headline.findPrevSubTree();
+	  if (prevTree !== undefined && thisTree !== undefined)
+		this.controller.moveHeadlineTree( prevTree[0], prevTree[1], // From
+										  thisTree[1]		  // After this
+										);
+	  return true;
 	}
   });
 
@@ -391,19 +374,13 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      if (event.shiftKey) {
-        var thisTree  = headline.findSubTree();
-        var nextTree  = headline.findNextSubTree();
-        if (nextTree !== undefined && thisTree !== undefined)
-          this.controller.moveHeadlineTree( nextTree[0], nextTree[1], // From
-											thisTree[0]-1       // After this
-								  );
-      } else {
-        // (Yeah, not really org-mode to move a single Headline by
-        // default and the whole tree with shift-M-down.)
-        this.controller.moveHeadlineDown( headline );
-      }
-      return true;
+	  var thisTree	= headline.findSubTree();
+	  var nextTree	= headline.findNextSubTree();
+	  if (nextTree !== undefined && thisTree !== undefined)
+		this.controller.moveHeadlineTree( nextTree[0], nextTree[1], // From
+										  thisTree[0]-1		  // After this
+										);
+	  return true;
 	}
   });
 
@@ -420,18 +397,18 @@ function OrgAddKeyCmds(cmdHandler) {
 	// Puts mark on whole Headline
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 
-	  var model    = this.controller.model;
-	  var view     = this.controller.view;
+	  var model	   = this.controller.model;
+	  var view	   = this.controller.view;
 
-      if (headline.visible_children() !== 'all_visible')
+	  if (headline.visible_children() !== 'all_visible')
 		// && (headline.level() === 1 || i === 0) ) Too many cases for now
 		// Show kids -- they'll even disappear(!) if at first place...
 		headline.change_children_visible(true);
 
-      view.delete_headline( headline );
-      headline.delete();
+	  view.delete_headline( headline );
+	  headline.delete();
 
-      if (model.length > 0)
+	  if (model.length > 0)
 		this.controller._updateOpenCloseAroundChanged(i ? i-1 : 0);
 
 	  if (charEvent) {
@@ -451,7 +428,7 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	// Puts mark on whole Headline
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      console.log("In SetMark");
+	  console.log("In SetMark");
 	  return true;
 	}
   });
@@ -462,10 +439,10 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Rotate the value of the TODO",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      console.log("In TodoRotate");
+	  console.log("In TodoRotate");
 
 	  var todoNow  = headline.todo();
-	  var model    = this.controller.model;
+	  var model	   = this.controller.model;
 	  var all_todo_done_states = model.all_todo_done_states();
 	  var i = -1;
 	  if (todoNow !== '') {
@@ -479,7 +456,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  if (i >= all_todo_done_states.length)
 		newState = '';
 	  else
-		newState =  all_todo_done_states[i];
+		newState =	all_todo_done_states[i];
 
 	  console.log("New state " + newState);
 	  headline.todo(newState);
@@ -510,7 +487,7 @@ function OrgAddKeyCmds(cmdHandler) {
 		this.setPrefixValue('4');
 	  }
 
-	  var handlerObj =  this;
+	  var handlerObj =	this;
 	  this.setCharacterFilter(
 		function(charEvent) {
 		  var ctrlKey  = event.ctrlKey;
@@ -520,24 +497,24 @@ function OrgAddKeyCmds(cmdHandler) {
 			flagNoCharsYet = false;
 			var existingValue = handlerObj.getPrefixValue();
 			var newValue = parseInt(existingValue, 10) * 4;
-		  	handlerObj.setPrefixValue( newValue.toString() );
-		  	return true;
+			handlerObj.setPrefixValue( newValue.toString() );
+			return true;
 		  }
 		  if (flagNoCharsYet && inChar === '-') {
-		  	flagNoCharsYet = false;
-		  	handlerObj.setPrefixValue('-');
-		  	return true;
+			flagNoCharsYet = false;
+			handlerObj.setPrefixValue('-');
+			return true;
 		  }
 		  // N B -- this doesn't check if 
 		  if (inChar >= '0' && inChar <= '9') {
-		  	if (flagNoCharsYet) {
-		  	  flagNoCharsYet = false;
-		  	  handlerObj.setPrefixValue(inChar);
-		  	} else
+			if (flagNoCharsYet) {
+			  flagNoCharsYet = false;
+			  handlerObj.setPrefixValue(inChar);
+			} else
 			  handlerObj.setPrefixValue(handlerObj.getPrefixValue() + inChar);
 
 			// console.log("C-U " + handlerObj.getPrefixValue());
-		  	return true;		// Means -- took this char.
+			return true;		// Means -- took this char.
 		  }
 
 		  // No more collecting characters:
@@ -557,28 +534,28 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	text: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      console.log("In headline CR, before meta test");
-      this.controller.updateEditedHeadline(headline);
-      this.controller.view.close_edit_headline( headline );
-      var ix = headline.index;
-      if (ctrl) {
-        this.controller._insertAndRenderHeading(ix+1, headline.level() );
-        return true;
-      }
-      if (meta) {
-        // XXXX Copy how it is in Emacs??
-        // I.e., if the Headlines subtree is fully closed, M-CR
-        // should open new Headline _after_ the tree. (Don't move
-        // either the block or the text to the right of
-        // the cursor to the new Headline).
-        this.controller._insertAndRenderHeading(ix+1, headline.level() );
-        return true;
-      }
-      return true;
-    },
+	  console.log("In headline CR, before meta test");
+	  this.controller.updateEditedHeadline(headline);
+	  this.controller.view.close_edit_headline( headline );
+	  var ix = headline.index;
+	  if (ctrl) {
+		this.controller._insertAndRenderHeading(ix+1, headline.level() );
+		return true;
+	  }
+	  if (meta) {
+		// XXXX Copy how it is in Emacs??
+		// I.e., if the Headlines subtree is fully closed, M-CR
+		// should open new Headline _after_ the tree. (Don't move
+		// either the block or the text to the right of
+		// the cursor to the new Headline).
+		this.controller._insertAndRenderHeading(ix+1, headline.level() );
+		return true;
+	  }
+	  return true;
+	},
 	// Block case:
 	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-      if (ctrl) {
+	  if (ctrl) {
 		console.log("In headline CR, before meta test");
 		this.controller.updateEditedHeadline(headline);
 		this.controller.view.close_edit_headline( headline );
@@ -679,7 +656,7 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	  return true;
 	},
-  	block: function() {
+	block: function() {
 	  return false;				// Do nothing in block
 	}
   });
@@ -731,49 +708,48 @@ function OrgAddKeyCmds(cmdHandler) {
 
   // XXXX If no control/meta, should 'shift-A' be same as 'A'??
 
-  // cmdHandler.addKeyCode("X-return",    "X-CR");
-  // cmdHandler.addKeyCode("Break",       "C-G");
+  // cmdHandler.addKeyCode("X-return",	  "X-CR");
+  // cmdHandler.addKeyCode("Break",		  "C-G");
 
-  cmdHandler.addKeyCommand("Return",       "CR,, C-CR,, M-CR");
+  cmdHandler.addKeyCommand("Return",	   "CR,, C-CR,, M-CR");
   // This should open a new Headline after any subs of lower level
   // cmdHandler.addKeyCommand("controlReturn","C-CR");
-  cmdHandler.addKeyCommand("Break",        "C-G");
-  cmdHandler.addKeyCommand("OpenClose",    "TAB,, S-TAB,, M-S-TAB");
+  cmdHandler.addKeyCommand("Break",		   "C-G");
+  cmdHandler.addKeyCommand("OpenClose",	   "TAB,, S-TAB,, M-S-TAB");
   cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-U");
-  cmdHandler.addKeyCommand("MovePrevious", "C-C C-P,, C-P,, up");
-  cmdHandler.addKeyCommand("MovePrevious", "C-up");
-  cmdHandler.addKeyCommand("MoveNext",     "C-N,, down,, C-down");
+  cmdHandler.addKeyCommand("MovePrevious", "C-C C-P,, C-P,, up,, C-up");
+  cmdHandler.addKeyCommand("MoveNext",	   "C-N,, down,, C-down");
 
   // Lots of keyboards needs shift to write '<', so... :-(
-  cmdHandler.addKeyCommand("ScrollTop",     "M-<,, S-M-<");
-  cmdHandler.addKeyCommand("ScrollBot",     "M->,, S-M->");
+  cmdHandler.addKeyCommand("ScrollTop",		"M-<,, S-M-<");
+  cmdHandler.addKeyCommand("ScrollBot",		"M->,, S-M->");
 
   // Set Mark, C-X C-X, [copy/paste??]
-  cmdHandler.addKeyCommand("SetMark",      "C-space");
+  cmdHandler.addKeyCommand("SetMark",	   "C-space");
 
   cmdHandler.addKeyCommand("TodoRotate",   "C-C C-T");
 
 
-  cmdHandler.addKeyCommand("ShiftLeft",    "M-left");
-  cmdHandler.addKeyCommand("ShiftLeft",    "M-S-left");
+  cmdHandler.addKeyCommand("ShiftLeft",	   "M-left");
+  cmdHandler.addKeyCommand("ShiftLeft",	   "M-S-left");
   cmdHandler.addKeyCommand("ShiftRight",   "M-right");
   cmdHandler.addKeyCommand("ShiftRight",   "M-S-right");
 
   cmdHandler.addKeyCommand("HeadlineUp",   "M-up");
+  cmdHandler.addKeyCommand("HeadlineDown", "M-down");
   cmdHandler.addKeyCommand("MoveTreeUp",   "M-S-up");
-  cmdHandler.addKeyCommand("MoveTreeDown", "M-down");
+  cmdHandler.addKeyCommand("MoveTreeDown", "M-S-down");
 
   // XXXX Support shift-up, shift-down on Headline (not block)
   // too. (S-down goes from highest priority to lower.)
-  cmdHandler.addKeyCommand("HighPrio",     "C-C , A,, C-C , S-A");
+  cmdHandler.addKeyCommand("HighPrio",	   "C-C , A,, C-C , S-A");
   cmdHandler.addKeyCommand("MediumPrio",   "C-C , B,, C-C , S-B");
-  cmdHandler.addKeyCommand("LowPrio",      "C-C , C,, C-C , S-C");
-  cmdHandler.addKeyCommand("ClearPrio",    "C-C , \\ ");
-  cmdHandler.addKeyCommand("PrioLower",    "S-up");
+  cmdHandler.addKeyCommand("LowPrio",	   "C-C , C,, C-C , S-C");
+  cmdHandler.addKeyCommand("ClearPrio",	   "C-C , \\ ");
+  cmdHandler.addKeyCommand("PrioLower",	   "S-up");
   cmdHandler.addKeyCommand("PrioHigher",   "S-down");
 
   cmdHandler.addKeyCommand("DelHeadline",  "C-K");
-  
 
 
   cmdHandler.addKeyCommand("NumberPrefix", "C-U");

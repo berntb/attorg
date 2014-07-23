@@ -85,8 +85,8 @@ var OrgCmdMapper = function() {
 	var numericalHandling = spec.numericalAsMultipleCalls;
 
 	var funs = [fun.bind(this)];
-	if (blockFun)
-	  console.log("-----------------\nCMD: " + name + " has blockfun!");
+	// if (blockFun)
+	//   console.log("-----------------\nCMD: " + name + " has blockfun!");
 	if (blockFun)
 	  funs.push( blockFun.bind(this) );
 
