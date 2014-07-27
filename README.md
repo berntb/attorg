@@ -3,7 +3,7 @@ Attorg
 
 This open source project is an attempt to make a simple JavaScript implementation of a subset of Org Mode for Emacs. My exact use case was to browse my Org notes on my iPad, or on a borrowed computer, without using an ssh client.
 
-The name comes from Atto Org.
+The name comes from Atto Org. A small subset of Org Mode in a GUI style, but with most of the key commands.
 
 From the choosen name, the obvious goal is less to replace Org Mode, more to have something usable from a generic web browser. At most, it is hoped this could become a gateway drug for Emacs... :-)
 
@@ -26,21 +26,24 @@ Chrome doesn't allow a program to get characters like control-N, control-T, meta
 
 This is tested on FireFox for now and I'll check it with Safari on Mac and iPad (probably with external keyboard) before I deem it useful. (I don't have a Windows installation nearby but will try to find something to test it with.)
 
+This is my project to learn JavaScript "for real", a lot has been rewritten/refactored more than once. (Lots of places don't even use CamelCase.) The code could fit in better with JavaScript Best Practices. Feedback appreciated!
+
 
 When is this usable?
 --------------------
 
-The full TODO list is... well, long. :-) I hope to get Attorg to where it is useful, so other people will contribute.
+I hope to get Attorg to where it is useful, so other people will contribute.
+
+The full TODO list is... well, long and growing. :-)
 
 Here is what I think is the minimum viable feature list still needed to make Attorg useful for browsing Org documents and minimal editing.
 
 + Installability, cough.
 + Documentation. And preferably C-h k, C-h a.
-+ It should now be possible to extend Attorg with templates and buttons/menus. The templates needs to be extracted to a separate file and I should ask for best template language to use (presently it is Underscore.js.)
-+ The command/key sequence table should be put into a separate file.
-+ Data sources should be configurable for users. At least one Git or Dropbox.
-+ Saving(!) is needed.
-+ Agendas should be done by starting a subprocess of Emacs.
++ It should now be possible to extend Attorg with templates and buttons/menus. The templates needs to be extracted to a separate file maybe the template language should be replaced (presently Underscore.js is used.)
++ The command/key sequences should be put into a separate configuration file or in the GUI.
++ Saving(!) is needed. A couple of data sources should be configurable for users. At least one of Git or Dropbox.
++ Agendas, probably just by an Emacs process.
 + Tags.
 + More search support.
 
