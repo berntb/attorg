@@ -264,7 +264,6 @@ var OrgController = function(model, view, commandHandler,
 	//  Sigh... Just support Safari and FF??
 	// )
     div.on('change',  '.lvl_select',      this.levelChangeEvent);
-    div.on('change',  '.todo_select',     this.todoChangeEvent);
 
 	// div.on('keypress','.title_edit',      this.handleTitleKeyEvent);
     // div.on('keypress','.block_edit',      this.handleBlockKeyEvent);
@@ -276,9 +275,6 @@ var OrgController = function(model, view, commandHandler,
     div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
 
     // div.on('click',   '.delete-header',   this.deleteHeadingEvent);
-
-	// Rotate value of TODO-text:
-	div.on('click',   '.todo-spec',       this.todoRotateEvent);
 
 	// Internal links:
 	div.on('click',   '.internal_link',   this.jumpToLink);
@@ -583,33 +579,6 @@ var OrgController = function(model, view, commandHandler,
       that.levelChange(headline, val);
   };
 
-
-  this.todoChangeEvent = function(event) {
-    var model_str_id = this.id.slice(3);
-    var i = that.model.get_ix_from_id_string( model_str_id );
-    var headline = that.model.headline(i);
-    // alert( model_str_id + ", " + headline.todo() + " --> " +
-    //        this.value);
-
-	console.log("New todo " + this.value);
-    if ( this.value !== headline.todo() ) {
-      headline.todo( this.value );
-      // that.model.dirty(i, 'todo');
-      that.view.render_headline( headline, true, true );
-    }
-  };
-
-  this.todoRotateEvent = function(event) {
-	var model_str_id = $(this).parent().parent().attr('id').slice(3);
-	console.log(model_str_id);
-	console.log(_.keys(model_str_id));
-    var i = that.model.get_ix_from_id_string( model_str_id );
-    var headline = that.model.headline(i);
-
-	that.cmdHandler.callCommand("TodoRotate",
-								{ headline: headline });
-
-  };
 
   // ------------------------------------------------------------
   // non-Edit button events:
@@ -1079,6 +1048,7 @@ var OrgController = function(model, view, commandHandler,
 	  // - - - Update!
 	  // XXXX Most of this is repeated from the Model! Fix.
 	  var data = JSON.parse(reply);
+	  // console.log(data);
 	  headline.modified_locally(undefined);
 
 	  // console.log(data);
@@ -1093,6 +1063,11 @@ var OrgController = function(model, view, commandHandler,
 	  // This might also be updated:
 	  if (data.title_text)
 		headline.title(data.title_text);
+
+	  // XXXX THIS NEEDS THAT TODO STATE IS SENT ALONG TO SERVER FOR
+	  // PARSING!  NOW IT ONLY WORKS WITH BUILT IN TODO STATES!
+	  if (data.todo_state)
+		headline.todo(data.todo_state);
 	  
 	  that.view.render_headline( headline );
 	};

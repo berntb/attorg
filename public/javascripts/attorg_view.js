@@ -212,7 +212,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 		hide_prefix: hide_headline_html_prefix,
 		level: level,
 		subtree_open_closed: this._make_open_close_button(visible_kids),
-		level_spec: "************".substring(0, level),
+		level_spec: headline.asterisks(),
 		todo_spec: _.escape(todo),
 		// Kludge for setting (Bootstrap) color:
 		color_text: levelColors[level],
@@ -264,8 +264,6 @@ var OrgView = function(document_div_id, divid_headlines) {
 		level: level,
 		config: headline.is_config(),
 		level_select_options: _make_level_select_help(level),
-		todo_select_options: _make_todo_select_help(headline,
-													all_todo_done_states),
 	  }) ;
   };
 
@@ -507,53 +505,6 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  'id="' + level_id + '">' + _level_generated[level];
   };
 
-  // - - - Make TODO-select HTML:
-  var _todo_generated = [];
-
-  function _make_todo_select_help(headline, all_todo_done_states) {
-
-	var present_state = headline.todo();
-	if (all_todo_done_states === undefined) {
-	  // If this is called without a good data structure like this, it
-	  // is a single call. If Headlines are rerendered systematically,
-	  // this is sent in.
-	  // (Caching is done in make_todo_select(), a level higher, so it
-	  // isn't needed here.)
-	  var model         = headline.owner;
-	  all_todo_done_states = model.all_todo_done_states();
-	}
-
-	var todo_items = '<option value="">-</option>';
-	for (var i in all_todo_done_states) {
-	  var state		= all_todo_done_states[i];
-	  if (state === present_state) {
-		todo_items	+= '<option value="' + state + '" selected>' +
-		  state + "&nbsp;</option>\n";
-	  } else {
-		todo_items	+= '<option value="' + state + '">' +
-		  state + "&nbsp;&nbsp;</option>\n";
-	  }
-	}
-	return todo_items;
-  }
-
-  this.make_todo_select = function(headline, todo_id,
-								   all_todo_done_states) {
-	// XXXX THIS ISN'T USED ANYMORE! _make_todo_select_help() is used
-	// directly. So no caching is on. :-(
-
-	// Memoizises most of the work.
-	// XXXX When updates TODO-states, need to clear out this cache!!
-	var present_state = headline.todo();
-	if (! _todo_generated[present_state])
-	  _todo_generated[present_state] = _make_todo_select_help(
-		headline, // XXXX Changed so sends the present headline.
-		all_todo_done_states
-	  ) + "</select>\n";
-
-	return '<select name="todo" class="span1 todo_select" ' +
-	  'id="' + todo_id + '">' + _todo_generated[present_state];
-  };
 
   // - - - - - Make Level-select HTML:
   this.make_more_edit_menu = function() {

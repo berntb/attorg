@@ -35,7 +35,8 @@
 			   id="org_edit_search_text" placeholder="Search">
       </form>
 	  <a class="btn btn-medium clear-search">
-		<i class="icon-asterisk" id="org_edit_search_clear"></i>
+		<!-- <i class="icon-asterisk" id="org_edit_search_clear"></i> -->
+		<i class="icon-off" id="org_edit_search_clear"></i>
 	  </a>
 	</div>
   </div>
@@ -97,7 +98,8 @@
 	   class="controls controls-row span12  <%= level === 1 ? "well well-small hl1" : "hl" + level %>">
 	<div class="btn-toolbar span2">
 	  <%= subtree_open_closed %>
-	  <button class=" todo-spec btn-mini btn pull-right" type="button">
+	  <button class="attorg-command btn-mini btn pull-right"
+			  data-command="TodoRotate" type="button">
 		<%= todo_spec %>
 	  </button>
 	  <div class="btn-group">
@@ -200,9 +202,6 @@
 		<div class="span3 controls-row">
 		 <select id="X_<%= id %>" class="span1 lvl_select" name="level-select">
 		 		 <%= level_select_options %>
-		 </select>
-		 <select id="do_<%= id %>" class="span1 todo_select" name="todo">
-		 		 <%= todo_select_options %>
 		 </select>
 		</div>
 	  </div>

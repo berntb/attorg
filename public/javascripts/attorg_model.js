@@ -413,7 +413,6 @@ OrgHeadline.prototype = {
   // XXXX Implement Tags!
 
   id_str: function() {
-    // Internal use
     // Unique string ID which is set in html and can be used to
     // find the right Headline again.
     if (arguments.length > 0)
@@ -508,6 +507,9 @@ OrgHeadline.prototype = {
     return level;
   },
 
+  asterisks: function() {
+	return "************".substring(0, this.level() );
+  },
 
   is_config: function() {
 	if (arguments.length > 0) {
@@ -576,14 +578,19 @@ OrgHeadline.prototype = {
   // ------------------------------------------------------------
   // Generate result:
   forSave: function() {
-	var title	      = headline.title();
-	var block         = headline.block() || '';
+	if (this.is_config()) {
 
-	if (block !== '') {
-	  // Check so ends with a newline.
-	  // if 
 	}
 
+	var title	      = this.title();
+	var block         = this.block() || '';
+
+	// Check so ends with a newline:
+	if (block !== '' && (! /\n\s*$/.test(block))) {
+	  block = block + "\n";
+	}
+
+	return this.asterisks() + " " + title + "\n" + block;
   },
 
   // ------------------------------------------------------------
