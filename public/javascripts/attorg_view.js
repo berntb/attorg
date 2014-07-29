@@ -376,14 +376,14 @@ var OrgView = function(document_div_id, divid_headlines) {
   // XXXX Have code both here and in Template. :-( Just use one way.
   this.fixOpenCloseFromTo = function(from_ix, to_ix, model) {
 	// Changes the open/closed flags for Headlines.
-	// console.log("Update from " + from_ix + " to " + to_ix);
+	// console.log("--- Open/Close Update from " + from_ix + " to " + to_ix);
 
 	// This assumes the open/closed data in the input data is set up
 	for(var ix = from_ix; ix <= to_ix; ix++) {
 	  var headline	  = model.headline(ix);
 	  var vis_kids	  = headline.visible_children();
 	  $( '#' + this.make_headline_id(headline) )
-		.find('.open-subtree').replaceWith(
+		.find('.openclose-tree').replaceWith(
 		  this._make_open_close_button(vis_kids)
 		);
 	}
@@ -408,7 +408,10 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  icon	  = 'icon-caret-right';
 	}
 	// btn-small or btn-mini??
-	return '<a class="btn btn-small open-subtree pull-left' + xaClass + '">'
+	// return '<a class="btn btn-small open-subtree pull-left' + xaClass + '">'
+	return '<a class="btn btn-small openclose-tree attorg-command pull-left'
+	  + xaClass + '" '
+	  + 'data-command="OpenClose">'
 	  + '<i class="' + icon + '"></i></a>';
   };
 
@@ -435,6 +438,11 @@ var OrgView = function(document_div_id, divid_headlines) {
 	// (N B -- next version should dynamically change size of
 	// textarea.)
   };
+
+  this.toggleLargeBlock = function(headline) {
+	// XXXX
+	console.log("In View's toggleLarge");
+  }
 
 
   // - - - - - Diverse:

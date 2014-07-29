@@ -85,13 +85,20 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+
 	  var hide_action  = this.controller.updateTreeVisibility( headline );
-	  if (!event.shiftKey)
+	  // XXXX This makes the shift-TAB impossible to call as a command.
+	  if (!charEvent || !event.shiftKey)
 		return true;
 
-	  // Difference from Emacs -- just show all after present
-	  // position.	(Later -- find out how to do scrolling so
-	  // we can keep the present field under editing visible.)
+	  // - - - shift-TAB:
+
+	  // XXXX Do this the Emacs way instead, when implements hiding of text:
+	  // - If all Headlines but no body text, show ALL (including body text).
+	  // - If JUST 1st level Headlines, ALL Headlines are shown (no body)
+	  // - Otherwise, JUST show 1st level AND goes to superior level 1.
+
+	  console.log("Doing SHIFT-key, opening/closing everything");
 	  var ix		   = headline.index;
 	  var i;
 	  var model		   = this.controller.model;
@@ -107,9 +114,6 @@ function OrgAddKeyCmds(cmdHandler) {
 		if (later_hline.level() === 1)
 		  top_headlines.push( later_hline );
 	  }
-	  // XXXX Should have logic for only showing children??
-
-	  // XXXX BUGGY -- will hide when editing non-level 1!! XXXX
 
 	  if (hide_action === 'kids') {
 		// Just one or the other:
@@ -425,12 +429,14 @@ function OrgAddKeyCmds(cmdHandler) {
 	  view.delete_headline( headline );
 	  headline.delete();
 
-	  if (model.length > 0)
-		this.controller._updateOpenCloseAroundChanged(i ? i-1 : 0);
+	  if (model.length > 0) {
+		var ix     = headline.index;
+		this.controller._updateOpenCloseAroundChanged(ix ? ix-1 : 0);
+	  }
 
 	  if (charEvent) {
 		// XXXXX
-		// Open editing for next visible Headline!!
+		// Open editing for next visible Headline??
 	  }
 
 	  return true;

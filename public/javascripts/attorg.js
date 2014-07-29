@@ -238,22 +238,21 @@ var OrgController = function(model, view, commandHandler,
   // ------------------------------------------------------------
   // Event handlers:
 
+
   this.bind_events = function() {
     var div  = $("#" + this.divid_headlines);
     // $('.title_input').change( // (Fails if multiple org modes in window!!)
     // div.find('.title_input').change(  // Less bad
     // div.on('change', 'input:text',    this.title_text_change_event);
 
-    // XXXXX Move implementation to Cmd implementation.
-
-    div.on('click',   '.open-subtree',    this.openCloseHeadlineEvent);
-
     div.on('dblclick','.title-text',      this.dblClickHeadingEvent);
+
+    div.on('click',   '.title-text',      this.clickBlockEvent);
 
     // - - - - - Menu in Edit Mode:
 
 	// (New generation -- forward Menu choices to commands.)
-    div.on('click',   '.attorg-menu-cmd', this.handleMenuCommand);
+    div.on('click',   '.attorg-command',  this.handleUICommand);
 
 
     div.on('click',   '.edit-header',     this.editHeadingEvent);
@@ -615,32 +614,23 @@ var OrgController = function(model, view, commandHandler,
   // ------------------------------------------------------------
   // non-Edit button events:
 
-  // XXXXX MOVE ALL MENU COMMANDS INTO THIS FORMAT!!
-  // (But do consider that all implemented commands can be sent 
-  this.handleMenuCommand  = function(event) {
-	// XXXX Disallow most commands (change level etc) for config
-	// statements!!
+  this.handleUICommand  = function(event) {
+	// XXXX Disallow some commands (change level etc) for config
+	// etc!
 
     // (Sigh, put ID:s in a few more Elements??)
     var headline  = that._headlineFromMenuEvent(event);
-	var attorgCmd = $(event.target).attr("data-command");
+	var attorgCmd = $(event.target).attr("data-command")
+	  || $(event.currentTarget).attr("data-command");
 	console.log(event);
-	console.log("Event target:" + event.target["data-command"]);
-	console.log("Att:" + attorgCmd);
+	console.log("--- CMD name:" + attorgCmd);
 
-	// XXXX Should I add C-U number prefixes here??
+	// XXXX Should the present C-U number prefixes be done, too??
 	// When needed, allow a series of commands too. (Trivial, split on ",").
 	that.cmdHandler.callCommand(attorgCmd,
 								{ headline: headline });
   };
 
-
-  this.openCloseHeadlineEvent = function(event) {
-    var i = that._getHeadlineIxForButtonEvent( event );
-    var headline = that.model.headline(i);
-
-    that.updateTreeVisibility( headline );
-  };
 
 
   this.editHeadingEvent = function(event) {
@@ -679,6 +669,14 @@ var OrgController = function(model, view, commandHandler,
     }
   };
 
+  this.clickBlockEvent = function(event) {
+    var i = that._getHeadlineIxForButtonEvent( event );
+    var headline = that.model.headline(i);
+
+	console.log(headline);
+
+	that.view.toggleLargeBlock( headline ); // Hides any 
+  }
 
   // ----------------------------------------------------------------------
   // Help routines
@@ -950,12 +948,19 @@ var OrgController = function(model, view, commandHandler,
     return this.model.get_ix_from_id_string( model_id );
   };
 
+
   this._headlineFromMenuEvent = function(event) {
     // Get the Headline from Edit mode, when a dropdown menu
     // selection is done.
     // (Sigh, put ID:s in a few more Elements??)
-    var edit_div = event.target.parentNode.parentNode.parentNode.
-      parentNode.parentNode;
+    var edit_div = event.target.parentNode.parentNode;
+
+	if (! edit_div.id)
+	  edit_div   = edit_div.parentNode;
+	if (! edit_div.id)
+	  edit_div   = edit_div.parentNode;
+	if (! edit_div.id)
+	  edit_div   = edit_div.parentNode;
     // (Random if event is from <a> or from what it contains??)
     if (! edit_div.id)
       edit_div   = edit_div.parentNode;

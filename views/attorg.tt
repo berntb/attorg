@@ -148,27 +148,27 @@
 			<ul class="dropdown-menu">
 			  <!-- Move all commands over to this format: -->
 			  <li>
-				<a class="attorg-menu-cmd" data-command="DelHeadline">
+				<a class="attorg-command" data-command="DelHeadline">
 				  <i class="icon-trash"></i> Delete
 				</a>
 			  </li>
 			  <li>
-				<a class="attorg-menu-cmd"  data-command="HeadlineUp">
+				<a class="attorg-command"  data-command="HeadlineUp">
 				  <i class="icon-angle-up"></i> Move Up
 				</a>
 			  </li>
 			  <li>
-				<a class="attorg-menu-cmd" data-command="HeadlineDown">
+				<a class="attorg-command" data-command="HeadlineDown">
 				  <i class="icon-angle-down"></i> Move Down
 				</a>
 			  </li>
 			  <li>
-				<a class="attorg-menu-cmd" data-command="MoveTreeUp">
+				<a class="attorg-command" data-command="MoveTreeUp">
 				  <i class="icon-chevron-up"></i> Move Subtree Up
 				</a>
 			  </li>
 			  <li>
-				<a class="attorg-menu-cmd" data-command="MoveTreeDown">
+				<a class="attorg-command" data-command="MoveTreeDown">
 				  <i class="icon-chevron-down"></i> Move Subtree Down
 				</a>
 			  </li>

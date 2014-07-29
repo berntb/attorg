@@ -386,6 +386,10 @@ var OrgHeadline = function(headline, model) {
 };
 
 OrgHeadline.prototype = {
+
+  // ------------------------------------------------------------
+  // Attribute:
+
   title: function() {
     // XXXXX Need to send line for evaluation to server, in case
     // it contains link or other logic
@@ -512,6 +516,7 @@ OrgHeadline.prototype = {
     return this.headline.config;
   },
 
+
   // ------------------------------------------------------------
   // Has local changes been done, not yet parsed by server?
 
@@ -567,6 +572,19 @@ OrgHeadline.prototype = {
   // Also, any Headline moved to the top must be set as visible. (Not
   // here, the Controller must do that and call the View.)
 
+
+  // ------------------------------------------------------------
+  // Generate result:
+  forSave: function() {
+	var title	      = headline.title();
+	var block         = headline.block() || '';
+
+	if (block !== '') {
+	  // Check so ends with a newline.
+	  // if 
+	}
+
+  },
 
   // ------------------------------------------------------------
   // This part implements (in)visible subsets of the headlines.
@@ -658,6 +676,7 @@ OrgHeadline.prototype = {
   has_visible_child: function() {
     return this.headline.visible_kids;
   },
+
 
   // ------------------------------------------------------------
 
