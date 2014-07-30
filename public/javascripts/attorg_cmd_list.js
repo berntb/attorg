@@ -85,7 +85,6 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-
 	  var hide_action  = this.controller.updateTreeVisibility( headline );
 	  // XXXX This makes the shift-TAB impossible to call as a command.
 	  if (!charEvent || !event.shiftKey)
@@ -304,7 +303,84 @@ function OrgAddKeyCmds(cmdHandler) {
 	}
   });
 
+  cmdHandler.addACommand({
+	name:  "PrevSameLevel",		// ("C-C, C-B")
+	docum: "Move to next (visible) item",
 
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
+	  // Negative number prefix? Go other way
+	  if (number !== undefined && number < 0) {
+		return this.callCommand('NextSameLevel',
+								{
+								  charEvent: true,
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  block_p,
+								  numericalPrefix: -number
+								});
+	  }
+
+	  // C-C C-B in Block goes to next Visible Headline:
+	  var model		   = this.controller.model;
+	  var ix		   = headline.index;
+	  var level        = headline.level();
+	  var numOfHlines  = number === undefined ? 1 : number;
+	  var foundSpec	   = model.findHeadlinesFrom(
+		ix, numOfHlines, -1, function(headline) {
+		  if (headline.visible() && headline.level() <= level)
+			return true;
+		  return false;
+		}
+	  );
+
+	  console.log("FOUND PREVIOUS FROM " + ix + " GOT TO:" + foundSpec);
+	  if (foundSpec[0] != ix)
+		this.controller.saveAndGotoIndex(headline, foundSpec[0], false);
+	  return true;
+	}
+  });
+
+  cmdHandler.addACommand({
+	name:  "NextSameLevel",		// ("C-C, C-F")
+	docum: "Move to next (visible) item",
+
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
+	  // Negative number prefix? Go other way
+	  if (number !== undefined && number < 0) {
+		return this.callCommand('PrevSameLevel',
+								{
+								  charEvent: true,
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  block_p,
+								  numericalPrefix: -number
+								});
+	  }
+
+	  // C-C C-B in Block goes to next Visible Headline:
+	  var model		   = this.controller.model;
+	  var ix		   = headline.index;
+	  var level        = headline.level();
+	  var numOfHlines  = number === undefined ? 1 : number;
+	  var foundSpec	   = model.findHeadlinesFrom(
+		ix, numOfHlines, 1, function(headline) {
+		  if (headline.visible() && headline.level() <= level)
+			return true;
+		  return false;
+		}
+	  );
+
+	  // console.log("FOUND NEXT FROM " + ix + " GOT TO:" + foundSpec);
+	  if (foundSpec[0] != ix)
+		this.controller.saveAndGotoIndex(headline, foundSpec[0], false);
+	  return true;
+	}
+  });
+
+
+  // - - - - - - - - - - -
   cmdHandler.addACommand({
 	name:  "ShiftLeft",			// ("M-left")
 	docum: "Description",
@@ -444,6 +520,19 @@ function OrgAddKeyCmds(cmdHandler) {
   });
 
 
+  cmdHandler.addACommand({
+	name:  "SaveDocument",
+	docum: "Description",
+	
+	// Save document to server
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+	  console.log("In SaveDocument");
+
+	  var text = this.controller.model.saveData();
+	  console.log(text);
+	  return true;
+	}
+  });
 
   cmdHandler.addACommand({
 	name:  "SetMark",
@@ -731,40 +820,43 @@ function OrgAddKeyCmds(cmdHandler) {
 
   // XXXX If no control/meta, should 'shift-A' be same as 'A'??
 
-  // cmdHandler.addKeyCode("X-return",	  "X-CR");
-  // cmdHandler.addKeyCode("Break",		  "C-G");
-
-  cmdHandler.addKeyCommand("Return",	   "CR,, C-CR,, M-CR");
-  // This should open a new Headline after any subs of lower level
-  // cmdHandler.addKeyCommand("controlReturn","C-CR");
+  // - - - Diverse:
   cmdHandler.addKeyCommand("Break",		   "C-G");
+  cmdHandler.addKeyCommand("Return",	   "CR,, C-CR,, M-CR");
   cmdHandler.addKeyCommand("OpenClose",	   "TAB,, S-TAB,, M-S-TAB");
+  cmdHandler.addKeyCommand("SaveDocument", "C-X C-S");
+  
+
+  // - - - Move around:
   cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-U");
   cmdHandler.addKeyCommand("MovePrevious", "C-C C-P,, C-P,, up,, C-up");
   cmdHandler.addKeyCommand("MoveNext",	   "C-N,, down,, C-down");
+  cmdHandler.addKeyCommand("PrevSameLevel","C-C C-B"); // Same or higher level
+  cmdHandler.addKeyCommand("NextSameLevel","C-C C-F"); // Same or higher level
 
   // Lots of keyboards needs shift to write '<', so... :-(
   cmdHandler.addKeyCommand("ScrollTop",		"M-<,, S-M-<");
   cmdHandler.addKeyCommand("ScrollBot",		"M->,, S-M->");
 
-  // Set Mark, C-X C-X, [copy/paste??]
+  // - - - IMPLEMENT: Set Mark, C-X C-X, [copy/paste??]
   cmdHandler.addKeyCommand("SetMark",	   "C-space");
 
+  // - - - Todo handling:
   cmdHandler.addKeyCommand("TodoRotate",   "C-C C-T");
 
-
+  // - - - Change levels:
   cmdHandler.addKeyCommand("ShiftLeft",	   "M-left");
   cmdHandler.addKeyCommand("ShiftLeft",	   "M-S-left");
   cmdHandler.addKeyCommand("ShiftRight",   "M-right");
   cmdHandler.addKeyCommand("ShiftRight",   "M-S-right");
 
+  // - - - Move Headlines around
   cmdHandler.addKeyCommand("HeadlineUp",   "M-up");
   cmdHandler.addKeyCommand("HeadlineDown", "M-down");
   cmdHandler.addKeyCommand("MoveTreeUp",   "M-S-up");
   cmdHandler.addKeyCommand("MoveTreeDown", "M-S-down");
 
-  // XXXX Support shift-up, shift-down on Headline (not block)
-  // too. (S-down goes from highest priority to lower.)
+  // - - - Change priorities (not only todo lines):
   cmdHandler.addKeyCommand("HighPrio",	   "C-C , A,, C-C , S-A");
   cmdHandler.addKeyCommand("MediumPrio",   "C-C , B,, C-C , S-B");
   cmdHandler.addKeyCommand("LowPrio",	   "C-C , C,, C-C , S-C");
@@ -772,9 +864,12 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("PrioLower",	   "S-up");
   cmdHandler.addKeyCommand("PrioHigher",   "S-down");
 
+  // - - - Remove a Headline:
+  // Yes, this is a bastardi.. misuse of Emacs. Change it when
+  // implements a real text editor:
   cmdHandler.addKeyCommand("DelHeadline",  "C-K");
 
-
+  // - - - Numerical prefix:
   cmdHandler.addKeyCommand("NumberPrefix", "C-U");
   cmdHandler.addKeyCommand("NumberPrefix", "C-0,, C-1,, C-2,, C-3,, C-4");
   cmdHandler.addKeyCommand("NumberPrefix", "C-5,, C-6,, C-7,, C-8,, C-9");

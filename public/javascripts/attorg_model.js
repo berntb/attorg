@@ -158,7 +158,7 @@ var OrgModelSuper = function(documentName, org_data,
 	  priority: (spec.priority ? spec.priority : ''),
 	  title_subs: spec.title_subs,
 	  block_parts: spec.block_parts, // Should have same name as title part
-	  block_indent: spec.block_indent ? spec.block_indent : 0,
+	  block_indent: spec.block_indent ? spec.block_indent : undefined,
 	};
   }
 
@@ -220,6 +220,17 @@ var OrgModelSuper = function(documentName, org_data,
 		last  = i;
 	  }
 	}
+  };
+
+  // - - -
+  this.saveData = function() {
+	var text  = '';
+	for(var i = 0; i < this.all_data.length; i++) {
+	  var h   = this.headline(i);
+	  text   += h.generateTextForSave();
+	}
+
+	return text;
   };
 
 
@@ -518,6 +529,13 @@ OrgHeadline.prototype = {
     return this.headline.config;
   },
 
+  blockIndent: function() {
+	if (arguments.length > 0) {
+      this.headline.block_indent = arguments[0];
+    }
+    return this.headline.block_indent;
+  },
+
 
   // ------------------------------------------------------------
   // Has local changes been done, not yet parsed by server?
@@ -577,17 +595,52 @@ OrgHeadline.prototype = {
 
   // ------------------------------------------------------------
   // Generate result:
-  forSave: function() {
-	if (this.is_config()) {
+  generateTextForSave: function() {
+	// XXXX Where does text go from before first Headline??
+	// Utils:
+	function _makeSpaces(no) {
+	  var spaces      = '';
+	  if (String.prototype.repeat) {
+		spaces        = ' '.repeat(no);
+	  } else {
+		for(var i = 0; i < no; i++) {
+		  spaces     += ' ';
+		}
+	  }
+	  return spaces;
+	};
+	function _addPrefixToAllLines(text, prefix) {
+	  if (/\n\s*$/.test(text))
+		return text;
+	  // Regexps are primitive in JavaScript. :-( This should be done
+	  // in one regexp.
+	  
+	};
 
-	}
 
 	var title	      = this.title();
 	var block         = this.block() || '';
 
-	// Check so ends with a newline:
+	// Check so block ends with a newline, otherwise add one:
 	if (block !== '' && (! /\n\s*$/.test(block))) {
-	  block = block + "\n";
+	  block           = block + "\n";
+	}
+
+	if (this.is_config()) {
+	  return block;
+	}
+
+	// - - - Space prefix for block.
+	// XXXX 'block_indent' can't be changed! It won't be set in new
+	// lines. Now it sets a default for new blocks!! (=== level + 1.)
+	var blockIndent   = this.blockIndent();
+	if (block !== '') {
+	  // Make indent string:
+	  var indentSpaces= _makeSpaces(blockIndent !== undefined ?
+									blockIndent
+									: this.level() + 1);
+	  console.log(this);
+	  console.log(indent.length);
 	}
 
 	return this.asterisks() + " " + title + "\n" + block;
