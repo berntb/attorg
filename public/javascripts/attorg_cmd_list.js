@@ -386,7 +386,9 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-	  if (headline.level() === 1)	return true;		  // No change
+	  if (headline.is_config() || headline.level() === 1)
+		return true;		  // No change
+	  
 
 	  if (event.shiftKey) {
 		var tree = headline.findSubTree();
@@ -405,6 +407,8 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  // If shift, moves the whole subtree.
+	  if (headline.is_config())
+		return true;
 	  if (event.shiftKey) {
 		var tree = headline.findSubTree();
 		this.controller.levelChangeSubtree(tree[0], tree[1], 1);
@@ -552,6 +556,9 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  console.log("In TodoRotate");
+
+	  if (headline.is_config())
+		return true;			// Not possible
 
 	  var todoNow  = headline.todo();
 	  var model	   = this.controller.model;

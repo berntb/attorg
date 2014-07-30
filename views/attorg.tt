@@ -95,13 +95,15 @@
    <div class="row" <%= visible ? "" :  'style="display: none;"' %> >
 <% } %>
   <div id="hl_<%= id %>"
-	   class="controls controls-row span12  <%= level === 1 ? "well well-small hl1" : "hl" + level %>">
+	   class="controls controls-row span12  <%= config ? "well well-small hlC" : (level === 1 ? "well well-small hl1" : "hl" + level) %>">
 	<div class="btn-toolbar span2">
 	  <%= subtree_open_closed %>
-	  <button class="attorg-command btn-mini btn pull-right"
-			  data-command="TodoRotate" type="button">
-		<%= todo_spec %>
-	  </button>
+	  <% if (! config) { %>
+	    <button class="attorg-command btn-mini btn pull-right"
+				data-command="TodoRotate" type="button">
+		  <%= todo_spec %>
+		</button>
+	  <% } %>
 	  <div class="btn-group">
 	  <a class="btn btn-mini edit-header">
 		<i class="icon-edit edit-header"></i>

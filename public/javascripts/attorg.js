@@ -572,6 +572,9 @@ var OrgController = function(model, view, commandHandler,
     var i = that.model.get_ix_from_id_string( model_str_id );
     var headline = that.model.headline(i);
 
+	if (headline.is_config())
+	  return;
+
     var val = parseInt( this.value );
     var now = parseInt( headline.level() );
 

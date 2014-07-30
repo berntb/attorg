@@ -63,6 +63,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   // A kludge to override Bootstrap. The colors are from org-faces.el
   // for a light background. They doesn't seem to be exactly as my Emacs
   // installation, but... well, easy to change. :-)
+  var configColor = '#808080';
   var levelColors = [
 	'none',
 	'#0000FF',					  // 1 Blue1
@@ -195,6 +196,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var text_block	  = headline.block();
 	var level		  = headline.level();
 	var visible_kids  = headline.visible_children();
+	var configp       = headline.is_config();
 	var block_html	  = '';
 	if (text_block !== undefined &&
 		! this.dontShowBlockRegexp.test(text_block)) {
@@ -212,12 +214,12 @@ var OrgView = function(document_div_id, divid_headlines) {
 		hide_prefix: hide_headline_html_prefix,
 		level: level,
 		subtree_open_closed: this._make_open_close_button(visible_kids),
-		level_spec: headline.asterisks(),
+		level_spec:  configp ? '' : headline.asterisks(),
 		todo_spec: _.escape(todo),
 		// Kludge for setting (Bootstrap) color:
-		color_text: levelColors[level],
-		title: headline.is_config() ? "--CONFIG--" : headline.title_html(),
-		config: headline.is_config(),
+		color_text: configp ? configColor : levelColors[level],
+		title: configp ? "--CONFIG--" : headline.title_html(),
+		config: configp,
 		block: block_html,
 		priority: headline.priority(),
 		hiliteRegex: this.getHighlightRegex(),
@@ -263,7 +265,8 @@ var OrgView = function(document_div_id, divid_headlines) {
 		// Move into Template??
 		level: level,
 		config: headline.is_config(),
-		level_select_options: _make_level_select_help(level),
+		level_select_options: (headline.is_config() ?
+							   '' : _make_level_select_help(level)),
 	  }) ;
   };
 
