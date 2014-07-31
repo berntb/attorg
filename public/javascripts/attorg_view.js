@@ -154,7 +154,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	if (ix == 0) {
 	  // First place:
 	  div  = $("#" + this.divid_headlines).parent();
-	  div.prepend( rendered_html );
+	  div.before( rendered_html ); // prepend() puts it at start of 1st Hline!
 	} else if (ix > 0 && ix-1 < model.length) {
 	  // There is a headline at ix already. Add a new one before
 	  var div_id  = this.make_headline_id( model.headline(ix-1) );
@@ -320,16 +320,21 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  to_ix		  = model.length;
 
 	var divToMove = $('#' + this.make_headline_id(headline)).parent();
+	console.log("Moving Headline to " + to_ix);
+	console.log("Moving Headline's parent:" + this.make_headline_id(headline));
 	var div, div_id, relatedH;
 	if (to_ix == 0) {
 	  // First place:
 	  div_id	  = this.make_headline_id( model.headline( 0 ) );
 	  div		  = $("#" + div_id).parent();
-	  div.prepend( divToMove );
+	  console.log("BEFORE THIS:");
+	  console.log(div.html());
+	  div.before( divToMove ); // prepend() insert it at START of element :-(
 	} else {
 	  // There is a headline at to_ix already. Add a new one before
 	  relatedH	  = model.headline(to_ix-1);
 	  div_id	  = this.make_headline_id( relatedH );
+	  console.log("Moving '#'"+div_id + "'s parent");
 	  div		  = $("#" + div_id).parent();
 	  divToMove.insertAfter( div  );
 	}

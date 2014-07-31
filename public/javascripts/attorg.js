@@ -730,6 +730,7 @@ var OrgController = function(model, view, commandHandler,
     that.view.move_headline(nextH, index+1); // (Don't move the one we edit)
     headline.move(index-1);
     // Make certain the open/close arrows are correct:
+	headline.index--;
     that._updateOpenCloseAroundChanged(index);
     that._updateOpenCloseAroundChanged(index-1);
   };
@@ -748,6 +749,7 @@ var OrgController = function(model, view, commandHandler,
     // Move them around in View and Model:
     that.view.move_headline(nextH, index);
     headline.move(index+1);
+	headline.index++;
     // Make certain the opened/closed arrows are correct:
     that._updateOpenCloseAroundChanged(index);
     that._updateOpenCloseAroundChanged(index+1);

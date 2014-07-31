@@ -246,6 +246,8 @@ var OrgModelSuper = function(documentName, org_data,
     }
 
 	// (If more changes are going to be done directly after.)
+	// (XXXX Need to keep existing objects around and update their
+	// indexes?? Are there weak links in JS??)
     if (! dont_refresh_ids) {
       this.refresh_id_strings();
 	  // console.log("moveHeadline: caller is "
