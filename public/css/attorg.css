@@ -3,9 +3,10 @@ body { padding-top: 40px; }
 
 /* Set colors similar to default emacs config: */
 .hlC {							/* (Config) */
-    margin-left:   20px;
+    margin-left:   0px;
 	background-color: white;
-    /* margin-top: 8px; Not needed if we use Bootstrap-well */
+    margin-top: 8px;
+    margin-bottom: 8px;
     /* padding: 3px; */
 }
 

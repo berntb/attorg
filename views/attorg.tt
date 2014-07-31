@@ -95,7 +95,7 @@
    <div class="row" <%= visible ? "" :  'style="display: none;"' %> >
 <% } %>
   <div id="hl_<%= id %>"
-	   class="controls controls-row span12  <%= config ? "well well-small hlC" : (level === 1 ? "well well-small hl1" : "hl" + level) %>">
+	   class="controls controls-row span12  <%= config ? "hlC" : (level === 1 ? "well well-small hl1" : "hl" + level) %>">
 	<div class="btn-toolbar span2">
 	  <%= subtree_open_closed %>
 	  <% if (! config) { %>
