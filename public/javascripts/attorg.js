@@ -214,6 +214,7 @@ var OrgController = function(model, view, commandHandler,
     div.on('keydown', '.title_edit',      this.handleTitleKeyEvent);
     div.on('keydown', '.block_edit',      this.handleBlockKeyEvent);
 
+	// Buttons in Edit mode:
     div.on('click',   '.save-cmd',        this.saveCommandEvent);
     div.on('click',   '.update-cmd',      this.updateCommandEvent);
     div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
@@ -457,7 +458,6 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
-
   this.saveCommandEvent = function(event) {
     // (Sigh, put ID:s in a few more Elements??)
     var edit_div = event.target.parentNode.parentNode.parentNode.parentNode;
@@ -506,7 +506,8 @@ var OrgController = function(model, view, commandHandler,
   // non-Edit button events:
 
   this.handleUICommand  = function(event) {
-    var headline  = that._headlineFromMenuEvent(event);
+	// Don't automatically save Headline at every editor command(?)
+    var headline  = that._headlineFromMenuEvent(event, true);
 	var attorgCmd = $(event.target).attr("data-command")
 	  || $(event.currentTarget).attr("data-command");
 	console.log(event);
@@ -839,7 +840,7 @@ var OrgController = function(model, view, commandHandler,
   };
 
 
-  this._headlineFromMenuEvent = function(event) {
+  this._headlineFromMenuEvent = function(event, notSave) {
     // Get the Headline from Edit mode, when a dropdown menu
     // selection is done.
     // (Sigh, put ID:s in a few more Elements??)
@@ -857,7 +858,13 @@ var OrgController = function(model, view, commandHandler,
     if (! edit_div.id)
       edit_div   = edit_div.parentNode;
     var model_id = that.view.make_model_id_from_hldiv(edit_div.id);
-    var headline = that.saveHeadlineFromModelID( model_id );
+	// XXXX SHOULD this save the Headline???
+	var headline;
+	if (notSave) {
+	  var i      = that.model.get_ix_from_id_string( model_id );
+      headline   = that.model.headline(i);
+	} else
+      headline = that.saveHeadlineFromModelID( model_id );
 
     return headline;
   };
@@ -920,7 +927,8 @@ var OrgController = function(model, view, commandHandler,
     if (modified) {
 	  // Will be replaced
       that.view.render_headline( headline );
-	  that.update_headline_delayed( headline );
+	  if (! headline.is_config())
+		that.update_headline_delayed( headline );
 	}
   };
 
