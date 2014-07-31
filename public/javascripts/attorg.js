@@ -21,62 +21,6 @@
 // ----------------------------------------------------------------------
 
 
-// TEMP FOR DEBUG:
-
-JSON.stringifyOnce = function(obj, replacer, indent){
-    var printedObjects = [];
-    var printedObjectKeys = [];
-
-    function printOnceReplacer(key, value){
-        if ( printedObjects.length > 2000){ // browsers will not print
-											// more than 20K, I don't
-											// see the point to allow
-											// 2K.. algorithm will not
-											// be fast anyway if we
-											// have too many objects
-          return 'object too long';
-        }
-        var printedObjIndex = false;
-        printedObjects.forEach(function(obj, index){
-            if(obj===value){
-                printedObjIndex = index;
-            }
-        });
-
-        if ( key == ''){ //root element
-             printedObjects.push(obj);
-            printedObjectKeys.push("root");
-             return value;
-        }
-
-        else if(printedObjIndex+"" != "false" && typeof(value)=="object"){
-            if ( printedObjectKeys[printedObjIndex] == "root"){
-                return "(pointer to root)";
-            }else{
-                return "(see "
-				+ ((!!value && !!value.constructor)
-				   ? (value.constructor
-					  ? (value.constructor.name
-						 ? value.constructor.name.toLowerCase()
-						 : "<no set constructor name>")
-					  : "<no set constructor>")
-				   : typeof(value))
-				+ " with key " + printedObjectKeys[printedObjIndex] + ")";
-            }
-        }else{
-
-            var qualifiedKey = key || "(empty key)";
-            printedObjects.push(value);
-            printedObjectKeys.push(qualifiedKey);
-            if(replacer){
-                return replacer(key, value);
-            }else{
-                return value;
-            }
-        }
-    }
-    return JSON.stringify(obj, printOnceReplacer, indent);
-};
 
 // Global variable for model data, replace with some VMC-variant.
 var stored_model     = {};
@@ -455,8 +399,8 @@ var OrgController = function(model, view, commandHandler,
   };
   
   // this.temp = function(event) {	// TEST
-  // 	console.log("keypress:" + _.keys(event));
-  // 	// console.log("keypress:" + JSON.stringifyOnce(event));
+  // 	console.log("keypress:");
+  // 	console.log(event);
   // 	that._handleKeyEvent(event, false);
   // };
 
@@ -573,7 +517,7 @@ var OrgController = function(model, view, commandHandler,
     var headline = that.model.headline(i);
 
 	if (headline.is_config())
-	  return;
+	  return;					// (Shouldn't get here really)
 
     var val = parseInt( this.value );
     var now = parseInt( headline.level() );
