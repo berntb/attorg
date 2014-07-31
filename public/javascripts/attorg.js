@@ -191,7 +191,7 @@ var OrgController = function(model, view, commandHandler,
 
     div.on('dblclick','.title-text',      this.dblClickHeadingEvent);
 
-    div.on('click',   '.title-text',      this.clickBlockEvent);
+    div.on('click',   '.block-text',      this.clickBlockEvent);
 
     // - - - - - Menu in Edit Mode:
 
@@ -222,8 +222,6 @@ var OrgController = function(model, view, commandHandler,
 
 	// Internal links:
 	div.on('click',   '.internal_link',   this.jumpToLink);
-	// Priority:
-	div.on('click',   '.prio_link',       this.changePriority);
 
     // Bind search event:
     $("#" + this.divid_search).submit( this.searchEvent );
@@ -232,23 +230,6 @@ var OrgController = function(model, view, commandHandler,
 
   
   // - - - - - - - - - - - - - - - - - -
-
-  this.changePriority = function(event) {
-	event.preventDefault();
-
-	// - - - Get clicked Headline.
-	var headlineID = event.target.parentNode.parentNode.parentNode.id.slice(3);
-	console.log(headlineID);
-    var ix         = that.model.get_ix_from_id_string( headlineID );
-    var headline   = that.model.headline(ix);
-
-	headline.togglePriority();
-	that.view.render_headline(headline, true, true);
-  };
-
-
-  // - - - - - - - - - - - - - - - - - -
-
   this.jumpToLink = function(event) {
 	event.preventDefault();
 	// - - - Get clicked Headline.
@@ -398,12 +379,6 @@ var OrgController = function(model, view, commandHandler,
 	that._handleKeyEvent(event, false);
   };
   
-  // this.temp = function(event) {	// TEST
-  // 	console.log("keypress:");
-  // 	console.log(event);
-  // 	that._handleKeyEvent(event, false);
-  // };
-
   this.handleBlockKeyEvent = function(event) {
     // XXXX Need dynamically increasing no of rows in textarea.
 	that._handleKeyEvent(event, true);
@@ -531,10 +506,6 @@ var OrgController = function(model, view, commandHandler,
   // non-Edit button events:
 
   this.handleUICommand  = function(event) {
-	// XXXX Disallow some commands (change level etc) for config
-	// etc!
-
-    // (Sigh, put ID:s in a few more Elements??)
     var headline  = that._headlineFromMenuEvent(event);
 	var attorgCmd = $(event.target).attr("data-command")
 	  || $(event.currentTarget).attr("data-command");
@@ -545,6 +516,7 @@ var OrgController = function(model, view, commandHandler,
 	// When needed, allow a series of commands too. (Trivial, split on ",").
 	that.cmdHandler.callCommand(attorgCmd,
 								{ headline: headline });
+	return true;
   };
 
 
@@ -585,13 +557,15 @@ var OrgController = function(model, view, commandHandler,
     }
   };
 
+  // XXXX Can't work like this on iPad et al, since the double click
+  // should start editing? Do special handling there??
   this.clickBlockEvent = function(event) {
     var i = that._getHeadlineIxForButtonEvent( event );
     var headline = that.model.headline(i);
 
 	console.log(headline);
 
-	that.view.toggleLargeBlock( headline ); // Hides any 
+	that.view.toggleLargeBlock( headline ); // Hides/shows block
   }
 
   // ----------------------------------------------------------------------

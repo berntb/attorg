@@ -754,7 +754,6 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
-	  console.log("Lower priority");
 	  headline.togglePriority(true);
 	  this.controller.view.render_headline(headline, true, true);
 	  return true;
@@ -769,7 +768,6 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 	text: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 				   number) {
-	  console.log("Increase priority");
 	  headline.togglePriority();
 	  this.controller.view.render_headline(headline, true, true);
 
