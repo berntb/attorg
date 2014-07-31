@@ -827,9 +827,14 @@ function OrgAddKeyCmds(cmdHandler) {
 
   // - - - Diverse:
   cmdHandler.addKeyCommand("Break",		   "C-G");
-  cmdHandler.addKeyCommand("Return",	   "CR,, C-CR,, M-CR");
   cmdHandler.addKeyCommand("OpenClose",	   "TAB,, S-TAB,, M-S-TAB");
   cmdHandler.addKeyCommand("SaveDocument", "C-X C-S");
+  // XXXX
+  // Change CR so more Emacs:
+  // - C-CR opens a new line after the Headline (at the same level)
+  // - M-CR opens a new Healine directly after (also at the same level)
+  //   AND it gets any subtree of present Headline.
+  cmdHandler.addKeyCommand("Return",	   "CR,, C-CR,, M-CR");
   
 
   // - - - Move around:
