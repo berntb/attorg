@@ -187,6 +187,10 @@ var OrgController = function(model, view, commandHandler,
     div.on('dblclick','.title-text',      this.dblClickHeadingEvent);
     div.on('click',   '.block-text',      this.clickBlockEvent);
 
+	// - - - - - Edit tag by clicking existing tags:
+	div.on('click',   '.org-tags',        this.clickedEditTags);
+	div.on('dblclick','.org-tags',        this.clickedEditTags);
+
 	// - - - - - Most commands send this event:
     div.on('click',   '.attorg-command',  this.handleUICommand);
 
@@ -237,6 +241,11 @@ var OrgController = function(model, view, commandHandler,
 	return true;
   };
 
+  this.clickedEditTags = function(event) {
+	console.log("Tag edit!");
+	console.log(event);
+	return true;
+  };
 
   // - - - - - - - - - - - - - - - - - -
   // Handle clicking internal link to other part of the document

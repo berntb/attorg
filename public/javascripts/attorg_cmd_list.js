@@ -761,7 +761,12 @@ function OrgAddKeyCmds(cmdHandler) {
 	  return true;
 	},
 	block: function() {
-	  return false;				// Do nothing in block
+	  if (charEvent)
+		return false;			// Do nothing in block, for this char command
+
+	  headline.togglePriority(true);
+	  this.controller.view.render_headline(headline, true, true);
+	  return true;
 	}
   });
 
@@ -775,8 +780,16 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	  return true;
 	},
-	block: function() {
-	  return false;				// Do nothing in block
+	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+				   number) {
+	  // XXXX This logic shouldn't be here, it should be extra
+	  // parameter when specifying config!! :-(
+	  if (charEvent)
+		return false;			// Do nothing in block, for this char command
+
+	  headline.togglePriority();
+	  this.controller.view.render_headline(headline, true, true);
+	  return true;
 	}
   });
 
@@ -855,6 +868,13 @@ function OrgAddKeyCmds(cmdHandler) {
 
   // - - - Todo handling:
   cmdHandler.addKeyCommand("TodoRotate",   "C-C C-T");
+
+  // - - - Tag handling:
+  // C-C C-Q -- add tag
+  // C-C \ -- search for tags (see "Stories" in .org file.)
+  // Need to also reparse #+FILETAGS: when that is changed.(And UI later).
+  // Et al...
+
 
   // - - - Change levels:
   cmdHandler.addKeyCommand("ShiftLeft",	   "M-left");

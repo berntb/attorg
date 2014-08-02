@@ -50,14 +50,22 @@ var OrgView = function(document_div_id, divid_headlines) {
 	// changed/deleted! (Also, needs to refresh all, so we have right
 	// values of e.g. todos in selects.)
 
+	var todo  = model_data.todo_states();
+	var done  = model_data.done_states();
+	var tags  = model_data.tags();
+	var draws = model_data.drawer_names();
+
 	$("#" + this.document_div_id + " .todo_states_list")
-	  .html(model_data.todo_states() + "");
+	  .html( _.escape(todo.join(", ")) );
 	$("#" + this.document_div_id + " .done_states_list")
-	  .html(model_data.done_states());
+	  .html( _.escape(done.join(", ")) );
+	$("#" + this.document_div_id + " .tag_list")
+	  .html( (tags !== undefined && tags.length) ?
+			 _.escape(tags.join(", ")) : "-" );
 	$("#" + this.document_div_id + " .priority_list")
-	  .html(model_data.priorities() + "");
+	  .html( _.escape(model_data.priorities().join(", ")) );
 	$("#" + this.document_div_id + " .drawer_names_list")
-	  .html(model_data.drawer_names() + "");
+	  .html( _.escape(draws.join(", ")) );
   };
 
   // A kludge to override Bootstrap. The colors are from org-faces.el
@@ -197,15 +205,19 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var level		  = headline.level();
 	var visible_kids  = headline.visible_children();
 	var configp       = headline.is_config();
+	var todo          = headline.todo();
+	var tags          = headline.tags();
 	var block_html	  = '';
+
 	if (text_block !== undefined &&
 		! this.dontShowBlockRegexp.test(text_block)) {
 	  block_html	  = "<pre>" + headline.block_html() + "</pre>";
 	}
 
-	var todo          = headline.todo();
 	if (todo === '')
 	  todo            = '-'
+	if (tags != undefined)
+	  tags            = ":" + _.escape(tags.join(":")) + ":";
 
 	return compiled_template_hline(
 	  { id: headline_id, // ID string for Headline
@@ -221,6 +233,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 		title: configp ? "--CONFIG--" : headline.title_html(),
 		config: configp,
 		block: block_html,
+		tags: tags,
 		priority: headline.priority(),
 		hiliteRegex: this.getHighlightRegex(),
 	  });

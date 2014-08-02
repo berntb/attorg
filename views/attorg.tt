@@ -65,14 +65,16 @@
 <div class="row">
 <div class="span2">Todo states:</div>
 <div class="span2">Done states:</div>
-<div class="span2">Priorities:</div>
-<div class="span6">Drawer names:</div>
+<div class="span3">Tags:</div>
+<div class="span1">Priorities:</div>
+<div class="span4">Drawer names:</div>
 </div>
 <div id="org_edit_document_parameters" class="row">
 <div class="span2 todo_states_list">-</div>
 <div class="span2 done_states_list">-</div>
-<div class="span2 priority_list">-</div>
-<div class="span6 drawer_names_list">-</div>
+<div class="span3 tag_list">-</div>
+<div class="span1 priority_list">-</div>
+<div class="span4 drawer_names_list">-</div>
 </div>
 <!-- <div class="row"> -->
 <div id="org_edit">Hej svejs</div>
@@ -107,12 +109,12 @@
 		</button>
 	  <% } %>
 	  <div class="btn-group">
-	  <a class="btn btn-mini edit-header">
-		<i class="icon-edit edit-header"></i>
-	  </a>
-	  <a class="btn btn-mini add-header">
-		<i class="icon-plus add-header"></i>
-	  </a>
+		<a class="btn btn-mini edit-header">
+		  <i class="icon-edit edit-header"></i>
+		</a>
+		<a class="btn btn-mini add-header">
+		  <i class="icon-plus add-header"></i>
+		</a>
 	  </div>
 	</div>
 	<span class="span9 title-text" style="color:<%= color_text %>" >
@@ -124,6 +126,10 @@
 		</a>
 	  <% } %>
 	  <%= (hiliteRegex === undefined) ? title : title.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
+	  <% if (tags !== undefined ) { %>
+	    <br><a class="org-tags attorg-command"
+				  data-command="PrioHigher"><%= tags %></a>
+	  <% } %>
 	  <span class="block-text"><%= (hiliteRegex === undefined) ? block : block.replace(hiliteRegex, '<span class="hilight">$&</span>') %></span>
 	</span>
   </div>
@@ -208,6 +214,10 @@
 		 <select id="X_<%= id %>" class="span1 lvl_select" name="level-select">
 		 		 <%= level_select_options %>
 		 </select>
+		 <% if (! config) { %>
+	       <a class="btn btn-small pull-right attorg-command"
+			  data-command="MoveTreeDown">Tags</a>
+		 <% } %>
 		</div>
 	  </div>
 	  <div class="span9">

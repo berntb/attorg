@@ -1,6 +1,12 @@
 /* Note -- this will be everywhere! */
 body { padding-top: 40px; }
 
+.org-tags {
+	display: block;
+	text-align: right;
+	font-weight: bold;
+}
+
 /* Set colors similar to default emacs config: */
 .hlC {							/* (Config) */
     margin-left:   0px;

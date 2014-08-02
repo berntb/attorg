@@ -100,6 +100,7 @@ var OrgModelSuper = function(documentName, org_data,
   // Document data:
 
   this.todo_states  = doc_arr_attribute("TODO",        "todo_states");
+  this.tags         = doc_arr_attribute("Tag names",   "tags");
   this.done_states  = doc_arr_attribute("DONE states", "done_states");
   this.priorities   = doc_arr_attribute("priorities",  "priorities");
   this.drawer_names = doc_arr_attribute("Drawer names","drawer_names");
@@ -154,7 +155,7 @@ var OrgModelSuper = function(documentName, org_data,
 	  todo_state: (spec.todo_state ? spec.todo_state : ''),
 	  title_text: (spec.title_text ? spec.title_text : ''),
 	  block: (spec.block ? spec.block : ''),
-	  tags: (spec.tags ? spec.tags : ''),
+	  tags: ( (spec.tags && spec.tags.length ) ? spec.tags : undefined),
 	  priority: (spec.priority ? spec.priority : ''),
 	  title_subs: spec.title_subs,
 	  block_parts: spec.block_parts, // Should have same name as title part
@@ -423,8 +424,6 @@ OrgHeadline.prototype = {
     return this._encode_org_subtext( this.headline.title_subs, false );
   },
 
-  // XXXX Implement Tags!
-
   id_str: function() {
     // Unique string ID which is set in html and can be used to
     // find the right Headline again.
@@ -457,6 +456,15 @@ OrgHeadline.prototype = {
 	}
     return this.headline.todo_state;
   },
+  tags: function() {
+	// XXXX Have a function which returns a function doing an accessor:
+    if (arguments.length > 0) {
+      this.headline.tags = arguments[0];
+	  this.owner.dirty();
+	}
+    return this.headline.tags;
+  },
+
   priority: function() {
 	// XXXX Check value when it is set!!
     if (arguments.length > 0) {
@@ -629,6 +637,7 @@ OrgHeadline.prototype = {
 
 	var title	      = this.title();
 	var block         = this.block() || '';
+	var tags          = this.tags();
 	var todo          = this.todo()  || '';
 	if (todo !== '')
 	  todo           += ' ';	// Append a space
@@ -662,7 +671,26 @@ OrgHeadline.prototype = {
 	  block           = _addPrefixToAllLines(block, indentSpaces);
 	}
 
-	return this.asterisks() + " " + todo + prio + title + "\n" + block;
+	var firstline     = this.asterisks() + " " + todo + prio + title;
+
+	// "Real" tag mode use tabs up until tag text!
+	// Need to tabify saves on server :-(
+	if (tags !== undefined && tags.length > 0) {
+	  // Need to append the tags to the first line:
+	  tags            = " :" + tags.join(":") + ":";
+	  if (tags.length + firstline.length > 133) {
+		firstline    += tags;
+	  } else {
+		var remaining = 133 - firstline.length - tags.length;
+		console.log("Line " + firstline + ", len " + firstline.length
+					+ ", needs " + remaining + " spaces. Tags are "
+					+ tags.length + " long.");
+		firstline    += _makeSpaces(remaining) + tags;
+		console.log("Now line is " + firstline.length + " long.");
+	  }
+	}
+
+	return firstline + "\n" + block;
   },
 
   // ------------------------------------------------------------
