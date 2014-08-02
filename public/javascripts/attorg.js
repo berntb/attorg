@@ -168,69 +168,80 @@ var OrgController = function(model, view, commandHandler,
   };
 
   // ------------------------------------------------------------
-  // Key Code Bindings:
-
-
-  // function tmp(ctrl,meta,keycode,headline,block_p) {
-  //   // Temporary dump help routine:
-  //   var m = meta ? 'M-' : '';
-  //   var c = ctrl ? 'C-' : '';
-  //   var b = block_p ? ' (in Block)' : '';
-  //   console.log("Char " + m + c + keycode + ", " + headline.title() + b);
-  // }
-
-  // ------------------------------------------------------------
   // Event handlers:
 
 
   this.bind_events = function() {
-    var div  = $("#" + this.divid_headlines);
+	// - - - - - Menu commands:
+	var topDiv= $("#topmenu-commands");
+	topDiv.on('click',   '.attorg-command',  this.handleTopMenuCommand);
+
+
+	// - - - - - Headline events:
+    var div   = $("#" + this.divid_headlines);
+
     // $('.title_input').change( // (Fails if multiple org modes in window!!)
     // div.find('.title_input').change(  // Less bad
     // div.on('change', 'input:text',    this.title_text_change_event);
 
     div.on('dblclick','.title-text',      this.dblClickHeadingEvent);
-
     div.on('click',   '.block-text',      this.clickBlockEvent);
 
-    // - - - - - Menu in Edit Mode:
-
-	// (New generation -- forward Menu choices to commands.)
+	// - - - - - Most commands send this event:
     div.on('click',   '.attorg-command',  this.handleUICommand);
 
-
+    // - - - - - Buttons in non-Edit mode:
     div.on('click',   '.edit-header',     this.editHeadingEvent);
     div.on('click',   '.add-header',      this.addHeadingEvent);
 
-    // - - - - - Edit Mode the rest:
+    // - - - - - Key codes:
 	// (keydown seems more reactive, keypress is better but not
 	//  supported by Chrome (and IE?) -- arrow keys, C-N, etc. :-(
-	//  Sigh... Just support Safari and FF??
-	// )
-    div.on('change',  '.lvl_select',      this.levelChangeEvent);
+	//  Sigh... Just support Safari and FF??)
 
 	// div.on('keypress','.title_edit',      this.handleTitleKeyEvent);
     // div.on('keypress','.block_edit',      this.handleBlockKeyEvent);
     div.on('keydown', '.title_edit',      this.handleTitleKeyEvent);
     div.on('keydown', '.block_edit',      this.handleBlockKeyEvent);
 
-	// Buttons in Edit mode:
+    // - - - - -  Buttons etc in Edit mode:
     div.on('click',   '.save-cmd',        this.saveCommandEvent);
     div.on('click',   '.update-cmd',      this.updateCommandEvent);
     div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
 
+    div.on('change',  '.lvl_select',      this.levelChangeEvent);
+
     // div.on('click',   '.delete-header',   this.deleteHeadingEvent);
 
-	// Internal links:
+    // - - - - - Document links to other Headlines:
 	div.on('click',   '.internal_link',   this.jumpToLink);
 
-    // Bind search event:
+    // - - - - - Search event:
     $("#" + this.divid_search).submit( this.searchEvent );
 	$('.clear-search').click( this.searchEventClear );
   };
 
   
   // - - - - - - - - - - - - - - - - - -
+  // Top menu event:
+
+  this.handleTopMenuCommand  = function(event) {
+	var attorgCmd = $(event.target).attr("data-command")
+	  || $(event.currentTarget).attr("data-command");
+	console.log(event);
+	console.log("--- MENU COMMAND name:" + attorgCmd);
+
+	// XXXX Should the present C-U number prefixes be done, too??
+	// When needed, allow a series of commands too. (Trivial, split on ",").
+	that.cmdHandler.callCommand(attorgCmd, {  });
+	return true;
+  };
+
+
+  // - - - - - - - - - - - - - - - - - -
+  // Handle clicking internal link to other part of the document
+  // (Should probably make an editor command out of this.)
+
   this.jumpToLink = function(event) {
 	event.preventDefault();
 	// - - - Get clicked Headline.
@@ -372,8 +383,7 @@ var OrgController = function(model, view, commandHandler,
 
 
   // - - - - - - - - - - - - - - - - - -
-  // Events from Edit mode:
-
+  // Keyboard events:
 
   this.handleTitleKeyEvent = function(event) {
 	// console.log(event);
@@ -457,7 +467,9 @@ var OrgController = function(model, view, commandHandler,
 	}
   };
 
-
+  
+  // - - - - - - - - - - - - - - - - - -
+  // Button Edit events:
   this.saveCommandEvent = function(event) {
     // (Sigh, put ID:s in a few more Elements??)
     var edit_div = event.target.parentNode.parentNode.parentNode.parentNode;

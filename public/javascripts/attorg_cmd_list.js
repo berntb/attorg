@@ -274,7 +274,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
 	  if (block_p && keycode === 40 && !ctrl)
-		return false;		  // Don't use 'down' in Block
+		return false;		  // Don't filter 'down' arrow in Block
 
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MovePrevious',
@@ -453,7 +453,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	name:  "MoveTreeUp",		// "M-S-up"
 	docum: "Description",
 
-	// XXXX Implement moving multiple lines with C-U
+	autoMove: true,				// XXXX Implement
 
 	// XXXX Need to split this into two, so can use as command
 	// names. (For menu use, M-X, etc.)
@@ -473,6 +473,8 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addACommand({
 	name:  "MoveTreeDown",				// "M-down"
 	docum: "Description",
+
+	autoMove: true,				// XXXX Implement
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  var thisTree	= headline.findSubTree();
@@ -830,7 +832,7 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("OpenClose",	   "TAB,, S-TAB,, M-S-TAB");
   cmdHandler.addKeyCommand("SaveDocument", "C-X C-S");
   // XXXX
-  // Change CR so more Emacs:
+  // Change CR so more Emacsy:
   // - C-CR opens a new line after the Headline (at the same level)
   // - M-CR opens a new Healine directly after (also at the same level)
   //   AND it gets any subtree of present Headline.
@@ -849,7 +851,7 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("ScrollBot",		"M->,, S-M->");
 
   // - - - IMPLEMENT: Set Mark, C-X C-X, [copy/paste??]
-  cmdHandler.addKeyCommand("SetMark",	   "C-space");
+  cmdHandler.addKeyCommand("SetMark",	   "C-space"); // Not done
 
   // - - - Todo handling:
   cmdHandler.addKeyCommand("TodoRotate",   "C-C C-T");

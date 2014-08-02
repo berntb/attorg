@@ -601,27 +601,42 @@ OrgHeadline.prototype = {
 	// XXXX Where does text go from before first Headline??
 	// Utils:
 	function _makeSpaces(no) {
+	  if (String.prototype.repeat)
+		return ' '.repeat(no);
+
 	  var spaces      = '';
-	  if (String.prototype.repeat) {
-		spaces        = ' '.repeat(no);
-	  } else {
-		for(var i = 0; i < no; i++) {
-		  spaces     += ' ';
-		}
+	  for(var i = 0; i < no; i++) {
+		spaces     += ' ';
 	  }
 	  return spaces;
 	};
 	function _addPrefixToAllLines(text, prefix) {
-	  if (/\n\s*$/.test(text))
+	  if (/^\s*$/.test(text))
 		return text;
 	  // Regexps are primitive in JavaScript. :-( This should be done
 	  // in one regexp.
-	  
+
+	  var lines       = text.split(/\n/);
+	  var spacedLines = _.map(lines,
+							  function(line) {
+								if (/^\s*$/.test(line))
+								  return line;
+								return prefix + line;
+							  });
+	  return spacedLines.join("\n");
 	};
 
 
 	var title	      = this.title();
 	var block         = this.block() || '';
+	var todo          = this.todo()  || '';
+	if (todo !== '')
+	  todo           += ' ';	// Append a space
+	var prio          = this.priority()  || '';
+	if (prio !== '')
+	  prio            = '[#' + prio + '] ';	// Append a space
+	// XXXX Priorities!!
+
 
 	// Check so block ends with a newline, otherwise add one:
 	if (block !== '' && (! /\n\s*$/.test(block))) {
@@ -635,17 +650,19 @@ OrgHeadline.prototype = {
 	// - - - Space prefix for block.
 	// XXXX 'block_indent' can't be changed! It won't be set in new
 	// lines. Now it sets a default for new blocks!! (=== level + 1.)
-	var blockIndent   = this.blockIndent();
+	// XXXX Generated block_indent is one too little. Also, need to
+	// consider tabs and spaces.
 	if (block !== '') {
 	  // Make indent string:
-	  var indentSpaces= _makeSpaces(blockIndent !== undefined ?
-									blockIndent
-									: this.level() + 1);
-	  console.log(this);
-	  console.log(indent.length);
+	  var blockIndent = this.blockIndent();
+	  blockIndent     = (blockIndent !== undefined ?
+						 blockIndent : this.level() + 1);
+	  var indentSpaces= _makeSpaces(blockIndent);
+	  // console.log(this);
+	  block           = _addPrefixToAllLines(block, indentSpaces);
 	}
 
-	return this.asterisks() + " " + title + "\n" + block;
+	return this.asterisks() + " " + todo + prio + title + "\n" + block;
   },
 
   // ------------------------------------------------------------
@@ -923,16 +940,16 @@ OrgHeadline.prototype = {
 
     // XXXX isBlock decides if block specific stuff should be done
     // (DEADLINE, lists, spreadsheets, PROPERTIES, ???) Implement!
-    // (But first, think out a GUI for editing PROPERTIES etc. :-) )
+    // (But first, think out a GUI for editing PROPERTIES etc. :-( )
 
 	var encodeOrgText = {
       U: ['<u>', '</u>'],
       B: ['<b>', '</b>'],
       I: ['<i>', '</i>'],
-      C: ['<code>', '</code>'],
+      C: ['<code>', '</code>'],	// ~some stuff~
       S: ['<span style="text-decoration: line-through;">', '</span>'],
 	  // ~verbatim text~
-	  V: ['', '']
+	  V: ['<tt>', '</tt>']
 	};
 
     var collected = '';

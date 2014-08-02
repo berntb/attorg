@@ -41,8 +41,8 @@ Here is what I think is the minimum viable feature list still needed to make Att
 + Installability, cough.
 + Documentation. And preferably C-h k, C-h a.
 + It should now be possible to extend Attorg with templates and buttons/menus. The templates needs to be extracted to a separate file maybe the template language should be replaced (presently Underscore.js is used.)
-+ The command/key sequences should be put into a separate configuration file or in the GUI.
-+ Saving(!) is needed. A couple of data sources should be configurable for users. At least one of Git or Dropbox.
++ The command/key sequences shouldn't be listed in the code but put into a separate configuration file or in the GUI.
++ Saving(!) is needed. A couple of data sources should be configurable for users. At least one of Git or Dropbox should be supported.
 + Agendas, probably just by an Emacs process.
 + Tags.
 + More search support.

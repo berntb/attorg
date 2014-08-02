@@ -21,11 +21,13 @@
 <div class="navbar navbar-fixed-top">
   <div class="navbar-inner">
     <a class="brand" href="#">Attorg</a>
-    <ul class="nav">
+    <ul class="nav" id="topmenu-commands">
       <li class="active"><a href="#">Home</a></li>
       <li><a href="#">Update Priorities</a></li>
       <li><a href="#">Update TODO states</a></li>
       <li><a href="/info">Help and command list</a></li>
+      <li><a href="#" class="attorg-command"
+			 data-command="SaveDocument">Save</a></li>
     </ul>
     <a class="brand pull-left" href="#"></a>
 	<div class="pull-right">
@@ -118,7 +120,7 @@
 	  <% if (priority !== '') { %>
 	    <a class="attorg-command" data-command="PrioHigher"
 		   title="" >
-		  <b style="color: black;">[<%= priority %>]</b>
+		  <b style="color: black;">[#<%= priority %>]</b>
 		</a>
 	  <% } %>
 	  <%= (hiliteRegex === undefined) ? title : title.replace(hiliteRegex, '<span class="hilight">$&</span>') %>

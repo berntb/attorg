@@ -1,19 +1,19 @@
-    # This file is part of Attorg. Copyright 2013 Bernt Budde.
+# This file is part of Attorg. Copyright 2013 Bernt Budde.
 
-    # Attorg is free software: you can redistribute it and/or modify
-    # it under the terms of the GNU General Public License as published by
-    # the Free Software Foundation, either version 3 of the License, or
-    # (at your option) any later version.
+# Attorg is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-    # Attorg is distributed in the hope that it will be useful,
-    # but WITHOUT ANY WARRANTY; without even the implied warranty of
-    # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    # GNU General Public License for more details.
+# Attorg is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-    # You should have received a copy of the GNU General Public License
-    # along with Attorg.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Attorg.  If not, see <http://www.gnu.org/licenses/>.
 
-	# The author is Bernt Budde, see my GitHub account, user berntb.
+# The author is Bernt Budde, see my GitHub account, user berntb.
 
 
 # This really needs a cleanup.
@@ -27,25 +27,54 @@ package Attorg::Extract::Org;
 
 use Org::Parser;
 
+use Text::Tabs;
+
 use Data::Dumper;
 $Data::Dumper::Quotekeys = 1;
 $Data::Dumper::Sortkeys  = 1;
 
 # TODO: priority, tags, progress (??), etc, etc...
 
+sub _get_file_detab {
+  my $org_file  = shift;
+  my $tab_size  = shift;
+
+  say STDERR "READING FILE";
+  
+  open(my $fh, "< :encoding(UTF-8)", $org_file)
+	  or die "Failed to open '$org_file', $!";
+  my @lines     = <$fh>;
+  close $fh;
+  chomp @lines;
+
+  local $Text::Tabs::tabstop = defined $tab_size ? $tab_size : 8;
+
+  @lines        = expand( @lines );
+
+  return join("\n", @lines);
+}
+
+
 sub get_org_presentation {
   my $org_file = shift;
 
   die "No file '$org_file'"              if ! -f $org_file;
+  my $org_text = _get_file_detab( $org_file, 4 );
 
-  my $orgp = Org::Parser->new();
-  my $doc = $orgp->parse_file($org_file);
+  # return get_org_from_string($org_text);
+
+  my $orgp     = Org::Parser->new();
+  # my $doc    = $orgp->parse_file($org_file);
+  my $doc      = $orgp->parse($org_text);
 
   my @headlines_for_json;
   trav($doc, \@headlines_for_json);
 
+  # say STDERR Dumper \@headlines_for_json;
+
   return \@headlines_for_json;
 }
+
 
 sub get_org_from_string {
   my $org_string = shift;
