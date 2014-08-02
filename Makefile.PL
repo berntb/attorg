@@ -16,6 +16,9 @@ WriteMakefile(
         'YAML'       => 0,
         'Dancer'     => 1.3095,
         'Template'   => 0,
+		# ------
+		'Org::Parser'=> 0.39,
+		'Text::Tabs' => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'attorg-*' },
