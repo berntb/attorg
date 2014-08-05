@@ -299,7 +299,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 
   this.get_values = function(headline) {
-	var model_str_id = headline.id_str();
+	var model_str_id= headline.id_str();
 	var title_input = $('#t_' + model_str_id);
 	var block_input = $('#b_' + model_str_id);
 
@@ -309,18 +309,21 @@ var OrgView = function(document_div_id, divid_headlines) {
   // Make it visible that a Headline is being edited.
   // (For now -- put a frame around the Headline and its editing form.)
 
-  // Check so adding/removing frames for level 1 works? What happens
-  // when lusers _change_ levels while editing??
+  // (Better not set a Headline color too similar to the bg-warning color!)
   this._modify_top_view_for_edit = function(topView, headline) {
-	topView.addClass("well well-small");
-	// if (headline.level() == 1)
-	//   topView.children(':first').removeClass("well well-small");
+	// topView.addClass("well well-small");
+	topView.addClass("bg-warning");
+	// Maybe later?
+	// var marginTop   = topView.css("margin-top");
+	// var marginBot   = topView.css("margin-bottom");
+	// console.log("Margin top " + marginTop + ", bottom " + marginBot);
+	// topView.css("margin-top", marginTop + 30);
+	// topView.css("margin-bottom", marginBot + 30);
   };
 
   this._modify_top_view_for_end_of_edit = function(topView, headline) {
-	  topView.removeClass("well well-small");
-	// if (headline.level() == 1)
-	//   topView.children(':first').addClass("well well-small");
+	// topView.removeClass("well well-small");
+	topView.removeClass("bg-warning");
   };
 
   // - - - Move Headline in View only
@@ -417,21 +420,20 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  // 	+ ' style="display: none;"></span>';
 	  // return '<button type="button" class="btn btn-mini open-subtree" ' +
 	  //	' disabled>-</button>';
-	  icon    = 'icon-circle-blank';
+	  icon    = 'minus-sign';
 	  xaClass = " disabled ";
 	} else if (visible_kids === 'all_visible') {
-	  icon	  = 'icon-caret-down';
+	  icon	  = 'arrow-down';
 	} else if (visible_kids === 'some') {
-	  icon	  = 'icon-angle-down';
+	  icon	  = 'collapse-down';
 	} else {
-	  icon	  = 'icon-caret-right';
+	  icon	  = 'expand';
 	}
-	// btn-small or btn-mini??
-	// return '<a class="btn btn-small open-subtree pull-left' + xaClass + '">'
-	return '<a class="btn btn-small openclose-tree attorg-command pull-left'
+	return '<a class="btn btn-sm openclose-tree attorg-command pull-left'
 	  + xaClass + '" '
 	  + 'data-command="OpenClose">'
-	  + '<i class="' + icon + '"></i></a>';
+	  + '<span class="glyphicon glyphicon-' + icon + '"></span>'
+	  + '</a>';
   };
 
   // - - - - - Headline:
@@ -522,7 +524,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  _level_generated[level] = _make_level_select_help(level)
 	  + "</select>\n";
 
-	return '<select name="level-select" class="span1 lvl_select" ' +
+	return '<select name="level-select" class="col-md-1 lvl_select" ' +
 	  'id="' + level_id + '">' + _level_generated[level];
   };
 

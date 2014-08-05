@@ -867,7 +867,7 @@ var OrgController = function(model, view, commandHandler,
     // Get the Headline from Edit mode, when a dropdown menu
     // selection is done.
     // (Sigh, put ID:s in a few more Elements??)
-    var edit_div = event.target.parentNode.parentNode;
+    var edit_div = event.target.parentNode;
 
 	if (! edit_div.id)
 	  edit_div   = edit_div.parentNode;
