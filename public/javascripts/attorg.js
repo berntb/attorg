@@ -176,6 +176,14 @@ var OrgController = function(model, view, commandHandler,
 	var topDiv= $("#topmenu-commands");
 	topDiv.on('click',   '.attorg-command',  this.handleTopMenuCommand);
 
+	// - - - - - Modal commands:
+	$("#hline-tags-saved").click(this.saveHeadlineTags);
+	$("#hline-tags-cancel-save").click(this.cancelHeadlineTagsChange);
+
+
+    // - - - - - Search event:
+    $("#" + this.divid_search).submit( this.searchEvent );
+	$('.clear-search').click( this.searchEventClear );
 
 	// - - - - - Headline events:
     var div   = $("#" + this.divid_headlines);
@@ -198,31 +206,23 @@ var OrgController = function(model, view, commandHandler,
     div.on('click',   '.edit-header',     this.editHeadingEvent);
     div.on('click',   '.add-header',      this.addHeadingEvent);
 
+    // - - - - -  Buttons etc in Edit mode:
+    div.on('click',   '.save-cmd',        this.saveCommandEvent);
+    div.on('click',   '.update-cmd',      this.updateCommandEvent);
+    div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
+    div.on('change',  '.lvl_select',      this.levelChangeEvent);
+
     // - - - - - Key codes:
 	// (keydown seems more reactive, keypress is better but not
 	//  supported by Chrome (and IE?) -- arrow keys, C-N, etc. :-(
 	//  Sigh... Just support Safari and FF??)
 
-	// div.on('keypress','.title_edit',      this.handleTitleKeyEvent);
-    // div.on('keypress','.block_edit',      this.handleBlockKeyEvent);
+	// 'keypress' instead?? Sigh...
     div.on('keydown', '.title_edit',      this.handleTitleKeyEvent);
     div.on('keydown', '.block_edit',      this.handleBlockKeyEvent);
 
-    // - - - - -  Buttons etc in Edit mode:
-    div.on('click',   '.save-cmd',        this.saveCommandEvent);
-    div.on('click',   '.update-cmd',      this.updateCommandEvent);
-    div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
-
-    div.on('change',  '.lvl_select',      this.levelChangeEvent);
-
-    // div.on('click',   '.delete-header',   this.deleteHeadingEvent);
-
     // - - - - - Document links to other Headlines:
 	div.on('click',   '.internal_link',   this.jumpToLink);
-
-    // - - - - - Search event:
-    $("#" + this.divid_search).submit( this.searchEvent );
-	$('.clear-search').click( this.searchEventClear );
   };
 
   
@@ -591,6 +591,20 @@ var OrgController = function(model, view, commandHandler,
   }
 
   // ----------------------------------------------------------------------
+  // Tags:
+
+  this.saveHeadlineTags = function(event) {
+	that.cmdHandler.callCommand("_saveModalDialog", { });
+	return true;
+  }
+
+  this.cancelHeadlineTagsChange = function(event) {
+	that.view.closeHeadlineTagsEditing();
+	return true;
+  }
+
+
+  // ----------------------------------------------------------------------
   // Help routines
 
   // - - - - - - - - - - - - - - - - - -
@@ -867,7 +881,7 @@ var OrgController = function(model, view, commandHandler,
     // Get the Headline from Edit mode, when a dropdown menu
     // selection is done.
     // (Sigh, put ID:s in a few more Elements??)
-    var edit_div = event.target.parentNode.parentNode;
+    var edit_div = event.target.parentNode;
 
 	if (! edit_div.id)
 	  edit_div   = edit_div.parentNode;
@@ -920,6 +934,7 @@ var OrgController = function(model, view, commandHandler,
 
 
   // Help method which updates a Headline with title/block values:
+  // XXXX Should this handle tags??
   this.update_headline_title_block = function(headline, title, block) {
     var modified = false;
     if (title !== undefined && title !== headline.title()) {
@@ -936,7 +951,6 @@ var OrgController = function(model, view, commandHandler,
 		headline.headline.title_update_ix = 1;
 	  }
       modified = true;
-      // XXXX Check with server for parsing subparts of Headline!!
     }
     if (block !== undefined && block !== headline.block() ) {
       headline.block( block );
@@ -944,8 +958,18 @@ var OrgController = function(model, view, commandHandler,
       that.model.dirty(headline.index, 'block');
 	  headline.headline.block_parts = undefined;
       modified = true;
-      // XXXX Check with server for parsing subparts of Block!!
     }
+	// if (arguments.length > 2) {
+	//   // Got tags:
+	//   var tagsNow = headline.tags();
+	//   if ((tagsNow === undefined && tags    !== undefined)
+	// 	  || (tags === undefined && tagsNow !== undefined)
+	// 	  || (tags !== undefined && tags.join(":") !== tagsNow.join(":"))
+	// 	 ) {
+	// 	headline.tags( tags );
+	// 	// modified = true; -- only for update on server.
+	//   }
+	// }
 
     if (modified) {
 	  // Will be replaced

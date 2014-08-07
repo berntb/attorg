@@ -20,9 +20,12 @@
 // XXXX Make setting up templates neater!!
 // Inject template texts, instead.
 
-var compiled_template_hline = _.template( $("#template_hline").html() );
-var compiled_template_edit	= _.template( $("#template_edit_hline").html() );
-var compiled_template_empty = _.template( $("#template_hidden_hline").html() );
+var template_hline      = _.template( $("#template_hline").html() );
+var template_edit	    = _.template( $("#template_edit_hline").html() );
+var template_empty      = _.template( $("#template_hidden_hline").html() );
+
+var template_hline_tags = _.template( $("#template_hline_tags").html() );
+
 
 // Main View object:
 
@@ -197,7 +200,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 	if (!visible_at_all && ! force_visible ) {
 	  this.lazilyNotRendered[headline_id] = true;
-	  return compiled_template_empty( { id: headline_id } );
+	  return template_empty( { id: headline_id } );
 	}
 
 	var title_value	  = headline.title();
@@ -219,7 +222,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	if (tags != undefined)
 	  tags            = ":" + _.escape(tags.join(":")) + ":";
 
-	return compiled_template_hline(
+	return template_hline(
 	  { id: headline_id, // ID string for Headline
 		visible: visible_at_all,
 		visible_kids: headline.visible_children(),
@@ -270,7 +273,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 	var level		  = headline.level();
 
-	return compiled_template_edit(
+	return template_edit(
 	  { id: headline.id_str(), // ID string for Headline
 		level: headline.level(),
 		title_text: title_value.replace(/"/g, '&quot;'),
@@ -281,6 +284,39 @@ var OrgView = function(document_div_id, divid_headlines) {
 		level_select_options: (headline.is_config() ?
 							   '' : _make_level_select_help(level)),
 	  }) ;
+  };
+
+  // ----------------------------------------------------------------------
+  // Tags:
+
+  // Make one fun out of these two?
+  this.setupTagsForEditing = function(tags, allTags) {
+	$("#edit-headline-tags").html(template_hline_tags({tags:    tags,
+													   allTags: allTags}));
+	this._usedTagList = allTags;
+  };
+
+  this.editTagsForHeadline = function() {
+	$("#hline-tags-modal").modal({backdrop: true});
+  };
+
+  this.findCheckedTagsForHeadline = function() {
+	var allTags = this._usedTagList;
+	if (allTags === undefined)
+	  return [];
+
+	var named   = Array();
+	$("#edit-headline-tags").find("input:checked").each(function (i, ob) {
+	  var num   = parseInt($(ob).attr("name"));
+	  if (! isNaN(num) && num >= 0 && num < allTags.length)
+		named.push( allTags[num] );
+	});
+	return named;
+  };
+
+  this.closeHeadlineTagsEditing = function() {
+	$("#hline-tags-modal").modal('hide');
+	delete this._usedTagList;
   };
 
 
@@ -299,7 +335,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 
   this.get_values = function(headline) {
-	var model_str_id = headline.id_str();
+	var model_str_id= headline.id_str();
 	var title_input = $('#t_' + model_str_id);
 	var block_input = $('#b_' + model_str_id);
 
@@ -309,18 +345,21 @@ var OrgView = function(document_div_id, divid_headlines) {
   // Make it visible that a Headline is being edited.
   // (For now -- put a frame around the Headline and its editing form.)
 
-  // Check so adding/removing frames for level 1 works? What happens
-  // when lusers _change_ levels while editing??
+  // (Better not set a Headline color too similar to the bg-warning color!)
   this._modify_top_view_for_edit = function(topView, headline) {
-	topView.addClass("well well-small");
-	// if (headline.level() == 1)
-	//   topView.children(':first').removeClass("well well-small");
+	// topView.addClass("well well-small");
+	topView.addClass("bg-warning");
+	// Maybe later?
+	// var marginTop   = topView.css("margin-top");
+	// var marginBot   = topView.css("margin-bottom");
+	// console.log("Margin top " + marginTop + ", bottom " + marginBot);
+	// topView.css("margin-top", marginTop + 30);
+	// topView.css("margin-bottom", marginBot + 30);
   };
 
   this._modify_top_view_for_end_of_edit = function(topView, headline) {
-	  topView.removeClass("well well-small");
-	// if (headline.level() == 1)
-	//   topView.children(':first').addClass("well well-small");
+	// topView.removeClass("well well-small");
+	topView.removeClass("bg-warning");
   };
 
   // - - - Move Headline in View only
@@ -417,21 +456,20 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  // 	+ ' style="display: none;"></span>';
 	  // return '<button type="button" class="btn btn-mini open-subtree" ' +
 	  //	' disabled>-</button>';
-	  icon    = 'icon-circle-blank';
+	  icon    = 'minus-sign';
 	  xaClass = " disabled ";
 	} else if (visible_kids === 'all_visible') {
-	  icon	  = 'icon-caret-down';
+	  icon	  = 'arrow-down';
 	} else if (visible_kids === 'some') {
-	  icon	  = 'icon-angle-down';
+	  icon	  = 'collapse-down';
 	} else {
-	  icon	  = 'icon-caret-right';
+	  icon	  = 'expand';
 	}
-	// btn-small or btn-mini??
-	// return '<a class="btn btn-small open-subtree pull-left' + xaClass + '">'
-	return '<a class="btn btn-small openclose-tree attorg-command pull-left'
+	return '<a class="btn btn-sm openclose-tree attorg-command pull-left'
 	  + xaClass + '" '
 	  + 'data-command="OpenClose">'
-	  + '<i class="' + icon + '"></i></a>';
+	  + '<span class="glyphicon glyphicon-' + icon + '"></span>'
+	  + '</a>';
   };
 
   // - - - - - Headline:
@@ -522,7 +560,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  _level_generated[level] = _make_level_select_help(level)
 	  + "</select>\n";
 
-	return '<select name="level-select" class="span1 lvl_select" ' +
+	return '<select name="level-select" class="col-md-1 lvl_select" ' +
 	  'id="' + level_id + '">' + _level_generated[level];
   };
 

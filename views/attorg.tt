@@ -1,139 +1,168 @@
 <!--
-    This file is part of Attorg. Copyright 2013 Bernt Budde.
+	This file is part of Attorg. Copyright 2013 Bernt Budde.
 
-    Attorg is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Attorg is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    Attorg is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	Attorg is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Attorg.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with Attorg.	If not, see <http://www.gnu.org/licenses/>.
 
 	The author is Bernt Budde, see my GitHub account, user berntb.
 -->
 
 
-<div class="navbar navbar-fixed-top">
-  <div class="navbar-inner">
-    <a class="brand" href="#">Attorg</a>
-    <ul class="nav" id="topmenu-commands">
-      <li class="active"><a href="#">Home</a></li>
-      <li><a href="#">Update Priorities</a></li>
-      <li><a href="#">Update TODO states</a></li>
-      <li><a href="/info">Help and command list</a></li>
-      <li><a href="#" class="attorg-command"
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+  <div class="container-fluid">
+	<ul class="nav navbar-nav" id="topmenu-commands">
+	  <li class="active"><a class="brand navbar-left" href="#">Attorg</a></li>
+	  <li><a href="#">Home</a></li>
+	  <li><a href="#">Update Priorities</a></li>
+	  <li><a href="#">Update TODO states</a></li>
+	  <li><a href="/info">Help and command list</a></li>
+	  <li><a href="#" class="attorg-command"
 			 data-command="SaveDocument">Save</a></li>
-    </ul>
-    <a class="brand pull-left" href="#"></a>
-	<div class="pull-right">
-	  <!-- Vertically align these, looks horribly :-( -->
-      <form class="navbar-search" id="org_edit_search">
-		<input type="text" class="search-query input-small"
+	</ul>
+	<form class="navbar-form navbar-right"
+		  role="search" id="org_edit_search">
+	  <div class="form-group pull-right">
+		<input type="text" class="search-query input-small pull-left"
 			   id="org_edit_search_text" placeholder="Search">
-      </form>
-	  <a class="btn btn-medium clear-search">
-		<!-- <i class="icon-asterisk" id="org_edit_search_clear"></i> -->
-		<i class="icon-off" id="org_edit_search_clear"></i>
-	  </a>
-	</div>
+		<a class="btn btn-default btn-xs clear-search pull-right">
+		  <span class="glyphicon glyphicon-remove"
+				id="org_edit_search_clear"></span>
+		</a>
+	  </div>
+	</form>
   </div>
-</div>
+</nav>
 
-<!-- <div class="page-header"> -->
-<!-- <h1>Foo</h1> -->
-<!-- </div> -->
-<div class="container">
-
-<div class="page-header">
+<div class="page-header container-fluid">
 	<div class="row">
-		<div class="span12">
-      <h4 class="pull-left">Document: <span id="filename">XXXX</span></h4>
-      <span class="pull-right"><b>user: [%= user_name %]</b></span>
-			<!-- <h1>Attorg - org documents in the browser</h1> -->
+	  <div class="col-md-11">
+		  <h4 class="pull-left">Document: <span id="filename">XXXX</span></h4>
+		  <!-- XXXX TEST: -->
+		  <span class="pull-right"><b>user: [%= user_name %]</b></span>
 		</div>
 	</div>
 </div>
 
+
 <!-- For the data; just let it take all the horizontal space it can -->
-<div class="row">
+<div class="container-fluid">
+  <div class="row">
+	<div class="col-md-2">Todo states:</div>
+	<div class="col-md-2">Done states:</div>
+	<div class="col-md-3">Tags:</div>
+	<div class="col-md-1">Priorities:</div>
+	<div class="col-md-3">Drawer names:</div>
+  </div>
+  <div class="row" id="org_edit_document_parameters">
+	<div class="col-md-2 todo_states_list">-</div>
+	<div class="col-md-2 done_states_list">-</div>
+	<div class="col-md-3 tag_list">-</div>
+	<div class="col-md-1 priority_list">-</div>
+	<div class="col-md-3 drawer_names_list">-</div>
+  </div>
+  <!-- <div class="row"> -->
+  <div id="org_edit">Hej svejs</div>
+  <!-- </div> -->
 </div>
-<div class="row">
-<div class="span2">Todo states:</div>
-<div class="span2">Done states:</div>
-<div class="span3">Tags:</div>
-<div class="span1">Priorities:</div>
-<div class="span4">Drawer names:</div>
-</div>
-<div id="org_edit_document_parameters" class="row">
-<div class="span2 todo_states_list">-</div>
-<div class="span2 done_states_list">-</div>
-<div class="span3 tag_list">-</div>
-<div class="span1 priority_list">-</div>
-<div class="span4 drawer_names_list">-</div>
-</div>
-<!-- <div class="row"> -->
-<div id="org_edit">Hej svejs</div>
-<!-- </div> -->
 
 
-</div> <!-- container -->
-<input type="text" id="file-to-start" style="display:none;"
+<div class="container-fluid">
+  <input type="text" id="file-to-start" style="display:none;"
  value="[%= filename %]"/>
+</div>
 <!-- <script src="/jquery-1.8.3.min.js"></script> -->
 <!-- <script src="bootstrap/js/bootstrap.js"></script> -->
 
 <!-- <script type="text/javascript">alert("Loading -- JS");</script> -->
 
+<!-- Modals ---------------------- -->
+
+<!-- add 'fade' to class, to get a nice animation of showing/hiding. -->
+<div class="modal" id="hline-tags-modal" tabindex="-1" role="dialog"
+	 aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 class="modal-title" id="myModalLabel">Update Headline tags</h4>
+      </div>
+      <div class="modal-body">
+        <div id="edit-headline-tags">
+		  (Shouldn't be shown.)
+		</div>
+      </div>
+      <div class="modal-footer">
+		<!-- Skips this data-dismiss="modal", need clean up. -->
+        <button type="button" class="btn btn-default"
+				id="hline-tags-cancel-save">
+		  Cancel
+		</button>
+        <button type="button" class="btn btn-primary" id="hline-tags-saved">
+		  Save tags
+		</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Templates ---------------------- -->
+
 
 <!-- Normal headline: -->
 <script id ="template_hline" type="text/template">
 <% if (hide_prefix) {
-     // Don't do anything
+	 // Don't do anything
    } else { %>
-   <div class="row" <%= visible ? "" :  'style="display: none;"' %> >
+  <div class="row" <%= visible ? '' :  'style="display: none;"' %>>
 <% } %>
+  <!-- style="margin: 0; padding: 0;" ?? -->
   <div id="hl_<%= id %>"
-	   class="controls controls-row span12  <%= config ? "hlC" : (level === 1 ? "well well-small hl1" : "hl" + level) %>">
-	<div class="btn-toolbar span2">
+	   class="<%= config ? "hlC" : (level === 1 ? "hl1" : "hl" + level) %>" >
+	<div class="btn-group col-md-2">
+	  <div class="btn-group-xs">
 	  <%= subtree_open_closed %>
+	  </div>
 	  <% if (! config) { %>
-	    <button class="attorg-command btn-mini btn pull-right"
+		<button class="attorg-command btn-xs btn btn-default pull-right"
 				data-command="TodoRotate" type="button">
 		  <%= todo_spec %>
 		</button>
 	  <% } %>
-	  <div class="btn-group">
-		<a class="btn btn-mini edit-header">
-		  <i class="icon-edit edit-header"></i>
+	  <div class="btn-group-xs">
+		<a class="btn btn-sm edit-header">
+		  <span class="glyphicon glyphicon-edit"></span>
 		</a>
-		<a class="btn btn-mini add-header">
-		  <i class="icon-plus add-header"></i>
+		<a class="btn btn-sm add-header">
+		  <span class="glyphicon glyphicon-plus"></span>
 		</a>
 	  </div>
 	</div>
-	<span class="span9 title-text" style="color:<%= color_text %>" >
+	<span class="col-md-9 title-text" style="color:<%= color_text %>" >
 	  <b><%= level_spec %></b>
 	  <% if (priority !== '') { %>
-	    <a class="attorg-command" data-command="PrioHigher"
+		<a class="attorg-command" data-command="PrioHigher"
 		   title="" >
 		  <b style="color: black;">[#<%= priority %>]</b>
 		</a>
 	  <% } %>
 	  <%= (hiliteRegex === undefined) ? title : title.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
 	  <% if (tags !== undefined ) { %>
-	    <br><a class="org-tags attorg-command"
-				  data-command="PrioHigher"><%= tags %></a>
+		<br><a class="org-tags attorg-command"
+				  data-command="EditHlineTags"><%= tags %></a>
 	  <% } %>
 	  <span class="block-text"><%= (hiliteRegex === undefined) ? block : block.replace(hiliteRegex, '<span class="hilight">$&</span>') %></span>
 	</span>
   </div>
-  <div class="row headline-edit"></div>
+  <div class="headline-edit col-md-11"></div>
 <% if (hide_prefix) { } else { %>
 </div>
 <% } %>
@@ -141,90 +170,80 @@
 
 <!-- Edit part of a Headline: -->
 <script id ="template_edit_hline" type="text/template">
-<div class="row headline-edit">
+<div class="headline-edit">
 	<div id="ed-<%= id %>" class="controls controls-row">
-	  <div class="span3">
-		<div class="row btn-toolbar span3">
-		  <div class="btn-group">
-			<button class="btn btn-small btn-primary save-cmd">Save</button>
-			<button class="btn btn-small update-cmd">Update</button>
-		  </div>
-		  <div class="btn-group">
-			<button class="btn btn-small cancel-cmd">Cancel</button>
+	  <div class="col-md-2">
+		<% if (! config) { %>
+		<!-- Change command! Update "tags". -->
+		<div class="btn-toolbar">
+		  <select id="X_<%= id %>" class="lvl_select pull-left"
+				  name="level-select">
+			<%= level_select_options %>
+		  </select>
+		  <a class="btn btn-sm btn-default pull-right attorg-command"
+			 data-command="MoveTreeDown">Update Tags</a>
+		</div>
+		<% } %>
+		<br>
+		<div class="btn-toolbar">
+		  <div class="btn-group-xs">
+			<button class="btn btn-primary pull-left save-cmd">
+			  Save</button>
+			<button class="btn btn-primary pull-left update-cmd">
+			  Update</button>
+			<button class="btn btn-warning pull-right cancel-cmd">
+			  Cancel</button>
 		  </div>
 		</div>
-		<div class="row btn-group span3">
-		  <div class="btn-group">
-			<a data-toggle="dropdown" class="btn dropdown-toggle">
-			  Cmds<i class="icon-large icon-caret-down"></i>
-			</a>
-			<ul class="dropdown-menu">
-			  <!-- Move all commands over to this format: -->
-			  <li>
-				<a class="attorg-command" data-command="DelHeadline">
-				  <i class="icon-trash"></i> Delete
-				</a>
-			  </li>
-			  <li>
-				<a class="attorg-command"  data-command="HeadlineUp">
-				  <i class="icon-angle-up"></i> Move Up
-				</a>
-			  </li>
-			  <li>
-				<a class="attorg-command" data-command="HeadlineDown">
-				  <i class="icon-angle-down"></i> Move Down
-				</a>
-			  </li>
-			  <li>
-				<a class="attorg-command" data-command="MoveTreeUp">
-				  <i class="icon-chevron-up"></i> Move Subtree Up
-				</a>
-			  </li>
-			  <li>
-				<a class="attorg-command" data-command="MoveTreeDown">
-				  <i class="icon-chevron-down"></i> Move Subtree Down
-				</a>
-			  </li>
+		<br>
+		<div class="btn-group-xs">
+		  <a data-toggle="dropdown" class="btn dropdown-toggle btn-default"
+			 type="button" >
+			Commands <span class="caret"></span>
+		  </a>
+		  <ul class="dropdown-menu">
+			<!-- Move all commands over to this format: -->
+			<li>
+			  <a class="attorg-command" data-command="DelHeadline">
+				<span class="glyphicon glyphicon-trash"></span>Delete
+			  </a>
+			</li>
+			<li>
+			  <a class="attorg-command"  data-command="HeadlineUp">
+				<span class="glyphicon glyphicon-chevron-up"></span>Move Up
+			  </a>
+			</li>
+			<li>
+			  <a class="attorg-command" data-command="HeadlineDown">
+				<span class="glyphicon glyphicon-chevron-down"></span>Move Down
+			  </a>
+			</li>
+			<li>
+			  <a class="attorg-command" data-command="MoveTreeUp">
+				<span class="glyphicon glyphicon-arrow-up"></span>
+				Move Subtree Up
+			  </a>
+			</li>
+			<li>
+			  <a class="attorg-command" data-command="MoveTreeDown">
+				<span class="glyphicon glyphicon-arrow-down"></span>
+				Move Subtree Down
+			  </a>
+			</li>
 
-			  <li class="divider"></li>
-
-			  <li>
-				<a class=""><i class="icon-coffee"></i> Not implemented yet:
-				</a>
-			  </li>
-			  <li>
-				<a class="">
-				  <i class="icon-copy"></i> Copy Subtree
-				</a>
-			  </li>
-			  <li>
-				<a class="">
-				  <i class="icon-paste"></i> Paste Subtree
-				</a>
-			  </li>
-			  <li>
-				<a class="">
-				  <i class="icon-trash"></i> Delete Subtree
-				</a>
-			  </li>
-			</ul>
-		  </div>&nbsp;
-		</div>
-		<div class="span3 controls-row">
-		 <select id="X_<%= id %>" class="span1 lvl_select" name="level-select">
-		 		 <%= level_select_options %>
-		 </select>
-		 <% if (! config) { %>
-	       <a class="btn btn-small pull-right attorg-command"
-			  data-command="MoveTreeDown">Tags</a>
-		 <% } %>
+			<li class="divider"></li>
+			<li> <a class=""> Not implemented yet:</a> </li>
+			<li> <a class=""> Copy Subtree </a> </li>
+			<li> <a class=""> Paste Subtree </a> </li>
+			<li> <a class=""> Delete Subtree </a> </li>
+		  </ul>
 		</div>
 	  </div>
-	  <div class="span9">
-		<% if (config) console.log("CONFIG!!"); %>
+	  <div class="col-md-9">
+		<!-- XXXX '"':es are quoted here?? -->
 		<input type="text" value="<%= title_text %>" id="t_<%= id %>"
-			   class="span9 title_edit" <%= config ? 'disabled' : '' %>><br>
-<textarea id="b_<%= id %>" cols="73" rows="5" class="span9 block_edit">
+			   class="col-md-9 title_edit" <%= config ? 'disabled' : '' %>><br>
+<textarea id="b_<%= id %>" cols="73" rows="5" class="col-md-9 block_edit">
 <%= block_text %></textarea>
 	  </div>
 	</div>
@@ -239,130 +258,152 @@
 </script>
 
 
+<!-- Present Headline tags for editing: -->
+<script id ="template_hline_tags" type="text/template">
+<div class="row">
+  <div>
+	<p>
+	<form role="form">
+	<% var now = {}; %>
+	<% for(var i = 0; i < tags.length; i++) { now[tags[i]] = true; } %>
+	<% for(i = 0; i < allTags.length; i++) { %>
+	   <label>
+		 <input type="checkbox" name ="<%= i %>"
+				<%= now[allTags[i]] ? 'checked="true"' : '' %> >
+		 <%= _.escape(allTags[i]) %>
+       </label></br>
+	<% } %>
+	</form>
+	</p>
+  </div>
+</div>
+</script>
+
+
  <!-- Test data: -->
 <script id ="data" type="text/json">
 [
    {
-      "drawer_names" : [
-         "CLOCK",
-         "LOGBOOK",
-         "PROPERTIES"
-      ],
-      "priorities" : [
-         "A",
-         "B",
-         "C"
-      ],
-      "document" : 1,
-      "done_states" : [
-         "DONE"
-      ],
-      "todo_states" : [
-         "TODO"
-      ]
+	  "drawer_names" : [
+		 "CLOCK",
+		 "LOGBOOK",
+		 "PROPERTIES"
+	  ],
+	  "priorities" : [
+		 "A",
+		 "B",
+		 "C"
+	  ],
+	  "document" : 1,
+	  "done_states" : [
+		 "DONE"
+	  ],
+	  "todo_states" : [
+		 "TODO"
+	  ]
    },
    {
-      "level" : 1,
-      "title_text" : "Duh",
-      "tags" : ""
+	  "level" : 1,
+	  "title_text" : "Duh",
+	  "tags" : ""
    },
    {
-      "level" : 2,
-      "title_text" : "A-txt",
-      "tags" : ""
+	  "level" : 2,
+	  "title_text" : "A-txt",
+	  "tags" : ""
    },
    {
-      "level" : 2,
-      "title_text" : "Complex before [[http://www.techotopia.com/index.php/Using_Xcode_Storyboarding_%28iPhone_iOS_5%29][Book]] After",
-      "title_subs" : [
-         [
-            "Org::Element::Text",
-            "Complex before ",
-            ""
-         ],
-         [
-            "Org::Element::Link",
-            "[[http://www.techotopia.com/index.php/Using_Xcode_Storyboarding_%28iPhone_iOS_5%29][Book]]"
-         ],
-         [
-            "Org::Element::Text",
-            " After",
-            ""
-         ]
-      ],
-      "tags" : ""
+	  "level" : 2,
+	  "title_text" : "Complex before [[http://www.techotopia.com/index.php/Using_Xcode_Storyboarding_%28iPhone_iOS_5%29][Book]] After",
+	  "title_subs" : [
+		 [
+			"Org::Element::Text",
+			"Complex before ",
+			""
+		 ],
+		 [
+			"Org::Element::Link",
+			"[[http://www.techotopia.com/index.php/Using_Xcode_Storyboarding_%28iPhone_iOS_5%29][Book]]"
+		 ],
+		 [
+			"Org::Element::Text",
+			" After",
+			""
+		 ]
+	  ],
+	  "tags" : ""
    },
    {
-      "level" : 3,
-      "title_text" : "AA",
-      "tags" : ""
+	  "level" : 3,
+	  "title_text" : "AA",
+	  "tags" : ""
    },
    {
-      "level" : 3,
-      "title_text" : "AB",
-      "tags" : ""
+	  "level" : 3,
+	  "title_text" : "AB",
+	  "tags" : ""
    },
    {
-      "level" : 2,
-      "block_indent" : 3,
-      "title_text" : "B",
-      "block" : "Text text\n",
-      "tags" : ""
+	  "level" : 2,
+	  "block_indent" : 3,
+	  "title_text" : "B",
+	  "block" : "Text text\n",
+	  "tags" : ""
    },
    {
-      "level" : 3,
-      "title_text" : "BA",
-      "tags" : ""
+	  "level" : 3,
+	  "title_text" : "BA",
+	  "tags" : ""
    },
    {
-      "level" : 4,
-      "title_text" : "BAA",
-      "tags" : ""
+	  "level" : 4,
+	  "title_text" : "BAA",
+	  "tags" : ""
    },
    {
-      "level" : 1,
-      "block_indent" : 2,
-      "title_text" : "Blaha",
-      "block" : "Some Block text from <2013-01-03 Thu> time.\n",
-      "block_parts" : [
-         [
-            "Org::Element::Text",
-            "  Some Block text from "
-         ],
-         [
-            "Org::Element::Timestamp",
-            "<2013-01-03 Thu>"
-         ],
-         [
-            "Org::Element::Text",
-            " time.\n"
-         ]
-      ],
-      "tags" : ""
+	  "level" : 1,
+	  "block_indent" : 2,
+	  "title_text" : "Blaha",
+	  "block" : "Some Block text from <2013-01-03 Thu> time.\n",
+	  "block_parts" : [
+		 [
+			"Org::Element::Text",
+			"  Some Block text from "
+		 ],
+		 [
+			"Org::Element::Timestamp",
+			"<2013-01-03 Thu>"
+		 ],
+		 [
+			"Org::Element::Text",
+			" time.\n"
+		 ]
+	  ],
+	  "tags" : ""
    },
    {
-      "level" : 2,
-      "block_indent" : 3,
-      "title_text" : "C",
-      "block" : "foo bar\nfrotz\n",
-      "tags" : ""
+	  "level" : 2,
+	  "block_indent" : 3,
+	  "title_text" : "C",
+	  "block" : "foo bar\nfrotz\n",
+	  "tags" : ""
    },
    {
-      "level" : 3,
-      "title_text" : "CA [2012-07-18 Wed]",
-      "block" : "\n\n",
-      "title_subs" : [
-         [
-            "Org::Element::Text",
-            "CA ",
-            ""
-         ],
-         [
-            "Org::Element::Timestamp",
-            "[2012-07-18 Wed]"
-         ]
-      ],
-      "tags" : ""
+	  "level" : 3,
+	  "title_text" : "CA [2012-07-18 Wed]",
+	  "block" : "\n\n",
+	  "title_subs" : [
+		 [
+			"Org::Element::Text",
+			"CA ",
+			""
+		 ],
+		 [
+			"Org::Element::Timestamp",
+			"[2012-07-18 Wed]"
+		 ]
+	  ],
+	  "tags" : ""
    }
 ]
 </script>
@@ -370,7 +411,7 @@
 
 
 <!-- <script type="text/javascript" -->
-<!-- 	src="[% request.uri_base %]/javascripts/duh.js"></script> -->
+<!--	src="[% request.uri_base %]/javascripts/duh.js"></script> -->
 
 
 <script type="text/javascript"
