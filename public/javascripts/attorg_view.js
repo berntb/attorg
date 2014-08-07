@@ -20,9 +20,12 @@
 // XXXX Make setting up templates neater!!
 // Inject template texts, instead.
 
-var compiled_template_hline = _.template( $("#template_hline").html() );
-var compiled_template_edit	= _.template( $("#template_edit_hline").html() );
-var compiled_template_empty = _.template( $("#template_hidden_hline").html() );
+var template_hline      = _.template( $("#template_hline").html() );
+var template_edit	    = _.template( $("#template_edit_hline").html() );
+var template_empty      = _.template( $("#template_hidden_hline").html() );
+
+var template_hline_tags = _.template( $("#template_hline_tags").html() );
+
 
 // Main View object:
 
@@ -197,7 +200,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 	if (!visible_at_all && ! force_visible ) {
 	  this.lazilyNotRendered[headline_id] = true;
-	  return compiled_template_empty( { id: headline_id } );
+	  return template_empty( { id: headline_id } );
 	}
 
 	var title_value	  = headline.title();
@@ -219,7 +222,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	if (tags != undefined)
 	  tags            = ":" + _.escape(tags.join(":")) + ":";
 
-	return compiled_template_hline(
+	return template_hline(
 	  { id: headline_id, // ID string for Headline
 		visible: visible_at_all,
 		visible_kids: headline.visible_children(),
@@ -270,7 +273,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 	var level		  = headline.level();
 
-	return compiled_template_edit(
+	return template_edit(
 	  { id: headline.id_str(), // ID string for Headline
 		level: headline.level(),
 		title_text: title_value.replace(/"/g, '&quot;'),
@@ -281,6 +284,39 @@ var OrgView = function(document_div_id, divid_headlines) {
 		level_select_options: (headline.is_config() ?
 							   '' : _make_level_select_help(level)),
 	  }) ;
+  };
+
+  // ----------------------------------------------------------------------
+  // Tags:
+
+  // Make one fun out of these two?
+  this.setupTagsForEditing = function(tags, allTags) {
+	$("#edit-headline-tags").html(template_hline_tags({tags:    tags,
+													   allTags: allTags}));
+	this._usedTagList = allTags;
+  };
+
+  this.editTagsForHeadline = function() {
+	$("#hline-tags-modal").modal({backdrop: true});
+  };
+
+  this.findCheckedTagsForHeadline = function() {
+	var allTags = this._usedTagList;
+	if (allTags === undefined)
+	  return [];
+
+	var named   = Array();
+	$("#edit-headline-tags").find("input:checked").each(function (i, ob) {
+	  var num   = parseInt($(ob).attr("name"));
+	  if (! isNaN(num) && num >= 0 && num < allTags.length)
+		named.push( allTags[num] );
+	});
+	return named;
+  };
+
+  this.closeHeadlineTagsEditing = function() {
+	$("#hline-tags-modal").modal('hide');
+	delete this._usedTagList;
   };
 
 

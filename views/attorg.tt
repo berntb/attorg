@@ -47,6 +47,7 @@
 	<div class="row">
 	  <div class="col-md-11">
 		  <h4 class="pull-left">Document: <span id="filename">XXXX</span></h4>
+		  <!-- XXXX TEST: -->
 		  <span class="pull-right"><b>user: [%= user_name %]</b></span>
 		</div>
 	</div>
@@ -84,7 +85,37 @@
 
 <!-- <script type="text/javascript">alert("Loading -- JS");</script> -->
 
+<!-- Modals ---------------------- -->
+
+<!-- add 'fade' to class, to get a nice animation of showing/hiding. -->
+<div class="modal" id="hline-tags-modal" tabindex="-1" role="dialog"
+	 aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 class="modal-title" id="myModalLabel">Update Headline tags</h4>
+      </div>
+      <div class="modal-body">
+        <div id="edit-headline-tags">
+		  (Shouldn't be shown.)
+		</div>
+      </div>
+      <div class="modal-footer">
+		<!-- Skips this data-dismiss="modal", need clean up. -->
+        <button type="button" class="btn btn-default"
+				id="hline-tags-cancel-save">
+		  Cancel
+		</button>
+        <button type="button" class="btn btn-primary" id="hline-tags-saved">
+		  Save tags
+		</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Templates ---------------------- -->
+
 
 <!-- Normal headline: -->
 <script id ="template_hline" type="text/template">
@@ -126,7 +157,7 @@
 	  <%= (hiliteRegex === undefined) ? title : title.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
 	  <% if (tags !== undefined ) { %>
 		<br><a class="org-tags attorg-command"
-				  data-command="PrioHigher"><%= tags %></a>
+				  data-command="EditHlineTags"><%= tags %></a>
 	  <% } %>
 	  <span class="block-text"><%= (hiliteRegex === undefined) ? block : block.replace(hiliteRegex, '<span class="hilight">$&</span>') %></span>
 	</span>
@@ -223,6 +254,28 @@
 <script id ="template_hidden_hline" type="text/template">
 <div class="row" style="display: none;">
   <div id="hl_<%= id %>">Lazily not instantiated.</div>
+</div>
+</script>
+
+
+<!-- Present Headline tags for editing: -->
+<script id ="template_hline_tags" type="text/template">
+<div class="row">
+  <div>
+	<p>
+	<form role="form">
+	<% var now = {}; %>
+	<% for(var i = 0; i < tags.length; i++) { now[tags[i]] = true; } %>
+	<% for(i = 0; i < allTags.length; i++) { %>
+	   <label>
+		 <input type="checkbox" name ="<%= i %>"
+				<%= now[allTags[i]] ? 'checked="true"' : '' %> >
+		 <%= _.escape(allTags[i]) %>
+       </label></br>
+	<% } %>
+	</form>
+	</p>
+  </div>
 </div>
 </script>
 

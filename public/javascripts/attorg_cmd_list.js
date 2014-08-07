@@ -794,6 +794,60 @@ function OrgAddKeyCmds(cmdHandler) {
   });
 
 
+  // ----------------------------------------------------------------------
+  // Tags:
+
+  cmdHandler.addACommand({
+	name:  "EditHlineTags",
+	docum: "Description",
+
+	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+				   number) {
+	  if (headline.is_config())
+		return true;			// Don't you try... :-)
+
+	  this._headlineIDWithEditedTags = headline.id_str();
+
+	  console.log("Edit Headline Tags, Headline:");
+	  console.log(headline);
+
+	  // - - - Find tags in Headline and Modal.
+	  var tagsNow  = headline.tags() || [];
+	  var allTags  = this.controller.model.tags();
+	  this.controller.view.setupTagsForEditing(tagsNow, allTags);
+	  this.controller.view.editTagsForHeadline();
+
+	  return true;
+	}
+  });
+
+
+  cmdHandler.addACommand({
+	name:  "_saveModalDialog",
+	// Parameters are uninteresting. This should just be called when a
+	// Modal is up.
+	both: function() {
+	  // Get new values for tags and close Modal:
+	  var newTags  = this.controller.view.findCheckedTagsForHeadline();
+	  this.controller.view.closeHeadlineTagsEditing();
+	  if (newTags === undefined) return;      // Huh?
+
+	  // Get Headline:
+	  var hlineID  = this._headlineIDWithEditedTags;
+	  delete this._headlineIDWithEditedTags;
+	  if (hlineID === undefined) return true; // Huh?
+	  var hlineIx  = this.controller.model.get_ix_from_id_string(hlineID);
+	  if (hlineIx === undefined) return true; // Huh?
+	  var headline = this.controller.model.headline(hlineIx);
+
+	  // Set tags:
+	  if (newTags !== undefined && newTags.length === 0)
+		newTags    = undefined;
+	  headline.tags(newTags);
+
+	  this.controller.view.render_headline( headline );
+	}
+  });
 
   // ----------------------------------------------------------------------
   // Go top/bot:
@@ -895,6 +949,10 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("ClearPrio",	   "C-C , \\ ");
   cmdHandler.addKeyCommand("PrioLower",	   "S-up");
   cmdHandler.addKeyCommand("PrioHigher",   "S-down");
+
+  // - - - Tags
+  // C-q is suboptimal, for obvious reasons. C-c C-X T is free(?).
+  cmdHandler.addKeyCommand("EditHlineTags","C-C C-Q,, C-C C-X T");
 
   // - - - Remove a Headline:
   // Yes, this is a bastardi.. misuse of Emacs. Change it when
