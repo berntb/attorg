@@ -43,6 +43,11 @@ OrgModel.prototype = OrgModelSuper;
 // XXXX Store finished Headline objects, don't recreate them. It is a
 // waste of time.
 
+// XXXX Reorganize this mess. Have an init method.
+
+// Need to reinit an existing object with data and everything when
+// loads a new file. (Could throw it away instead and have a new one?)
+
 var OrgModelSuper = function(documentName, org_data,
 							 visible_update_callback, increment_function) {
 
@@ -370,16 +375,46 @@ var OrgModelSuper = function(documentName, org_data,
   // ----------------------------------------------------------------------
   // - - - - - - - - - - - - -
   // Set up any input data:
-  // (XXXX When change so stores objects, update this.)
+  // (XXXX When change so stores objects, update this. And make init
+  //       method out of it)
   if (arr && arr.length) {
+	// All tags in Headlines which aren't in a '#+FILETAGS' will be
+	// added, but any '#+FILETAGS' won't be updated. Is that a good
+	// default?
+	var documTags = this.tags();
+	if (documTags === undefined)
+	  documTags   = []
+	var documHash = {};
+	for(var i = 0; i < documTags.length; i++) {
+	  documHash[documTags[i]] = true;
+	}
+
+	var newTags   = false;		// Did Headline have more tags?
+
 	for(var i = 0; i < arr.length; i++) {
 	  // The rest of this is eq to this, but faster:
 	  // this.new_headline(i, arr[i]);
 
-	  var record = _make_headline_from_data_structure(arr[i]);
+	  var record  = _make_headline_from_data_structure(arr[i]);
 	  this.all_data.push( record );
+
+	  var tags    = record.tags;
+	  if (tags !== undefined) {
+		for(var j = 0; j < tags.length; j++) {
+		  if (! documHash[tags[j]]) {
+			documHash[tags[j]] = true;
+			newTags            = true;
+			documTags.push( tags[j] );
+			// console.log("Adding tag " + tags[j]
+			// 			+ ". Now has " + documTags.length)
+		  }
+		}
+	  }
 	}
-	this.length = arr.length;
+	if (newTags)
+	  this.tags( documTags );
+
+	this.length   = arr.length;
   }
 
 

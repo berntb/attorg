@@ -127,7 +127,8 @@ var OrgCmdMapper = function() {
 	for(var ix = 0; ix <  keyCodeSpecs.length; ix++) {
 	  var charKeySeq = keyCodeSpecs[ix];
 	  // console.log("For " + name + ", going to add " + charKeySeq);
-	  var keySpec = this._parseKeySPec(charKeySeq);
+	  // (This trim removes '\ ', but ' ' is named as 'space'.)
+	  var keySpec = this._parseKeySPec(charKeySeq.trim());
 	  if (keySpec === undefined) {
 		// XXXX Error handling how??
 		console.log("Failed parsing command for " + name + ", "

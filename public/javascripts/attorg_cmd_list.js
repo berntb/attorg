@@ -799,7 +799,7 @@ function OrgAddKeyCmds(cmdHandler) {
 
   cmdHandler.addACommand({
 	name:  "EditHlineTags",
-	docum: "Description",
+	docum: "Puts up a modal dialog and asks about tags for a Headline.",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 				   number) {
@@ -845,7 +845,7 @@ function OrgAddKeyCmds(cmdHandler) {
 		newTags    = undefined;
 	  headline.tags(newTags);
 
-	  this.controller.view.render_headline( headline );
+	  this.controller.view.render_headline( headline, true, true );
 	}
   });
 
@@ -923,20 +923,13 @@ function OrgAddKeyCmds(cmdHandler) {
   // - - - Todo handling:
   cmdHandler.addKeyCommand("TodoRotate",   "C-C C-T");
 
-  // - - - Tag handling:
-  // C-C C-Q -- add tag
-  // C-C \ -- search for tags (see "Stories" in .org file.)
-  // Need to also reparse #+FILETAGS: when that is changed.(And UI later).
-  // Et al...
-
-
   // - - - Change levels:
   cmdHandler.addKeyCommand("ShiftLeft",	   "M-left");
   cmdHandler.addKeyCommand("ShiftLeft",	   "M-S-left");
   cmdHandler.addKeyCommand("ShiftRight",   "M-right");
   cmdHandler.addKeyCommand("ShiftRight",   "M-S-right");
 
-  // - - - Move Headlines around
+  // - - - Move Headlines around:
   cmdHandler.addKeyCommand("HeadlineUp",   "M-up");
   cmdHandler.addKeyCommand("HeadlineDown", "M-down");
   cmdHandler.addKeyCommand("MoveTreeUp",   "M-S-up");
@@ -946,12 +939,15 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("HighPrio",	   "C-C , A,, C-C , S-A");
   cmdHandler.addKeyCommand("MediumPrio",   "C-C , B,, C-C , S-B");
   cmdHandler.addKeyCommand("LowPrio",	   "C-C , C,, C-C , S-C");
-  cmdHandler.addKeyCommand("ClearPrio",	   "C-C , \\ ");
+  cmdHandler.addKeyCommand("ClearPrio",	   'C-C , \\');
   cmdHandler.addKeyCommand("PrioLower",	   "S-up");
   cmdHandler.addKeyCommand("PrioHigher",   "S-down");
 
-  // - - - Tags
-  // C-q is suboptimal, for obvious reasons. C-c C-X T is free(?).
+  // - - - Tags:
+  // C-C \ -- search for tags (see "Stories" in .org file.)
+
+  // C-q is suboptimal in a browser, obviously... C-c C-x T is
+  // free(?).
   cmdHandler.addKeyCommand("EditHlineTags","C-C C-Q,, C-C C-X T");
 
   // - - - Remove a Headline:
