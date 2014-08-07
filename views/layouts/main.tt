@@ -9,8 +9,10 @@
 	<title>[% settings.appname %]</title>
 
 
-<script type="text/javascript"
-		src="[% request.uri_base %]/javascripts/jquery-1.11.1.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js">
+</script>
+<!-- <script type="text/javascript"
+		src="[% request.uri_base %]/javascripts/jquery-1.11.1.js"></script> -->
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
 
@@ -20,7 +22,6 @@
 <link rel="stylesheet" href="[% request.uri_base %]/css/attorg.css">
 
 
-<!-- Latest compiled and minified JavaScript -->
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 <!-- <script type="text/javascript"
 	 src="[% request.uri_base %]/bootstrap/js/bootstrap.min.js"></script> -->
