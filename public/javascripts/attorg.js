@@ -809,13 +809,14 @@ var OrgController = function(model, view, commandHandler,
       no         = 0;
       for(i = fromStart; i < fromEnd; i++) {
         headline = this.model.headline(i);
-        headline.visible(true);
+        // headline.visible(true);
         console.log("Moving ''" + headline.title() + "''.  " +
                     "From " + i + " to " + (toAfterThis+no-1));
         this.view.move_headline(headline, toAfterThis+no+1);
         headline.move(toAfterThis+no+1);
         no++;
       }
+
       this._updateOpenCloseAroundChanged(toAfterThis);
       this._updateOpenCloseAroundChanged(toAfterThis+no);
       var tree   = this._updateOpenCloseAroundChanged(fromStart+no-1);

@@ -1063,7 +1063,7 @@ OrgHeadline.prototype = {
     return collected;
   },
 
-  _RegexpTestStartIsURL: /^[a-z][-+a-z]:/,
+  _RegexpTestStartIsURL: /^[a-z][-+a-z]+:/i,
 
   _encode_link_subcase: function(link) {
 	// This parse out [[Org][links]] to HTML.
@@ -1078,9 +1078,8 @@ OrgHeadline.prototype = {
         txt     = _.escape(parts[2]);
 		// - - - Normal URL:
 		if (testURL.test(parts[1])) {
-		  console.log("Normal link:" + parts[1]);
-          tmp  += '<a href="' + encodeURI(parts[1]) + '">' + txt + '</a>';
-          return tmp;
+		  parts[1].replace('"', "'", "g");
+          return '<a href="' + unescape(parts[1]) + '">' + txt + '</a>';
 		}
 		// - - - Internal link:
 		console.log("Internal link:" + parts[1]);
@@ -1088,7 +1087,7 @@ OrgHeadline.prototype = {
 		tmp     = '<a href="#' + _.escape(parts[1]) + '"'
 		  + ' class="internal_link" title="">'
 		  + txt + '</a>';
-		console.log("INTERNAL LINK " + tmp);
+		// console.log("INTERNAL LINK " + tmp);
 		return tmp;
       } catch(err) {return "ERROR " + err + " FOR LINK:" + _.escape(link);};
     } else {
@@ -1108,7 +1107,7 @@ OrgHeadline.prototype = {
 		  tmp   = '<a href="#' + _.escape(parts[1]) + '"'
 			+ ' class="internal_link" title="">'
 			+ txt + '</a>';
-		  console.log("INTERNAL LINK, 1 PART: " + tmp);
+		  // console.log("INTERNAL LINK, 1 PART: " + tmp);
 		  return tmp;
 		  
         } catch(err) { return "ERR " + err + " FOR LINK:" + _.escape(link) };

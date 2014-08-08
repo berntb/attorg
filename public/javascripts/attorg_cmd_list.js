@@ -654,6 +654,8 @@ function OrgAddKeyCmds(cmdHandler) {
 	name:  "Return",
 	docum: "Description",
 
+	// XXXX Need to have logic to WHERE to put in the new
+	// Headline!!
 	text: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  console.log("In headline CR, before meta test");
 	  this.controller.updateEditedHeadline(headline);
@@ -661,28 +663,41 @@ function OrgAddKeyCmds(cmdHandler) {
 	  var ix = headline.index;
 	  if (ctrl) {
 		this.controller._insertAndRenderHeading(ix+1, headline.level() );
+		this.controller._updateOpenCloseAroundChanged(ix);
+		this.controller._updateOpenCloseAroundChanged(ix+1);
 		return true;
 	  }
 	  if (meta) {
-		// XXXX Copy how it is in Emacs??
+		// XXXX Temporary.
+		// Copy how it is in Emacs??
 		// I.e., if the Headlines subtree is fully closed, M-CR
 		// should open new Headline _after_ the tree. (Don't move
 		// either the block or the text to the right of
 		// the cursor to the new Headline).
 		this.controller._insertAndRenderHeading(ix+1, headline.level() );
+		this.controller._updateOpenCloseAroundChanged(ix);
+		this.controller._updateOpenCloseAroundChanged(ix+1);
 		return true;
 	  }
 	  return true;
 	},
 	// Block case:
 	block: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-	  if (ctrl) {
-		console.log("In headline CR, before meta test");
+	  if (meta) {
 		this.controller.updateEditedHeadline(headline);
 		this.controller.view.close_edit_headline( headline );
+		this.controller._insertAndRenderHeading(ix+1, headline.level() );
+		this.controller._updateOpenCloseAroundChanged(ix);
+		this.controller._updateOpenCloseAroundChanged(ix+1);
 		return true;
 	  }
-	  return false				// Ignore
+	  if (!ctrl)
+		return false;
+
+	  // In block, ctrl just close editing:
+	  this.controller.updateEditedHeadline(headline);
+	  this.controller.view.close_edit_headline( headline );
+	  return true;
 	}
   });
 
