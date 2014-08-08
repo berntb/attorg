@@ -56,13 +56,13 @@ Presently supported commands
 
 These commands are implemented now, more or less completely. Not all are "real" Emacs/Org Mode. E.g. Ctrl-K removes a Headline directly. Ctrl-Return stops editing of a block text field. And so on.)
 
-### Diverse:
+#### Diverse:
 
 *  OpenClose,     TAB // S-TAB // M-S-TAB
 *  SaveDocument,  C-X C-S
 
 
-### Move around:
+#### Move around:
 
 *  MoveLevelUp,   C-C C-U
 *  MovePrevious,  C-C C-P // C-P // up arrow // C-up # (Block don't reuse up.)
@@ -74,12 +74,12 @@ These commands are implemented now, more or less completely. Not all are "real" 
 *  ScrollBot,     M-> // S-M->
 
 
-### Todo handling:
+#### Todo handling:
 
 *  TodoRotate,    C-C C-T
 
 
-### Change levels:
+#### Change levels:
 
 *  ShiftLeft,     M-left
 *  ShiftLeft,     M-S-left
@@ -87,7 +87,7 @@ These commands are implemented now, more or less completely. Not all are "real" 
 *  ShiftRight,    M-S-right
 
 
-### Move Headlines around:
+#### Move Headlines around:
 
 *  HeadlineUp,    M-up
 *  HeadlineDown,  M-down
@@ -95,7 +95,7 @@ These commands are implemented now, more or less completely. Not all are "real" 
 *  MoveTreeDown,  M-S-down
 
 
-### Change priorities (not only todo lines):
+#### Change priorities (not only todo lines):
 
 *  HighPrio,      C-C , A
 *  MediumPrio,    C-C , B
@@ -106,12 +106,12 @@ These commands are implemented now, more or less completely. Not all are "real" 
 
 
 
-### Tags:
+#### Tags:
 
 *  EditHlineTags, C-C C-Q // C-C C-X T  # C-Q is dangerous for obvious reasons
 
 
-#### Delete a Headline:
+##### Delete a Headline:
 
 *  DelHeadline,   C-K  # Sorry about that :-)
 
