@@ -111,7 +111,7 @@ These commands are implemented now, more or less completely. Not all are "real" 
 *  EditHlineTags, C-C C-Q // C-C C-X T  # C-Q is dangerous for obvious reasons
 
 
-##### Delete a Headline:
+#### Delete a Headline:
 
 *  DelHeadline,   C-K  # Sorry about that :-)
 
