@@ -58,7 +58,7 @@ These commands are implemented now, more or less completely. Not all are "real" 
 
 ### Diverse:
 
-*  OpenClose,     TAB // S-TAB // M-S-TAB	# Hierarchical change
+*  OpenClose,     TAB // S-TAB // M-S-TAB
 *  SaveDocument,  C-X C-S
 
 
