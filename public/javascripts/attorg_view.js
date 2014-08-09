@@ -17,6 +17,54 @@
 
 // ----------------------------------------------------------------------
 
+// Test:
+// http://stackoverflow.com/questions/487073/check-if-element-is-visible-after-scrolling
+function isScrolledIntoView(jQelem)
+{
+  var docViewTop = $(window).scrollTop();
+  var docViewBottom = docViewTop + $(window).height();
+
+  var elemTop = jQelem.offset().top;
+  var elemBottom = elemTop + jQelem.height();
+
+  return ((elemBottom >= docViewTop) && (elemTop <= docViewBottom)
+		  && (elemBottom <= docViewBottom) &&  (elemTop >= docViewTop) );
+}
+
+
+function scrollIntoView(jQelem, elementMargin)
+{
+  if (isScrolledIntoView(jQelem))
+	return;
+
+  var docViewTop    = $(window).scrollTop();
+  var docViewHeight =  $(window).height();
+  var margin        = elementMargin === undefined ?
+	Math.floor( docViewHeight/10 ) : elementMargin;
+  var docViewBottom = docViewTop + docViewHeight;
+  var elemTop       = jQelem.offset().top;
+
+  // Is element above? Show it, with a little margin
+  if (elemTop < docViewTop) {
+	if (elemTop < margin)
+	  elemTop  = 0;
+	else
+	  elemTop -= margin;
+	console.log("Scrolling from " + docViewTop + " to " + elemTop);
+	$(window).scrollTop( elemTop );
+	return;
+  }
+
+  // Put bottom so bottom edge of element + margin is visible
+  var viewNewBottom = elemTop + jQelem.height() + margin;
+  var viewNewTop    = viewNewBottom  - docViewHeight;
+  viewNewTop        = viewNewTop < 0 ? 0 : viewNewTop;
+
+  console.log("Scrolling up " + docViewTop + " to " + viewNewTop);
+  $(window).scrollTop( viewNewTop );
+}
+
+
 // XXXX Make setting up templates neater!!
 // Inject template texts, instead.
 
@@ -35,7 +83,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   this.document_div_id = document_div_id;
   this.divid_headlines = divid_headlines;
 
-  // Keep IDs of those Headlines not rendered, since they aren't visible
+  // IDs of unrendered Headlines, since they have never been visible:
   this.lazilyNotRendered = {};
 
   this.documentName = function() {
@@ -262,8 +310,9 @@ var OrgView = function(document_div_id, divid_headlines) {
 	// show the hidden text.)
 
 	this._modify_top_view_for_edit(div_parent, headline);
-	  
+
 	div.html( rendered_html );
+	this.headlineEditScrolledVisible(headline);
   };
 
 
@@ -336,11 +385,18 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   this.get_values = function(headline) {
 	var model_str_id= headline.id_str();
-	var title_input = $('#t_' + model_str_id);
-	var block_input = $('#b_' + model_str_id);
+	var titleInput  = $('#t_' + model_str_id);
+	var blockInput  = $('#b_' + model_str_id);
 
-	return {title: title_input.val(), block: block_input.val() };
+	return {title: titleInput.val(), block: blockInput.val() };
   };
+
+  this.headlineEditScrolledVisible = function(headline) {
+	var model_str_id= headline.id_str();
+	var titleInput  = $('#t_' + model_str_id);
+	scrollIntoView(titleInput);	
+  };
+
 
   // Make it visible that a Headline is being edited.
   // (For now -- put a frame around the Headline and its editing form.)

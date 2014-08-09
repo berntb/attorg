@@ -20,7 +20,9 @@
 
 // ----------------------------------------------------------------------
 
-// - - - Polyfill:
+
+
+// Polyfill:
 if (!String.prototype.trim) {
   String.prototype.trim = function () {
     return this.replace(/^\s+|\s+$/g, '');
@@ -28,11 +30,17 @@ if (!String.prototype.trim) {
 }
 
 
-// Global variable for model data, replace with some VMC-variant.
+// ----------------------------------------------------------------------
+// Global variables.
+
+// (These aren't really used. Replace sometime.)
+
 var stored_model     = {};
 var org_controllers  = {};
 
-// Old jQuery style for: $(document).ready(function() { ... } );
+
+// ----------------------------------------------------------------------
+
 $(function() {
   // - - -
   // This fun should be sent into all created Models, to guarantee

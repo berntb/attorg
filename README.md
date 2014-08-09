@@ -56,10 +56,12 @@ Presently supported commands
 
 These commands are implemented now, more or less completely. Not all are "real" Emacs/Org Mode. E.g. Ctrl-K removes a Headline directly. Ctrl-Return stops editing of a block text field. And so on.)
 
+
 #### Diverse:
 
 *  OpenClose,     TAB // S-TAB // M-S-TAB
 *  SaveDocument,  C-X C-S
+*  NumberPrefix,  C-U // C-0 to C-9
 
 
 #### Move around:
@@ -67,8 +69,8 @@ These commands are implemented now, more or less completely. Not all are "real" 
 *  MoveLevelUp,   C-C C-U
 *  MovePrevious,  C-C C-P // C-P // up arrow // C-up # (Block don't reuse up.)
 *  MoveNext,      C-N // down arrow // C-down
-*  PrevSameLevel, C-C C-B # Same or higher level
-*  NextSameLevel, C-C C-F # Same or higher level
+*  PrevSameLevel, C-C C-B
+*  NextSameLevel, C-C C-F
 
 *  ScrollTop,     M-< // S-M-<
 *  ScrollBot,     M-> // S-M->
@@ -114,9 +116,6 @@ These commands are implemented now, more or less completely. Not all are "real" 
 #### Delete a Headline:
 
 *  DelHeadline,   C-K  # Sorry about that :-)
-
-* NumberPrefix,   C-U // C-0 to C-9
-
 
 
 License

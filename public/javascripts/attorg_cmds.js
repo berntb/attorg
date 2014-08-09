@@ -85,8 +85,6 @@ var OrgCmdMapper = function() {
 	var numericalHandling = spec.numericalAsMultipleCalls;
 
 	var funs = [fun.bind(this)];
-	// if (blockFun)
-	//   console.log("-----------------\nCMD: " + name + " has blockfun!");
 	if (blockFun)
 	  funs.push( blockFun.bind(this) );
 
@@ -102,7 +100,7 @@ var OrgCmdMapper = function() {
   this.addKeyCommand = function(name_in, cmdKeySpec) {
 	var name = name_in.toLowerCase();
 
-	console.log("Cmd " + name_in + ", key seqs: " + cmdKeySpec);
+	// console.log("Cmd " + name_in + ", key seqs: " + cmdKeySpec);
 
 	if (! (name in commands) ) {
 	  // Oh oh.
