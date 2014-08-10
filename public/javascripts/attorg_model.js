@@ -464,6 +464,11 @@ OrgHeadline.prototype = {
     // find the right Headline again.
     if (arguments.length > 0)
       this.headline.idstr = arguments[0];
+	if (this.headline === undefined) {
+	  console.log("ERROR! Caller info:");
+	  console.trace();
+	  return undefined;
+	}
     return this.headline.idstr;
   },
 
@@ -618,6 +623,12 @@ OrgHeadline.prototype = {
   compareBlockRegexp: function(compareWith) {
     return compareWith.test(this.block());
   },
+  compareTagsRegexp: function(compareWith) {
+	var tags = this.tags();
+	if (tags === undefined || tags.length === 0)
+	  return false;
+    return compareWith.test(tags.join(":"));
+  },
 
   
   // ------------------------------------------------------------
@@ -732,7 +743,6 @@ OrgHeadline.prototype = {
   // This part implements (in)visible subsets of the headlines.
 
   visible: function() {
-    // XXXX Add so Level 1 is always visible??
     var present_value = this.headline.visible;
     if (arguments.length > 0) {
       var new_value = arguments[0];
@@ -1033,6 +1043,10 @@ OrgHeadline.prototype = {
         }
       } else if (type  === "Org::Element::Link") {
 		value = OrgHeadline.prototype._encode_link_subcase(value);
+		// console.log("Link from:");
+		// console.log(textSubs);
+		// console.log("Callers:");
+		// console.trace();
       } else if (type  === "Org::Element::Target") {
 		// In Emacs: <<target name>>
 		// Implement internal links in the document with JS. The
@@ -1082,7 +1096,8 @@ OrgHeadline.prototype = {
           return '<a href="' + unescape(parts[1]) + '">' + txt + '</a>';
 		}
 		// - - - Internal link:
-		console.log("Internal link:" + parts[1]);
+		console.log("Internal link:");
+		console.log(parts);
 		// The 'href' part is just so hower-URL look ok
 		tmp     = '<a href="#' + _.escape(parts[1]) + '"'
 		  + ' class="internal_link" title="">'
@@ -1096,13 +1111,18 @@ OrgHeadline.prototype = {
       if (parts !== null && typeof(parts) == 'object' && parts.length) {
         try {
 		  // - - - Normal URL:
+		  // console.log("---------------------------------- PARSED LINK:");
+		  // console.log(parts);
 		  txt   =  _.escape(parts[1]);
 		  if (testURL.test(parts[1])) {
 			tmp = '<a href="' + parts[1] + '">' + txt + '</a>';
+			console.log("Non internal link:" + tmp);
 			return tmp;
 		  }
 		  // - - - Internal link:
-		  console.log("Internal link, 1 part:" + parts[1]);
+		  console.log("Internal link, 1 part:");
+		  console.log(parts);
+		  // XXXX Buggy!
 		  // The 'href' part is just so hower-URL look ok
 		  tmp   = '<a href="#' + _.escape(parts[1]) + '"'
 			+ ' class="internal_link" title="">'

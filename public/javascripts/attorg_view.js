@@ -17,53 +17,6 @@
 
 // ----------------------------------------------------------------------
 
-// Test:
-// http://stackoverflow.com/questions/487073/check-if-element-is-visible-after-scrolling
-function isScrolledIntoView(jQelem)
-{
-  var docViewTop = $(window).scrollTop();
-  var docViewBottom = docViewTop + $(window).height();
-
-  var elemTop = jQelem.offset().top;
-  var elemBottom = elemTop + jQelem.height();
-
-  return ((elemBottom >= docViewTop) && (elemTop <= docViewBottom)
-		  && (elemBottom <= docViewBottom) &&  (elemTop >= docViewTop) );
-}
-
-
-function scrollIntoView(jQelem, elementMargin)
-{
-  if (isScrolledIntoView(jQelem))
-	return;
-
-  var docViewTop    = $(window).scrollTop();
-  var docViewHeight =  $(window).height();
-  var margin        = elementMargin === undefined ?
-	Math.floor( docViewHeight/10 ) : elementMargin;
-  var docViewBottom = docViewTop + docViewHeight;
-  var elemTop       = jQelem.offset().top;
-
-  // Is element above? Show it, with a little margin
-  if (elemTop < docViewTop) {
-	if (elemTop < margin)
-	  elemTop  = 0;
-	else
-	  elemTop -= margin;
-	console.log("Scrolling from " + docViewTop + " to " + elemTop);
-	$(window).scrollTop( elemTop );
-	return;
-  }
-
-  // Put bottom so bottom edge of element + margin is visible
-  var viewNewBottom = elemTop + jQelem.height() + margin;
-  var viewNewTop    = viewNewBottom  - docViewHeight;
-  viewNewTop        = viewNewTop < 0 ? 0 : viewNewTop;
-
-  console.log("Scrolling up " + docViewTop + " to " + viewNewTop);
-  $(window).scrollTop( viewNewTop );
-}
-
 
 // XXXX Make setting up templates neater!!
 // Inject template texts, instead.
@@ -258,17 +211,34 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var configp       = headline.is_config();
 	var todo          = headline.todo();
 	var tags          = headline.tags();
+	var hiliteRegexp  = this.getHighlightRegex();
 	var block_html	  = '';
 
+	var titleHilite, blockHilite, tagHilite;
+
+
+	if (!configp && hiliteRegexp && hiliteRegexp.test(title_value))
+	  textHilite      = true;
 	if (text_block !== undefined &&
 		! this.dontShowBlockRegexp.test(text_block)) {
-	  block_html	  = "<pre>" + headline.block_html() + "</pre>";
+	  block_html	  = headline.block_html();
+	  if (hiliteRegexp && hiliteRegexp.test(text_block)) {
+		blockHilite   = true;
+	  }
 	}
+
+	// XXXX Need to check tags for hilite too!!
 
 	if (todo === '')
 	  todo            = '-'
-	if (tags != undefined)
+	if (tags != undefined) {
 	  tags            = ":" + _.escape(tags.join(":")) + ":";
+	  // (Shouldn't really check the hilite in html escaped tags.)
+	  if (hiliteRegexp && hiliteRegexp.test(tags))
+		tagHilite     = true;
+	}
+
+
 
 	return template_hline(
 	  { id: headline_id, // ID string for Headline
@@ -286,7 +256,9 @@ var OrgView = function(document_div_id, divid_headlines) {
 		block: block_html,
 		tags: tags,
 		priority: headline.priority(),
-		hiliteRegex: this.getHighlightRegex(),
+		blockHilite: blockHilite,
+		titleHilite:  titleHilite,
+		tagHilite: tagHilite,
 	  });
   };
 
@@ -312,7 +284,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	this._modify_top_view_for_edit(div_parent, headline);
 
 	div.html( rendered_html );
-	this.headlineEditScrolledVisible(headline);
+	this.scrollHeadlineIntoView(headline);
   };
 
 
@@ -391,11 +363,43 @@ var OrgView = function(document_div_id, divid_headlines) {
 	return {title: titleInput.val(), block: blockInput.val() };
   };
 
-  this.headlineEditScrolledVisible = function(headline) {
-	var model_str_id= headline.id_str();
-	var titleInput  = $('#t_' + model_str_id);
-	scrollIntoView(titleInput);	
+  // Find first invisible above view area, given a visible Headline.
+  // Returns undefined if fails. On success, returns an array with:
+  //    [first_outside_visible_scroll, last_inside_fully_visible]
+  this.firstHeadlineAboveScroll = function(headline) {
+	if (headline.index < 1)
+	  return undefined;
+	var model       = headline.owner;
+
+	// First loop until have the first scrolled so it is visible in
+	// the Viewport. Then loop until the first _above_ the viewport.
+
+	var topVisible;
+	var result      = model.findHeadlinesFrom(
+	  headline.index-1, 1, -1,
+	  function (hlineToTest) {
+		if (! hlineToTest.visible())
+		  return false;
+
+		var inView  = that.isHeadlineScrolledIntoView(hlineToTest);
+		if (inView) {
+		  console.log("Hline " + hlineToTest.index + " visible. "
+					  + hlineToTest.title());
+		  topVisible = hlineToTest.index;
+		  return false;
+		}
+
+		// We got a winner!
+		return true;
+	  });
+
+	if (result[1] !== undefined) {
+	  // Failed, didn't find any
+	  return undefined;
+	}
+	return [result[0], topVisible];
   };
+
 
 
   // Make it visible that a Headline is being edited.
@@ -654,4 +658,121 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var div	   = $("#" + div_id).parent();
 	div.remove();
   };
+
+
+  // ------------------------------------------------------------
+  // Handle scrolling in View:
+
+  // Mostly from:
+  // http://stackoverflow.com/questions/487073/check-if-element-is-visible-after-scrolling )
+
+  // XXXX Need a constant to show offset of Window or is that handled??
+
+  this.scrollHeadlineIntoView = function(headline, margin) {
+	var model_str_id= headline.id_str();
+	var titleInput  = $('#hl_' + model_str_id);
+	console.log("scrollHeadlineIntoView: Hline " + headline.index);
+	console.log("   Headline title:" + headline.title());
+	this.scrollIntoView(titleInput, margin);
+  };
+
+
+  // Like previous, but make certain the Headline is at the bottom:
+  this.scrollHeadlineTobottom = function(headline, margin) {
+	var model_str_id= headline.id_str();
+	var titleInput  = $('#hl_' + model_str_id);
+	this.scrollIntoViewAtBottom(titleInput, margin);
+  };
+
+
+  this.isHeadlineScrolledIntoView = function(headline) {
+	var model_str_id= headline.id_str();
+	var titleInput  = $('#hl_' + model_str_id);
+	// console.log("isHeadlineScrolledIntoView, Hline Ix " + headline.index);
+	return this.isScrolledIntoView(titleInput);
+  };
+
+
+  this.isScrolledIntoView = function(jQelem) {
+	var docViewTop = $(window).scrollTop();
+	var docViewBottom = docViewTop + $(window).height();
+
+	var elemTop = jQelem.offset().top;
+	var elemBottom = elemTop + jQelem.height();
+
+	return ((elemBottom >= docViewTop) && (elemTop <= docViewBottom)
+			&& (elemBottom <= docViewBottom) &&  (elemTop >= docViewTop) );
+  };
+
+
+  // This assumes the row has editing on:
+  // XXXX Does not take into consideration of large Block texts.
+  this.scrollIntoViewAtBottom = function(jQelem, elementMargin) {
+	var docViewTop    = $(window).scrollTop();
+	var docViewHeight =  $(window).height();
+	var margin        = elementMargin === undefined ?
+	  Math.floor( docViewHeight/15 ) : elementMargin;
+	var docViewBottom = docViewTop + docViewHeight;
+	var elemTop       = jQelem.offset().top;
+	var elemHeight    = jQelem.offset().height;
+
+	var nextOffsetBot = elemTop + margin;
+
+	$(window).scrollTop( nextOffsetBot - docViewHeight );
+	
+
+  };
+
+  this.scrollIntoView = function(jQelem, elementMargin) {
+	if (this.isScrolledIntoView(jQelem))
+	  return;
+
+	var docViewTop    = $(window).scrollTop();
+	var docViewHeight =  $(window).height();
+	var margin        = elementMargin === undefined ?
+	  Math.floor( docViewHeight/15 ) : elementMargin;
+	var docViewBottom = docViewTop + docViewHeight;
+	var elemTop       = jQelem.offset().top;
+	var elemHeight    = jQelem.offset().height;
+
+	console.log("------- scrollIntoView:");
+	console.log("View off " + docViewTop + ", height "
+				+ docViewHeight);
+	console.log("Element top:" + elemTop + ", height:" + elemHeight );
+	console.log(jQelem.height());
+	// Need to do it like this:
+	// console.log(jQelem.parent().height());
+	console.log(jQelem);
+
+
+	// Is element above? Show it, with a little margin
+	if (elemTop < docViewTop) {
+	  if (elemTop < margin)
+		elemTop  = 0;
+	  else
+		elemTop -= margin;
+	  console.log("Scrolling from " + docViewTop + " to " + elemTop);
+	  $(window).scrollTop( elemTop );
+	  return;
+	}
+
+	// Put bottom so bottom edge of element + margin is visible
+	var elemHeight    = jQelem.height();
+	elemHeight        = elemHeight > 0 ? elemHeight : jQelem.parent().height();
+	var viewNewBottom = elemTop + margin + elemHeight;
+	var viewNewTop    = viewNewBottom  - docViewHeight;
+	viewNewTop        = viewNewTop < 0 ? 0 : viewNewTop;
+
+	console.log("Scrolling up " + docViewTop + " to " + viewNewTop);
+	$(window).scrollTop( viewNewTop );
+  };
+
+  
+
+  this.selectPageUp = function(headline) {
+	// XXXX
+	
+  };
+
+
 };

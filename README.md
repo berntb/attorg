@@ -1,18 +1,18 @@
 Attorg
 ======
 
-This open source project is an attempt to make a simple JavaScript implementation of a subset of Org Mode for Emacs. My exact use case was to browse my Org notes on my iPad, or on a borrowed computer, without using an ssh client.
+This open source project is an attempt to make a simple JavaScript implementation of a subset of Org Mode for Emacs. The name comes from a combination of 'Atto' and 'Org'. That is, a small subset of Org Mode.
 
-The name comes from Atto Org. A small subset of Org Mode in a GUI style, but with most of the key commands.
+The exact use case is to browse Org mode notes on an iPad or on a borrowed computer using just a web browser. Both the usual Emacs key bindings should work and there should be a GUI interface.
 
-From the choosen name, the obvious goal is less to replace Org Mode, more to have something usable from a generic web browser. At most, it is hoped this project could become a gateway drug for Emacs. :-)
+The goal is less to replace Org Mode and more to have a browser and minimal editor usable from the web. The most amibitious dream is that this project could become a gateway drug for Emacs. :-)
 
 Status
 ------
 
-Attorg was a bit stalled, since it really needs lots of love from someone with *taste*, both for UI and UX. In the end, I decided to extract the UI to templates and the menus to named commands.
+Attorg was a bit stalled, since it really needs lots of love from someone with *taste*, both for UI and UX. In the end, this wasn't solved, instead the UI was extracted to templates and the menus to named commands. (As it should have been from the beginning, of course.)
 
-It should now be possible to skin Attorg with templates and buttons/menus. The templates should probably still be extracted to a separate file. A more powerful template language might be needed, but Underscore.js seems to be enough.
+It should now be possible to skin Attorg with templates and buttons/menus.
 
 Attorg use the Perl Dancer framework server side. The client side use jQuery, Underscore.js and Twitter Bootstrap 3.
 
@@ -26,19 +26,19 @@ This is not feature complete for real use, yet. But it is moving along.
 
 Chrome doesn't allow a program to get characters like control-N, control-T, meta-arrows. I gave up on supporting it.
 
-This is tested on FireFox for now and I'll check it with Safari on Mac and iPad (probably with external keyboard) before I deem it possible to release. (I don't have a Windows installation nearby but will try to find something to test it with.)
+This is tested on FireFox for now and I'll verify Safari on Mac and iPad before first real release. (I don't have a Windows installation nearby but will try to get it done there, too.)
 
-This is my project to learn JavaScript "for real", a lot has been rewritten/refactored more than once. Lots of names don't even use CamelCase, so the code could fit in better with JavaScript Best Practices. Feedback appreciated!
+This is my project to learn JavaScript "for real", a lot has been rewritten/refactored more than once. Lots of names don't even use CamelCase. I am more or less aware of JavaScript Best Practices, it is just hard to get over old habits. Feedback appreciated!
 
 
 When is this usable?
 --------------------
 
-I hope to get Attorg to where it is useful for some people, so some real JavaScript guys will start to contribute. (The server side is quite trivial in the Perl way, i.e. mostly glue for CPAN modules which do the real work.)
+I hope to get Attorg to where it can be useful, so some real JavaScript guys will start to contribute. (The server side is quite trivial in the Perl way, i.e. mostly glue for CPAN modules which do the real work.)
 
-There are no real editing commands, it is a bit down on the ToDo list, first comes the commands oriented towards the Org structure. The GUI needs work from someone with good UI/UX understanding.
+There are no real text editing commands (M-t, C-d, etc). A full editor comes after the commands oriented towards the Org functionality on the TODO list. The GUI needs work from someone with good UI/UX understanding.
 
-The full TODO list is... well, long and growing. :-)
+The full TODO list is... well, long. :-) And growing. :-(
 
 Here is what I think is the minimum viable feature list still needed to make Attorg useful for browsing Org documents and a bit of editing.
 
@@ -51,10 +51,12 @@ Here is what I think is the minimum viable feature list still needed to make Att
 + Date/time handling.
 
 
-Presently supported commands
+Supported key chars commands
 ----------------------------
 
-These commands are implemented now, more or less completely. Not all are "real" Emacs/Org Mode. E.g. Ctrl-K removes a Headline directly. Ctrl-Return stops editing of a block text field. And so on.)
+These commands are implemented now, more or less completely.
+
+Not all are "real" Emacs/Org Mode. E.g. Ctrl-K removes a Headline directly. Ctrl-Return stops editing of a block text field. And so on.
 
 
 #### Diverse:
@@ -71,6 +73,9 @@ These commands are implemented now, more or less completely. Not all are "real" 
 *  MoveNext,      C-N // down arrow // C-down
 *  PrevSameLevel, C-C C-B
 *  NextSameLevel, C-C C-F
+
+*  JumpAPageUp,   M-V
+*  JumpAPageDown, C-V
 
 *  ScrollTop,     M-< // S-M-<
 *  ScrollBot,     M-> // S-M->

@@ -150,12 +150,13 @@
 		  <b style="color: black;">[#<%= priority %>]</b>
 		</a>
 	  <% } %>
-	  <%= (hiliteRegex === undefined) ? title : title.replace(hiliteRegex, '<span class="hilight">$&</span>') %>
+	  <%= titleHilite ? '<span class="hilight">' + title + '</span>' : title %>
 	  <% if (tags !== undefined ) { %>
 		<br><a class="org-tags attorg-command"
-				  data-command="EditHlineTags"><%= tags %></a>
+			   data-command="EditHlineTags"><%= tagHilite ? ('<span class="hilight">' + tags + '</span>') : tags %></a>
 	  <% } %>
-	  <span class="block-text"><%= (hiliteRegex === undefined) ? block : block.replace(hiliteRegex, '<span class="hilight">$&</span>') %></span>
+	  <!-- block.replace(hiliteRegex, '<span class="hilight">$&</span>') %></span> -->
+	  <span class="block-text"><%= (blockHilite) ? '<pre><span class="hilight">' + block + '</span></pre>' : (block.length ? "<pre>" + block + "</pre>" : '' ) %>
 	</span>
   </div>
   <div class="headline-edit col-md-11"></div>
@@ -170,14 +171,13 @@
 	<div id="ed-<%= id %>" class="controls controls-row">
 	  <div class="col-md-2">
 		<% if (! config) { %>
-		<!-- Change command! Update "tags". -->
 		<div class="btn-toolbar">
 		  <select id="X_<%= id %>" class="lvl_select pull-left"
 				  name="level-select">
 			<%= level_select_options %>
 		  </select>
 		  <a class="btn btn-sm btn-default pull-right attorg-command"
-			 data-command="MoveTreeDown">Update Tags</a>
+			 data-command="EditHlineTags">Update Tags</a>
 		</div>
 		<% } %>
 		<br>

@@ -256,8 +256,14 @@ var OrgController = function(model, view, commandHandler,
   };
 
   this.clickedEditTags = function(event) {
+	// XXXX IS THIS USED??
+	event.preventDefault();
+    var headline  = that._headlineFromMenuEvent(event, true);
 	console.log("Tag edit!");
 	console.log(event);
+	console.log(that._getHeadlineIxForButtonEvent( event ));
+	console.log(that._headlineFromMenuEvent(event, true));
+	// EditHlineTags
 	return true;
   };
 
@@ -271,20 +277,34 @@ var OrgController = function(model, view, commandHandler,
 
 	// (If this is in edit mode and the text is clicked, should close
 	//  it when goes to target Headline.)
-	var headlineID = event.target.parentNode.parentNode.id.slice(3);
-    var ix         = that.model.get_ix_from_id_string( headlineID );
-    var headline   = that.model.headline(ix);
+	var headline   = that._headlineFromMenuEvent(event, true);
+    var ix         = headline.index;
+	console.log("Jump to link from ix: " + ix);
 
 	// - - - Get what to find:
-	var result     = /href="#(.*)" +class=/.exec(event.target.outerHTML);
+	var result     = /href="#([^"]*)" +class=/.exec(event.target.outerHTML);
 	if (result   === null) {
 	  alert("Failed to get that link target?!\nInternal error?");
-	  return;
+	  return true;
 	}
-	var toFind     = result[1];
+	var toFind     = decodeURIComponent(result[1]);
+
+	// - - - Check for if just looking for headline:
+	var onlyHeadline;
+	// console.log("Search for:" + toFind);
+	var matched = /^\*+ +(.*)/.exec(toFind);
+	if (matched !== null) {
+	  // If search is for '* str', it must be exact headline
+	  onlyHeadline = true;
+	  toFind       = matched[1];
+	}
 	var escapedStr = escapeRegExp(toFind);
+	if (onlyHeadline)
+	   // '***' etc not stored in Headline 
+	  escapedStr   = "^ *" + escapedStr + " *$";
+
 	// N B -- Radio links are not case sensitive, but these are.
-	var regexp     = new RegExp(escapedStr); // Substring instead??
+	var regexp     = new RegExp(escapedStr);
 	// console.log("Matched " + toFind);
 
 	// - - - Find Headline (or its block) with that text:
@@ -295,7 +315,7 @@ var OrgController = function(model, view, commandHandler,
 
       var hlineLoop = that.model.headline(i);
 	  if (hlineLoop.compareTitleRegexp(regexp)
-		  || hlineLoop.compareBlockRegexp(regexp) ) {
+		  || (!onlyHeadline && hlineLoop.compareBlockRegexp(regexp)) ) {
 		console.log("Found case:" + i);
 
 		// Emacs doesn't make block visible.
@@ -303,23 +323,22 @@ var OrgController = function(model, view, commandHandler,
 		  that._makeHeadlineAndSuperiorsVisible(hlineLoop);
 
 		that.saveAndGotoIndex(headline, hlineLoop.index);
-		return;
+		return true;
 	  }
 	}
 
-	// alert: Can't find it
 	alert("Can't find a Headline with text " + toFind
 		  + "\n(XXXX <<Ask if it should be added>>");
+	return true;
   };
 
   // - - - - - - - - - - - - - - - - - -
   // Search Headlines from UI
   // (Show part of tree, based on regexp search.)
 
-  // XXXX Use same/similar for tag search too.
-
-  // XXXX C-S, M-C-S, C-R, M-C-R searches just forward to next, from
-  // present editing place.
+  // XXXX Let C-S, M-C-S, C-R, M-C-R Go to search field.
+  // If two C-S etc (i.e. C-S in search field), searches to next hit,
+  // from last used Headline index??
 
   this.searchEventClear = function() {
 	var hadHilight = that.view.getHighlightRegex() !== undefined;
@@ -368,7 +387,8 @@ var OrgController = function(model, view, commandHandler,
 	  
       if (regexp !== undefined &&
 		  (headline.compareTitleRegexp(regexp)
-           || headline.compareBlockRegexp(regexp)) ) {
+           || headline.compareBlockRegexp(regexp)
+		   || headline.compareTagsRegexp(regexp)) ) {
 		// console.log(headline.level() + ": " + i + ":  " + headline.title());
 
 		// (Reimplements _makeHeadlineAndSuperiorsVisible here. This
@@ -387,6 +407,7 @@ var OrgController = function(model, view, commandHandler,
 
 		// Must rerender all headlines, since they might have old highlights
 		// Store if there is a hit as flags, so no need to check that again!
+		// This will stop lazy generation in View, redo.
 		if (hadHilight)
 		  that.view.render_headline( headline, true, true );
 	  }
@@ -596,12 +617,16 @@ var OrgController = function(model, view, commandHandler,
   // XXXX Can't work like this on iPad et al, since the double click
   // should start editing? Do special handling there??
   this.clickBlockEvent = function(event) {
+	event.stopPropagation()
     var i = that._getHeadlineIxForButtonEvent( event );
+	if (i === undefined)
+	  return true;
     var headline = that.model.headline(i);
 
 	console.log(headline);
 
 	that.view.toggleLargeBlock( headline ); // Hides/shows block
+	return true;
   }
 
   // ----------------------------------------------------------------------

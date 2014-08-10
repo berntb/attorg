@@ -142,6 +142,9 @@ function OrgAddKeyCmds(cmdHandler) {
   });
 
 
+  // ----------------------------------------------------------------------
+  // Move commands:
+
   cmdHandler.addACommand({
 	name:  "MoveLevelUp",		// ("C-C C-U" style)
 	docum: "Description",
@@ -173,6 +176,9 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
+	  // TEST:
+	  console.log("Finding first invisible headline number above:");
+	  console.log(this.controller.view.firstHeadlineAboveScroll(headline));
 	  // If we have a negative C-U prefix number, make it 'movenext':
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MoveNext',
@@ -189,7 +195,8 @@ function OrgAddKeyCmds(cmdHandler) {
 	  var ix		   = headline.index;
 	  var numOfHlines  = number === undefined ? 1 : number;
 	  var foundSpec	   = model.findHeadlinesFrom(
-		ix, numOfHlines, -1, function(headline) {
+		ix, numOfHlines, -1,
+		function(headline) {
 		  return headline.visible() ? true : false;
 		}
 	  );
@@ -303,6 +310,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	}
   });
 
+
   cmdHandler.addACommand({
 	name:  "PrevSameLevel",		// ("C-C, C-B")
 	docum: "Move to next (visible) item",
@@ -378,6 +386,91 @@ function OrgAddKeyCmds(cmdHandler) {
 	  return true;
 	}
   });
+
+  cmdHandler.addACommand({
+	name:  "JumpAPageUp",
+	docum: "Description",
+
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
+	  // XXXX Add handling of C-U.
+	  // Easy. All the parts are done, just scroll a line up at a time
+	  // (or 'n' lines, if too slow).
+
+	  this.controller.view.scrollHeadlineIntoView(headline);
+
+	  var newH = this.controller.view.firstHeadlineAboveScroll(headline);
+	  console.log("Scrolled from " + headline.index + " to:");
+	  console.log(newH);
+	  if (newH === undefined) {
+		// (This means there are no Headlines invisible above present
+		//  Headline.)
+		return true;			// Error message here!!
+	  }
+
+	  var newVisibleHeadline = this.controller.model.headline(newH[0]);
+	  
+	  // this.controller.view.scrollHeadlineIntoView(newVisibleHeadline);
+	  this.controller.view.scrollIntoViewAtBottom(newVisibleHeadline);
+
+	  // XXXX If goes from block, should go to block, too??
+	  this.controller.saveAndGotoIndex(headline, newH[0], false);
+
+	  // XXXX NO.
+	  // Scroll so first invisible is at bottom. Know offset to it,
+	  // know offset to bottom edge. If have block-value, add X pixels
+	  // to offset from bottom. (10% more of Window height?)
+
+	  // XXXX Check offset of scroll when at top -- does it handle the
+	  // offset of top window ok?
+
+	  return true;
+	}
+  });
+
+  cmdHandler.addACommand({
+	name:  "JumpAPageDown",
+	docum: "Description",
+
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
+
+	}
+  });	
+					 
+
+  cmdHandler.addACommand({
+	name:  "ScrollTop",
+	docum: "Description",
+
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+	  var model = this.controller.model;
+	  if (model.length) {
+		this.controller.saveAndGotoIndex(headline, 0, false);
+	  }
+	  $("html, body").animate({ scrollTop: 0 }, "slow");
+	  return true;
+	}
+  });
+
+  cmdHandler.addACommand({
+	name:  "ScrollBot",
+	docum: "Description",
+
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+	  var model = this.controller.model;
+	  if (model.length) {
+		// XXXX Make more than the last one visible???
+		var nextHeadline = this.controller.model.headline(model.length-1);
+		nextHeadline.visible(true);
+		this.controller.saveAndGotoIndex(headline, model.length-1, false);
+		var height = $(document).height();
+		$("html, body").animate({ scrollTop: height }, "slow");
+	  }
+	  return true;
+	}
+  });
+
 
 
   // - - - - - - - - - - -
@@ -864,41 +957,6 @@ function OrgAddKeyCmds(cmdHandler) {
 	}
   });
 
-  // ----------------------------------------------------------------------
-  // Go top/bot:
-
-  cmdHandler.addACommand({
-	name:  "ScrollTop",
-	docum: "Description",
-
-	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-	  var model = this.controller.model;
-	  if (model.length) {
-		  this.controller.saveAndGotoIndex(headline, 0, false);
-	  }
-	  $("html, body").animate({ scrollTop: 0 }, "slow");
-	  return true;
-	}
-  });
-
-  cmdHandler.addACommand({
-	name:  "ScrollBot",
-	docum: "Description",
-
-	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
-	  var model = this.controller.model;
-	  if (model.length) {
-		// XXXX Make more than the last one visible???
-		var nextHeadline = this.controller.model.headline(model.length-1);
-		nextHeadline.visible(true);
-		this.controller.saveAndGotoIndex(headline, model.length-1, false);
-		var height = $(document).height();
-		$("html, body").animate({ scrollTop: height }, "slow");
-	  }
-	  return true;
-	}
-  });
-
 
 
   // ----------------------------------------------------------------------
@@ -921,16 +979,20 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("Return",	   "CR,, C-CR,, M-CR");
   
 
-  // - - - Move around:
+  // - - - Move commands:
   cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-U");
   cmdHandler.addKeyCommand("MovePrevious", "C-C C-P,, C-P,, up,, C-up");
   cmdHandler.addKeyCommand("MoveNext",	   "C-N,, down,, C-down");
   cmdHandler.addKeyCommand("PrevSameLevel","C-C C-B"); // Same or higher level
   cmdHandler.addKeyCommand("NextSameLevel","C-C C-F"); // Same or higher level
 
+  cmdHandler.addKeyCommand("JumpAPageUp",  "M-V");
+  cmdHandler.addKeyCommand("JumpAPageDown","C-V");
+
   // Lots of keyboards needs shift to write '<', so... :-(
   cmdHandler.addKeyCommand("ScrollTop",		"M-<,, S-M-<");
   cmdHandler.addKeyCommand("ScrollBot",		"M->,, S-M->");
+
 
   // - - - IMPLEMENT: Set Mark, C-X C-X, [copy/paste??]
   cmdHandler.addKeyCommand("SetMark",	   "C-space"); // Not done
