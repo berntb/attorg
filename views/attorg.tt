@@ -177,7 +177,7 @@
 			<%= level_select_options %>
 		  </select>
 		  <a class="btn btn-sm btn-default pull-right attorg-command"
-			 data-command="EditHlineTags">Update Tags</a>
+			 data-command="EditHlineTags">Tags</a>
 		</div>
 		<% } %>
 		<br>
