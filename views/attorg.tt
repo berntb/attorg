@@ -142,7 +142,7 @@
 		</a>
 	  </div>
 	</div>
-	<span class="col-md-9 title-text" style="color:<%= color_text %>" >
+	<span class="col-md-9 title-text <%= title_css_class %>">
 	  <b><%= level_spec %></b>
 	  <% if (priority !== '') { %>
 		<a class="attorg-command" data-command="PrioHigher"

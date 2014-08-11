@@ -1,4 +1,3 @@
-/* Note -- this will be everywhere! */
 body { padding-top: 40px; }
 
 .org-tags {
@@ -7,6 +6,59 @@ body { padding-top: 40px; }
 	font-weight: bold;
 }
 
+
+/* ------------------------------------------------------------
+   A kludge to override Bootstrap. The colors are from org-faces.el,
+   for a light background. They doesn't seem to be exactly as my Emacs
+   installation? 
+*/
+
+.hilight {                      /* For highlighted text (search results) */
+	color: gold;
+	font-weight:bold;
+}
+
+.config-class {
+	color: #808080;
+}
+
+.text-level1 {
+	color: #0000FF;				/* blue 1 */
+}
+.text-level2 {
+	color: #999900;				/* Should be #ffb90f/Darkgoldenrod1, but
+								   that is too close to .hilight.*/
+}
+.text-level3 {
+	color: #a020f0;				/* Purple */
+}
+.text-level4 {
+	color: #b22222;				/* Firebrick */
+}
+.text-level5 {
+	color: #228b22;				/* ForestGreen */
+}
+.text-level5 {
+	color: #228b22;				/* ForestGreen */
+}
+.text-level6 {
+	color: #5f9ea0;				/* CadetBlue */
+}
+.text-level7 {
+	color: #da70d6;				/* Orchid */
+}
+.text-level8 {
+	color: #bc8f8f;				/* RosyBrown */
+}
+.text-level9 {
+	color: #808080;				/* Only 8 were specified in Emacs */
+}
+.text-level10 {
+	color: #808080;				/* - " " - */
+}
+
+
+/* ------------------------------------------------------------ */
 /* Set colors similar to default emacs config: */
 .hlC {							/* (Config) */
     margin-left:   0px;
@@ -56,12 +108,6 @@ body { padding-top: 40px; }
 /* Will do for now */
 
 
-/* Default highlighted text: */
-
-.hilight {
-	color: gold;
-	font-weight:bold;
-}
 
 /* Layout: */
 

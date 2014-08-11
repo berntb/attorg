@@ -48,11 +48,6 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   this.init_document_parameters = function(model_data) {
 	// XXXX
-	// How to edit TODO/DONE states, Priorities, Drawer names etc?
-	// One problem is that we must check if the values exist in the
-	// headlines/blocks and take some type of action when a value is
-	// changed/deleted! (Also, needs to refresh all, so we have right
-	// values of e.g. todos in selects.)
 
 	var todo  = model_data.todo_states();
 	var done  = model_data.done_states();
@@ -71,25 +66,6 @@ var OrgView = function(document_div_id, divid_headlines) {
 	$("#" + this.document_div_id + " .drawer_names_list")
 	  .html( _.escape(draws.join(", ")) );
   };
-
-  // A kludge to override Bootstrap. The colors are from org-faces.el
-  // for a light background. They doesn't seem to be exactly as my Emacs
-  // installation, but... well, easy to change. :-)
-  var configColor = '#808080';
-  var levelColors = [
-	'none',
-	'#0000FF',					  // 1 Blue1
-	'#ffb90f',					  // Darkgoldenrod1 (A bit bad -- the
-	                              //   highlight (gold) is too close.)
-	'#a020f0',					  // Purple
-	'#b22222',					  // Firebrick
-	'#228b22',					  // 5 ForestGreen
-	'#5f9ea0',					  // CadetBlue
-	'#da70d6',					  // Orchid
-	'#bc8f8f',					  // 8 RosyBrown
-	'#808080',					  // (Only 8 was specified.)
-	'#808080',
-  ];
 
 
   // If set, will highlight text in text/block:
@@ -217,9 +193,11 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var titleHilite, blockHilite, tagHilite;
 
 
-	if (!configp && hiliteRegexp && hiliteRegexp.test(title_value))
-	  textHilite      = true;
-	if (text_block !== undefined &&
+	if (!configp && hiliteRegexp && hiliteRegexp.test(title_value)) {
+	  console.log("SEARCH HIT:" + title_value);
+	  titleHilite     = true;
+	}
+	if (text_block  !== undefined &&
 		! this.dontShowBlockRegexp.test(text_block)) {
 	  block_html	  = headline.block_html();
 	  if (hiliteRegexp && hiliteRegexp.test(text_block)) {
@@ -250,7 +228,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 		level_spec:  configp ? '' : headline.asterisks(),
 		todo_spec: _.escape(todo),
 		// Kludge for setting (Bootstrap) color:
-		color_text: configp ? configColor : levelColors[level],
+		title_css_class: configp ? 'config-class' : 'text-level' + level,
 		title: configp ? "--CONFIG--" : headline.title_html(),
 		config: configp,
 		block: block_html,
@@ -407,9 +385,10 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   // (Better not set a Headline color too similar to the bg-warning color!)
   this._modify_top_view_for_edit = function(topView, headline) {
-	// topView.addClass("well well-small");
+	topView.addClass("well well-small");
 	topView.addClass("bg-warning");
-	// Maybe later?
+
+	// Maybe do this later?
 	// var marginTop   = topView.css("margin-top");
 	// var marginBot   = topView.css("margin-bottom");
 	// console.log("Margin top " + marginTop + ", bottom " + marginBot);
@@ -418,7 +397,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   };
 
   this._modify_top_view_for_end_of_edit = function(topView, headline) {
-	// topView.removeClass("well well-small");
+	topView.removeClass("well well-small");
 	topView.removeClass("bg-warning");
   };
 
@@ -453,7 +432,7 @@ var OrgView = function(document_div_id, divid_headlines) {
   };
 
   // - - - - - Handle showing/hiding a Headline:
-  this.noOpenCloseUpdates = false;
+  this.noOpenCloseUpdates = false; // (XXXX Not used)
 
   this.close_edit_headline = function(headline) {
 	var div_id	= this.make_headline_id( headline );
@@ -552,8 +531,8 @@ var OrgView = function(document_div_id, divid_headlines) {
 	// goes to Edit mode. (Also allow hiding block specifically??)
 	// 2. To make a reasonable size for textareas.
 
-	// (N B -- next version should dynamically change size of
-	// textarea.)
+	// (N B -- should dynamically change size of textarea. Just cut
+	//  off block after X chars? Need to store this status.)
   };
 
   this.toggleLargeBlock = function(headline) {
@@ -706,7 +685,6 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 
   // This assumes the row has editing on:
-  // XXXX Does not take into consideration of large Block texts.
   this.scrollIntoViewAtBottom = function(jQelem, elementMargin) {
 	var docViewTop    = $(window).scrollTop();
 	var docViewHeight =  $(window).height();
@@ -717,10 +695,9 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var elemHeight    = jQelem.offset().height;
 
 	var nextOffsetBot = elemTop + margin;
+	var nextOffsetTop = nextOffsetBot - docViewHeight;
 
-	$(window).scrollTop( nextOffsetBot - docViewHeight );
-	
-
+	$(window).scrollTop( nextOffsetTop < 0 ? 0 : nextOffsetTop );
   };
 
   this.scrollIntoView = function(jQelem, elementMargin) {
