@@ -9,6 +9,12 @@ MANIFEST.SKIP
 lib/attorg.pm
 public/css/style.css
 public/css/error.css
+public/javascripts/attorg.js
+public/javascripts/attorg_model.js
+public/javascripts/attorg_view.js
+public/javascripts/attorg_cmds.js
+public/javascripts/attorg_cmd_list.js
+public/javascripts/attorg_view.js
 public/images/perldancer-bg.jpg
 public/images/perldancer.jpg
 public/500.html
@@ -16,7 +22,6 @@ public/404.html
 public/dispatch.fcgi
 public/favicon.ico
 public/dispatch.cgi
-public/javascripts/jquery.js
 t/002_index_route.t
 t/001_base.t
 Makefile.PL

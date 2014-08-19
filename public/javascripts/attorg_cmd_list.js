@@ -85,6 +85,12 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+
+	  // XXXX Error. This checks underlying (higher level values) if
+	  // they should be opened/closed. It should only do that if NOT
+	  // shiftKey. Also, it is buggy. Don't go to three steps anymore,
+	  // just two.  Redo this so it works when fixing hiding of (most
+	  // of) block fields.
 	  var hide_action  = this.controller.updateTreeVisibility( headline );
 	  // XXXX This makes the shift-TAB impossible to call as a command.
 	  if (!charEvent || !event.shiftKey)
@@ -176,9 +182,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	docum: "Description",
 	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
-	  // TEST:
-	  console.log("Finding first invisible headline number above:");
-	  console.log(this.controller.view.firstHeadlineAboveScroll(headline));
+
 	  // If we have a negative C-U prefix number, make it 'movenext':
 	  if (number !== undefined && number < 0) {
 		return this.callCommand('MoveNext',
@@ -195,7 +199,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  var ix		   = headline.index;
 	  var numOfHlines  = number === undefined ? 1 : number;
 	  var foundSpec	   = model.findHeadlinesFrom(
-		ix, numOfHlines, -1,
+		ix-1, numOfHlines, -1,
 		function(headline) {
 		  return headline.visible() ? true : false;
 		}
@@ -299,7 +303,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  var ix		   = headline.index;
 	  var numOfHlines  = number === undefined ? 1 : number;
 	  var foundSpec	   = model.findHeadlinesFrom(
-		ix, numOfHlines, 1, function(headline) {
+		ix+1, numOfHlines, 1, function(headline) {
 		  return headline.visible() ? true : false;
 		}
 	  );
@@ -335,7 +339,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  var level        = headline.level();
 	  var numOfHlines  = number === undefined ? 1 : number;
 	  var foundSpec	   = model.findHeadlinesFrom(
-		ix, numOfHlines, -1, function(headline) {
+		ix-1, numOfHlines, -1, function(headline) {
 		  if (headline.visible() && headline.level() <= level)
 			return true;
 		  return false;
@@ -373,7 +377,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  var level        = headline.level();
 	  var numOfHlines  = number === undefined ? 1 : number;
 	  var foundSpec	   = model.findHeadlinesFrom(
-		ix, numOfHlines, 1, function(headline) {
+		ix+1, numOfHlines, 1, function(headline) {
 		  if (headline.visible() && headline.level() <= level)
 			return true;
 		  return false;
@@ -393,37 +397,50 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
-	  // XXXX Add handling of C-U.
-	  // Easy. All the parts are done, just scroll a line up at a time
-	  // (or 'n' lines, if too slow).
+	  var result, nextH;
+	  if (number !== undefined) {
+		if (number < 0)
+		  return this.callCommand('JumpAPageDown',
+								  {
+									charEvent: true,
+									event:	  event,
+									headline:	  headline,
+									isBlock:	  block_p,
+									numericalPrefix: -number
+								  });
+
+		var topOfView = this.controller.view.topVisibleHeadline(headline, 0);
+		console.log("Result of finding top visible is:" + topOfView);
+		if (topOfView === undefined)
+		  return true;			// Uhh??
+		console.log("TOP VISIBLE IS: " + topOfView.title());
+
+		// Now scroll a bunch of headlines up:
+		result      = _stepVisibleHeadlines(topOfView, number, false);
+		nextH       = this.controller.model.headline(result[0]);
+		console.log("SCROLL TO: " + nextH.title());
+
+		this.controller.view.scrollHeadlineIntoView( nextH, 50 );
+
+		// XXXX Check if headline being edited is out of the page,
+		// then move edited headline so it is in the window??
+		return true;
+	  }
 
 	  this.controller.view.scrollHeadlineIntoView(headline);
 
-	  var newH = this.controller.view.firstHeadlineAboveScroll(headline);
-	  console.log("Scrolled from " + headline.index + " to:");
-	  console.log(newH);
-	  if (newH === undefined) {
+	  var nextH     = this.controller.view.firstHeadlineAboveScroll(headline);
+	  if (nextH === undefined) {
 		// (This means there are no Headlines invisible above present
 		//  Headline.)
-		return true;			// Error message here!!
+		return true;			// Error message here?
 	  }
-
-	  var newVisibleHeadline = this.controller.model.headline(newH[0]);
-	  
-	  // this.controller.view.scrollHeadlineIntoView(newVisibleHeadline);
-	  this.controller.view.scrollIntoViewAtBottom(newVisibleHeadline);
+	  console.log("Scrolled from " + headline.index + " to:" + nextH.index);
+	  console.log(nextH);
+	  this.controller.view.scrollHeadlineToBottom(nextH, 50);
 
 	  // XXXX If goes from block, should go to block, too??
-	  this.controller.saveAndGotoIndex(headline, newH[0], false);
-
-	  // XXXX NO.
-	  // Scroll so first invisible is at bottom. Know offset to it,
-	  // know offset to bottom edge. If have block-value, add X pixels
-	  // to offset from bottom. (10% more of Window height?)
-
-	  // XXXX Check offset of scroll when at top -- does it handle the
-	  // offset of top window ok?
-
+	  this.controller.saveAndGotoIndex(headline, nextH.index, false);
 	  return true;
 	}
   });
@@ -434,7 +451,56 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 					number) {
+	  var result, nextH;
 
+	  if (number !== undefined) {
+		// (Ctrl-u \d+, etc)
+		if (number < 0)
+		  return this.callCommand('JumpAPageUp',
+								  {
+									charEvent: true,
+									event:	  event,
+									headline:	  headline,
+									isBlock:	  block_p,
+									numericalPrefix: -number
+								  });
+
+		// XXXX '20' is a constant -- does it work on e.g. hires
+		// screens??  Should let View code find typical height of a
+		// text line dynamically, so it can handle increase/decrease
+		// of font size??
+		var bottomView = this.controller.view.botVisibleHeadline(headline, 20);
+		console.log("Result of finding BOTTOM visible is:");
+		console.log(bottomView);
+		if (bottomView === undefined)
+		  return true;			// Uhh??
+		console.log("BOT VISIBLE IS: " + bottomView.title());
+
+		// Now scroll a bunch of headlines down:
+		result      = _stepVisibleHeadlines(bottomView, number, true);
+		nextH       = this.controller.model.headline(result[0]);
+		console.log("SCROLL TO: " + nextH.title());
+
+		this.controller.view.scrollHeadlineToBottom( nextH, 10 );
+		return true;
+	  }
+
+	  // Make certain it is visible:
+	  this.controller.view.scrollHeadlineIntoView(headline);
+
+	  var nextH     = this.controller.view.firstHeadlineBelowScroll(headline);
+	  if (nextH === undefined) {
+		// (This means there are no Headlines invisible below present
+		//  Headline.)
+		return true;			// Error message here?
+	  }
+	  console.log("Scrolls from " + headline.index + " to:" + nextH.index);
+	  console.log(nextH);
+	  this.controller.view.scrollHeadlineToBottom(nextH, 50);
+
+	  // XXXX If goes from block, should go to block, too??
+	  this.controller.saveAndGotoIndex(headline, nextH.index, false);
+	  return true;
 	}
   });	
 					 
@@ -523,7 +589,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	// ** C
 	// ** D
 
-	autoMove: true,				// XXXX Implement
+	autoLoop: true,				// XXXX Implement
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  this.controller.moveHeadlineUp( headline ); // Move single headline:
@@ -534,7 +600,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	name:  "HeadlineDown",		// ("M-down")
 	docum: "Description",
 
-	autoMove: true,				// XXXX Implement
+	autoLoop: true,				// XXXX Implement
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  this.controller.moveHeadlineDown( headline ); // Move single headline:
@@ -546,7 +612,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	name:  "MoveTreeUp",		// "M-S-up"
 	docum: "Description",
 
-	autoMove: true,				// XXXX Implement
+	autoLoop: true,				// XXXX Implement
 
 	// XXXX Need to split this into two, so can use as command
 	// names. (For menu use, M-X, etc.)
@@ -567,7 +633,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	name:  "MoveTreeDown",				// "M-down"
 	docum: "Description",
 
-	autoMove: true,				// XXXX Implement
+	autoLoop: true,				// XXXX Implement
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  var thisTree	= headline.findSubTree();
@@ -914,10 +980,8 @@ function OrgAddKeyCmds(cmdHandler) {
 	  if (headline.is_config())
 		return true;			// Don't you try... :-)
 
+	  // (Store Headline ID in Modal instead?)
 	  this._headlineIDWithEditedTags = headline.id_str();
-
-	  console.log("Edit Headline Tags, Headline:");
-	  console.log(headline);
 
 	  // - - - Find tags in Headline and Modal.
 	  var tagsNow  = headline.tags() || [];
@@ -955,8 +1019,22 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	  this.controller.view.render_headline( headline, true, true );
 	}
+
+	// ------------------------------------------------------------
+	// Utility:
+
+
   });
 
+  function _stepVisibleHeadlines(headline, number, downwards) {
+	var model     = headline.owner;
+	var foundSpec = model.findHeadlinesFrom(
+	  headline.index, number+1, (downwards ? 1 : -1),
+	  function (hline) {
+		return hline.visible() ? true : false;
+	  });
+	return foundSpec;
+  }
 
 
   // ----------------------------------------------------------------------

@@ -41,6 +41,7 @@ var OrgCmdMapper = function() {
 
   var commands = {};			// Named commands + functions
   var cmdDescriptions = {};		// Descriptions of commands.
+  var autoDoNumericalPrefixes = {};
 
   // Use character description for keys. Values are command names
   // (strings). If there is a sequence of chars for a command, it
@@ -50,7 +51,7 @@ var OrgCmdMapper = function() {
   this.KeyTranslationTable = function() { return translationTable; };
   this.namesToCommands = function() { return commands; };
   this.commandsToDescriptions = function() { return cmdDescriptions; };
-
+  this.autoDoNumericalPrefixes = function() { return autoDoNumericalPrefixes;};
 
   // ----------------------------------------------------------------------
   // Used by commands.
@@ -82,6 +83,7 @@ var OrgCmdMapper = function() {
 	var document = spec.docum;	// Documentation
 	var fun      = spec.text || spec.both;
 	var blockFun = spec.block;
+	var autoLoop = spec.autoLoop || false;
 	var numericalHandling = spec.numericalAsMultipleCalls;
 
 	var funs = [fun.bind(this)];
@@ -90,6 +92,7 @@ var OrgCmdMapper = function() {
 
 	commands[name] = funs;
 	cmdDescriptions[name] = document;
+	autoDoNumericalPrefixes[name] = autoLoop;
 	return true;
   };
 
@@ -220,29 +223,50 @@ var OrgCmdMapper = function() {
   //  some less inelegant way?)
   this.callCommand = function(commandName, callParams) {
 	
-	var fun = this._getFunctionFromCommand(commandName, callParams.isBlock);
-	if (fun === undefined) {
+	var out = this._getFunctionFromCommand(commandName, callParams.isBlock);
+	if (out === undefined) {
 	  console.log("Failed to find command: " + commandName);
 	  return undefined;
 	}
+	var fun        = out[0];
+	var blockLoop  = out[1];
+
+	var headline   = callParams.headline;
+	var isBlock    = callParams.isBlock;
+	var numberPre  = callParams.numericalPrefix;
+
+	var event      = undefined;
+	var metaKey    = undefined;
+	var ctrlKey    = undefined;
+	var keyCode    = undefined;
+	var keyboardp  = false;
 
 	if (callParams.keyboard_p) {
 	  // console.log( "Call parameters:" + commandName);
 	  // console.log( callParams );
-	  var event    = callParams.event;
-	  var keyCode  = event.which || event.keyCode;
-	  var metaKey  = (event.altKey || event.metaKey);
-	  return fun(true, event,
-				 event.ctrlKey, metaKey,  keyCode,
-				 callParams.headline, callParams.isBlock,
-				 callParams.numericalPrefix);
+	  keyboardp    = true;
+	  event        = callParams.event;
+	  keyCode      = event.which || event.keyCode;
+	  ctrlKey      = event.ctrlKey;
+	  metaKey      = (event.altKey || event.metaKey);
 	}
 
-	// (Probably shouldn't check if control/meta are pressed right now?)
-	return fun(false, callParams,
-			   undefined, undefined, undefined,
-			   callParams.headline, callParams.isBlock,
-			   callParams.numericalPrefix);
+	if (blockLoop !== true || numberPre === undefined || numberPre+0 < 1)
+	  return fun(keyboardp, event,
+				   ctrlKey, metaKey,  keyCode,
+				   headline, isBlock, numberPre);
+
+	console.log("Checking command " + commandName + " ------ FOR LOOP!");
+	var val;
+	for(var i = 0; i < numberPre; i++) {
+	  val = fun(keyboardp, event,
+				ctrlKey, metaKey,  keyCode,
+				headline, isBlock, 1); // Always one here
+	  if (val === false)
+		return false;
+	}
+
+	return true;
   };
 
   // - - - - - - - - - - - - -
@@ -274,11 +298,6 @@ var OrgCmdMapper = function() {
 		numericalPrefixValue = parseInt(numericalPrefixValue);
 	  else
 		numericalPrefixValue = undefined;
-
-	  // var fun = this._getFunctionFromCommand(commandName, isBlock);
-	  // if (fun === undefined)
-	  // 	return [OrgCmdMapper.CMD_ERROR,
-	  // 			"Can't find command " + commandName];
 
 	  return [resultType, commandName, numericalPrefixValue];
 	}
@@ -377,8 +396,9 @@ var OrgCmdMapper = function() {
 	var funList = commands[name];
 	console.log("Has " + funList.length + " funs. Block value is " + isBlock);
 	if (isBlock && funList.length > 1)
-      return funList[1];
-	return funList[0];
+      return [funList[1], autoDoNumericalPrefixes[name]];
+	return [funList[0], autoDoNumericalPrefixes[name]];
+
   };
 
 

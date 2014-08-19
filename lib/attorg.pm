@@ -40,7 +40,7 @@ use examples::dynamic_content;
 
 use Attorg::Extract::Org;
 
-our $VERSION = '0.1';
+our $VERSION = '0.11';
 
 get '/' => require_login sub {
     template 'index';

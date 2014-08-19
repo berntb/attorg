@@ -262,7 +262,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	this._modify_top_view_for_edit(div_parent, headline);
 
 	div.html( rendered_html );
-	this.scrollHeadlineIntoView(headline);
+	this.scrollHeadlineIntoView(headline, 50);
   };
 
 
@@ -290,6 +290,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 
   // Make one fun out of these two?
   this.setupTagsForEditing = function(tags, allTags) {
+	// This is in a Modal:
 	$("#edit-headline-tags").html(template_hline_tags({tags:    tags,
 													   allTags: allTags}));
 	this._usedTagList = allTags;
@@ -322,6 +323,19 @@ var OrgView = function(document_div_id, divid_headlines) {
   // ----------------------------------------------------------------------
   // Utilities:
 
+  // To find/change which Headlines are visible:
+  function _findWindowScroll() {
+	// body should have 40 as margin in the css. But Firefox has 50??
+	// Verify in Safari on iPad/Mac (Borrow a retina display and
+	// check, too.) Is Bootstrap overriding this?
+	return $(window).scrollTop() + 50;
+  };
+  function _findWindowScrollBottom() {
+	return $(window).scrollTop() + $(window).height();
+  };
+
+
+
   // - - -
   // Getter/Setter for what-to-Highlight regexp:
   // (Work is done in templates.)
@@ -340,45 +354,6 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 	return {title: titleInput.val(), block: blockInput.val() };
   };
-
-  // Find first invisible above view area, given a visible Headline.
-  // Returns undefined if fails. On success, returns an array with:
-  //    [first_outside_visible_scroll, last_inside_fully_visible]
-  this.firstHeadlineAboveScroll = function(headline) {
-	if (headline.index < 1)
-	  return undefined;
-	var model       = headline.owner;
-
-	// First loop until have the first scrolled so it is visible in
-	// the Viewport. Then loop until the first _above_ the viewport.
-
-	var topVisible;
-	var result      = model.findHeadlinesFrom(
-	  headline.index-1, 1, -1,
-	  function (hlineToTest) {
-		if (! hlineToTest.visible())
-		  return false;
-
-		var inView  = that.isHeadlineScrolledIntoView(hlineToTest);
-		if (inView) {
-		  console.log("Hline " + hlineToTest.index + " visible. "
-					  + hlineToTest.title());
-		  topVisible = hlineToTest.index;
-		  return false;
-		}
-
-		// We got a winner!
-		return true;
-	  });
-
-	if (result[1] !== undefined) {
-	  // Failed, didn't find any
-	  return undefined;
-	}
-	return [result[0], topVisible];
-  };
-
-
 
   // Make it visible that a Headline is being edited.
   // (For now -- put a frame around the Headline and its editing form.)
@@ -642,25 +617,64 @@ var OrgView = function(document_div_id, divid_headlines) {
   // ------------------------------------------------------------
   // Handle scrolling in View:
 
-  // Mostly from:
-  // http://stackoverflow.com/questions/487073/check-if-element-is-visible-after-scrolling )
+  // Find first invisible above view area, given a visible Headline.
+  // Returns undefined if fails. On success, returns an array with:
+  //    [first_outside_visible_scroll, last_inside_fully_visible]
+  this.firstHeadlineAboveScroll = function(headline, margin) {
+	var result = this._topVisibleHline(headline,
+									   (margin === undefined ? 0 : margin),
+									   true);
+	console.log(" ---- firstHeadlineAboveScroll");
+	if (result === undefined)
+	  return undefined;			// Empty Headline list?
+	if (result[1] !== undefined)
+	  return headline.owner.headline(result[1]);
+	return undefined;
+  };
 
-  // XXXX Need a constant to show offset of Window or is that handled??
+
+  this.firstHeadlineBelowScroll = function(headline, margin) {
+	var result = this._botVisibleHline(headline,
+									   (margin === undefined ? 0 : margin),
+									   true);
+	// console.log(" ---- firstHeadlineBelowScroll, result:");
+	// console.log(result);
+	if (result === undefined)
+	  return undefined;			// Empty Headline list?
+	if (result[1] !== undefined)
+	  return headline.owner.headline(result[1]);
+	return undefined;
+  };
+
+
+  this.topVisibleHeadline = function(headline, margin) {
+	return this._topVisibleHline(headline, margin);
+  };
+
+  this.botVisibleHeadline = function(headline, margin) {
+	return this._botVisibleHline(headline, margin);
+  };
+
 
   this.scrollHeadlineIntoView = function(headline, margin) {
 	var model_str_id= headline.id_str();
 	var titleInput  = $('#hl_' + model_str_id);
 	console.log("scrollHeadlineIntoView: Hline " + headline.index);
 	console.log("   Headline title:" + headline.title());
-	this.scrollIntoView(titleInput, margin);
+	this._scrollIntoView(titleInput, margin);
   };
 
 
   // Like previous, but make certain the Headline is at the bottom:
-  this.scrollHeadlineTobottom = function(headline, margin) {
+  this.scrollHeadlineToBottom = function(headline, margin) {
+	console.log(headline);
+	console.log(_.keys(headline));
+	console.log(headline.headline);
+	console.log(headline.id_str);
 	var model_str_id= headline.id_str();
 	var titleInput  = $('#hl_' + model_str_id);
-	this.scrollIntoViewAtBottom(titleInput, margin);
+	// alert("In scrollHeadlineTobottom:" + headline.title());
+	this._scrollIntoViewAtBottom(titleInput, margin);
   };
 
 
@@ -668,88 +682,361 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var model_str_id= headline.id_str();
 	var titleInput  = $('#hl_' + model_str_id);
 	// console.log("isHeadlineScrolledIntoView, Hline Ix " + headline.index);
-	return this.isScrolledIntoView(titleInput);
+	return this._isScrolledIntoView(titleInput);
   };
 
 
-  this.isScrolledIntoView = function(jQelem) {
-	var docViewTop = $(window).scrollTop();
-	var docViewBottom = docViewTop + $(window).height();
+  // Mostly from: stackoverflow.com/questions
+  // /487073/check-if-element-is-visible-after-scrolling
 
-	var elemTop = jQelem.offset().top;
-	var elemBottom = elemTop + jQelem.height();
-
-	return ((elemBottom >= docViewTop) && (elemTop <= docViewBottom)
-			&& (elemBottom <= docViewBottom) &&  (elemTop >= docViewTop) );
+  this._findViewPortOffsetForHeadline = function(headline) {
+	var model_str_id= headline.id_str();
+	var jQelem      = $('#hl_' + model_str_id);
+	return jQelem.offset().top;
   };
 
 
-  // This assumes the row has editing on:
-  this.scrollIntoViewAtBottom = function(jQelem, elementMargin) {
-	var docViewTop    = $(window).scrollTop();
-	var docViewHeight =  $(window).height();
-	var margin        = elementMargin === undefined ?
-	  Math.floor( docViewHeight/15 ) : elementMargin;
-	var docViewBottom = docViewTop + docViewHeight;
-	var elemTop       = jQelem.offset().top;
-	var elemHeight    = jQelem.offset().height;
-
-	var nextOffsetBot = elemTop + margin;
-	var nextOffsetTop = nextOffsetBot - docViewHeight;
-
-	$(window).scrollTop( nextOffsetTop < 0 ? 0 : nextOffsetTop );
+  this._findPreviousVisibleIndex = function(headline) {
+	var model = headline.owner;
+	var foundSpec = model.findHeadlinesFrom(
+	  headline.index, 1, -1, function(headline) {
+		return headline.visible() ? true : false;
+	  });
+	if (foundSpec[1] === undefined)
+	  return foundSpec[0];
+	return undefined;
   };
 
-  this.scrollIntoView = function(jQelem, elementMargin) {
-	if (this.isScrolledIntoView(jQelem))
-	  return;
 
-	var docViewTop    = $(window).scrollTop();
-	var docViewHeight =  $(window).height();
-	var margin        = elementMargin === undefined ?
-	  Math.floor( docViewHeight/15 ) : elementMargin;
-	var docViewBottom = docViewTop + docViewHeight;
-	var elemTop       = jQelem.offset().top;
-	var elemHeight    = jQelem.offset().height;
+  this._topVisibleHline = function(headline, margin, alsoFirstInvisible) {
+	// Returns the topmost visible headline. (If alsoFirstInvisible, it
+	// returns an array with the index of the first invisible as the
+	// second parameter. Kludgy.)
+	return this._VisHlineTopBot(headline, margin, true, alsoFirstInvisible);
+  }
 
-	console.log("------- scrollIntoView:");
-	console.log("View off " + docViewTop + ", height "
-				+ docViewHeight);
-	console.log("Element top:" + elemTop + ", height:" + elemHeight );
-	console.log(jQelem.height());
-	// Need to do it like this:
-	// console.log(jQelem.parent().height());
-	console.log(jQelem);
+  this._botVisibleHline = function(headline, margin, alsoFirstInvisible) {
+	// See previous
+	return this._VisHlineTopBot(headline, margin, false, alsoFirstInvisible);
+  }
 
+  this._VisHlineTopBot = function(headline, margin, upwards, also1stInvis) {
+	var model         = headline.owner;
 
-	// Is element above? Show it, with a little margin
-	if (elemTop < docViewTop) {
-	  if (elemTop < margin)
-		elemTop  = 0;
-	  else
-		elemTop -= margin;
-	  console.log("Scrolling from " + docViewTop + " to " + elemTop);
-	  $(window).scrollTop( elemTop );
-	  return;
+	var headlViewport = that._findHeadlineInViewport(headline);
+	if (headlViewport === undefined)
+	  return undefined;			// Uhhh...?
+
+	var viewMargin    = margin === undefined ? 0 : margin;
+	var docViewTop    = _findWindowScroll();
+	var docViewBot    = _findWindowScrollBottom();
+
+	// - - - Loop upwards to find first non-visible.
+	var lastVisible   = headlViewport.index;
+	var foundSpec     = model.findHeadlinesFrom(
+	  lastVisible, 1, (upwards ? -1 : 1), function(headline) {
+		if (! headline.visible())
+		  return false;
+		var hOff      = that._findViewPortOffsetForHeadline(headline);
+		console.log("   H-line ix:" + headline.index + ", step UP by 1:"
+					+ headline.title());
+		console.log("     the Off:" + hOff + ", window: " + docViewTop);
+		if (upwards) {
+		  if (hOff < (docViewTop + viewMargin) ) {
+			console.log("    (is before window.)");
+			return true;
+		  }
+		} else {
+		  if (hOff > (docViewBot - viewMargin) ) {
+			console.log("    (is before window downwards.)");
+			return true;
+		  }
+		}
+
+		lastVisible   = headline.index; // This was still visible
+		return false;
+	  }
+	)
+
+	var theHeadline   = model.headline(lastVisible);
+	if (also1stInvis) {
+	  if (foundSpec[1] === undefined)
+		return [theHeadline, foundSpec[0]];
+	  return undefined;
 	}
 
-	// Put bottom so bottom edge of element + margin is visible
-	var elemHeight    = jQelem.height();
-	elemHeight        = elemHeight > 0 ? elemHeight : jQelem.parent().height();
-	var viewNewBottom = elemTop + margin + elemHeight;
-	var viewNewTop    = viewNewBottom  - docViewHeight;
-	viewNewTop        = viewNewTop < 0 ? 0 : viewNewTop;
-
-	console.log("Scrolling up " + docViewTop + " to " + viewNewTop);
-	$(window).scrollTop( viewNewTop );
+	return theHeadline;
   };
 
-  
+
+  this._findHeadlineInViewport = function(headline) {
+	// This verifies that the headline is visible in the browser
+	// window, otherwise it returns a random headline in viewPort:
+	var model         = headline.owner;
+
+	// XXXX Must put id in _lastFoundHeadlineInViewport!!
+
+	// In these cases, no scrolling is by definition possible:
+	if (model.length < 2)
+	  return undefined;
+
+	var docViewTop    = _findWindowScroll();
+	var docViewBot    = _findWindowScrollBottom();
+
+	function checkVisible(viewPortOff) {
+	  return ( viewPortOff > docViewTop && viewPortOff < docViewBot);
+	};
+
+	function loopToFindAVisible(headline, downwards) {
+	  // Go step by step:
+	  var ix = headline.index;
+	  console.log("=======================  Headline, STEP BY STEP STAGE");
+	  var foundSpec = model.findHeadlinesFrom(
+		ix, 1, (downwards ? 1 : -1), function(headline) {
+		  if (! headline.visible())
+			return false;
+		  var hOff    = that._findViewPortOffsetForHeadline(headline);
+		  console.log("--- Headline " + headline.index + ", step by 1:"
+					       + headline.title());
+		  console.log("    Off:" + hOff + ", window: " + docViewTop);
+		  if (hOff < docViewTop) {
+			console.log("    (is before window.)");
+			return false;
+		  }
+		  if (hOff < docViewBot)
+			return true;		// Is visible!
+
+		  console.log("    (Is AFTER window: " + docViewBot + ")");
+		  return false;			// Shouldn't happen?
+		}
+	  );
+
+	  if (foundSpec[1] === undefined)
+		console.log("FOUND A VISIBLE HEADLINE!");
+	  if (foundSpec[1] === undefined)
+		return foundSpec[0];
+	  return undefined;
+
+	};
+
+	var found, lastFound, lastOffset, foundHline;
+
+	// First, check if the input Headline is visible; a common case:
+	if (headline.visible()) {
+	  lastOffset      = that._findViewPortOffsetForHeadline(headline);
+	  if (checkVisible(lastOffset)) {
+		console.log("Success in-Headline!");
+		that._lastFoundHeadlineInViewport = headline.id_str();
+		return headline;
+	  }
+	}
+	
+	// - - - Cache of earlier tries:
+	lastFound         = that._lastFoundHeadlineInViewport;
+	if (lastFound   !== undefined && model.length > lastFound) {
+	  console.log("Checking cache");
+	  var lastHeadline= model.headline(lastFound);
+	  if (lastHeadline.visible()) {
+		lastOffset    = that._findViewPortOffsetForHeadline(lastHeadline);
+		if (lastOffset > docViewTop && lastOffset < docViewBot)
+		  return lastHeadline;
+		that._lastFoundHeadlineInViewport = undefined;
+
+		if (lastOffset < docViewTop && docViewTop-lastOffset < 500) {
+		  // Not so far before/above viewport. Traverse down towards View:
+		  console.log("Tries to scroll downwards");
+		  found       = loopToFindAVisible(model.headline(0), true);
+		  if (found !== undefined) {
+			console.log("Success DOWN!");
+			that._lastFoundHeadlineInViewport = found;
+			return model.headline(found);
+		  }
+		} else if (lastOffset > docViewTop && lastOffset-docViewTop < 500) {
+		  // Not so far after viewport. Traverse up towards View:
+		  console.log("Tries to scroll upwards");
+		  found       = loopToFindAVisible(model.headline(0), false);
+		  if (found !== undefined) {
+			console.log("Success UP!");
+			that._lastFoundHeadlineInViewport = found;
+			return model.headline(found);
+		  }
+		}
+	  }
+	  
+	}
+	
+	// TEMP TEST:
+	found             = loopToFindAVisible(model.headline(0), true);
+	if (found !== undefined) {
+	  that._lastFoundHeadlineInViewport = found;
+	  return model.headline(found);
+	}
+	return undefined;
+
+	console.log("---- Top document:" + docViewTop + ", bot: " + docViewBot);
+	// The idea is that we know the 1st levels are visible. Go over
+	// and check if anyone is visible (or the one closest to the open
+	// window).
+	// TL;DR: Go over all Level 1 headlines, find closest to docViewTop:
+	var preIx, preScroll;
+	var postScroll, last1st;
+	var foundSpec	  = model.findHeadlinesFrom(
+		0, 1, 1, function(headline) {
+		  if (! headline.visible() || headline.level() !== 1)
+			return false;		// no hit
+		  last1st     = headline.index;
+		  // Check offset to top in View
+		  var hOff    = that._findViewPortOffsetForHeadline(headline);
+		  console.log("--- Headline " + headline.title());
+		  console.log("    Off:" + hOff + ", window: " + docViewTop);
+		  if (docViewTop > hOff) {
+			console.log("    (is before window.)");
+			preIx     = last1st;
+			preScroll = hOff;
+			return false;
+		  }
+		  if (docViewBot > hOff) {
+			// This is more or less on the page! postScroll won't be set
+			return true;
+		  }
+		  if (docViewTop > hOff) {
+			postScroll= hOff;
+			return true;
+		  }
+		  console.log("SHOULDN'T HAPPEN??");
+		  return false;			// Shouldn't happen?
+		}
+	);
+
+	// Found a visible?
+	if (foundSpec[1] === undefined) {
+	  that._lastFoundHeadlineInViewport = foundSpec[0];
+	  return model.headline(foundSpec[0]);
+	}
+
+	console.log("///////////// PreIx "+preIx+", Scroll "+preScroll+" Result:");
+	console.log(foundSpec);
+	var headlineIx;
+
+	// This means that the top 1st level is visible (scrolled to the
+	// top) or that the document doesn't start with a level 1?
+	if (preIx === undefined) {
+	  foundHline      = model.headline(0);
+	  if (foundHline.visible()) {
+		var off       = that._findViewPortOffsetForHeadline(foundHline);
+		if (docViewTop > off) {
+		  preIx       = 0;
+		  preScroll   = off;
+		}
+	  }
+	}
+	if (preIx === undefined && docViewTop < 300) {
+	  // I assume it is scrolled to top?
+	  // Just ignore this weird document for now.
+	  headlineIx      = loopToFindAVisible(model.headline(0), true);
+	  if (headlineIx === undefined)
+		return undefined;
+	  that._lastFoundHeadlineInViewport = headlineIx;
+	  return model.headline(headlineIx);
+	}
+
+	// - - - 
+
+
+	// If no preIx, we are at ~ top. Check this.
+	// Otherwise, loop down from preIx (or up from first find, if
+	// any, depending on postScroll).
+
+	// So we can find the top visible Headline from that.
+
+	// XXXXX The important thing here is to cache stuff, to minimize
+	// checking.  Cache all 1st level offsets. Then find the real one
+	// and compare with the DOM. They change easily, when opens/closes
+	// etc. But With C-U M-V, it will be a big win.
+
+
+  };
+
 
   this.selectPageUp = function(headline) {
 	// XXXX
 	
   };
 
+  // ------------------------------------------------------------
+  // Lower level scroll handling based on jQuery/DOM elements:
+
+  this._isScrolledIntoView = function(jQelem) {
+	var docViewTop  = $(window).scrollTop() + 70; // (Constant for Bootstrap)
+	var docViewBot = docViewTop + $(window).height();
+
+	var elemTop = jQelem.offset().top;
+	var elemBottom = elemTop + jQelem.height();
+
+	return ((elemBottom >= docViewTop) && (elemTop <= docViewBot)
+			&& (elemBottom <= docViewBot) &&  (elemTop >= docViewTop) );
+  };
+
+
+  // This assumes the row has editing on:
+  this._scrollIntoViewAtBottom = function(jQelem, elementMargin) {
+	var docViewTop    = _findWindowScroll();
+	var docViewBot    = _findWindowScrollBottom();
+	// var docViewTop    = $(window).scrollTop() + 70; // (Bootstrap Constant)
+	var docViewHeight = $(window).height();
+	var margin        = elementMargin === undefined ?
+	  Math.floor( docViewHeight/15 ) : elementMargin;
+	var docViewBot    = docViewTop + docViewHeight;
+	var elemTop       = jQelem.offset().top;
+	var elemHeight    = jQelem.find(".title-text").height();
+
+	var nextOffsetBot = elemTop + elemHeight + margin;
+	var nextOffsetTop = nextOffsetBot - docViewHeight;
+	console.log("elemTop " + elemTop + ", margin " + margin);
+	console.log("but Offset "+nextOffsetBot + ", topOffset:" + nextOffsetTop);
+
+	$(window).scrollTop( nextOffsetTop < 0 ? 0 : nextOffsetTop );
+  };
+
+
+  this._scrollIntoView = function(jQelem, elementMargin) {
+	// If an element is above the browser's viewport, it is scrolled
+	// so it is at the top. If it is below, it is scrolled to be at
+	// the bottom.
+
+	if (this._isScrolledIntoView(jQelem))
+	  return;
+
+	var docViewTop    = _findWindowScroll();
+	var docViewBot    = _findWindowScrollBottom();
+	var docViewHeight =  $(window).height();
+	var margin        = elementMargin === undefined ? 0 : elementMargin;
+	var elemTop       = jQelem.offset().top;
+	// (Sigh, that DOM element itself has height 0, at least in FF. :-( )
+	var elemHeight    = jQelem.find(".title-text").height();
+
+	// console.log("------- DO WORK OF _scrollIntoView:");
+	// console.log("View off " + docViewTop + ", height "
+	// 			+ docViewHeight);
+	// console.log("Element top:" + elemTop + ", height:" + elemHeight );
+
+
+	// Is element above? Show it, with a little margin
+	if (elemTop < docViewTop) {
+	  if (elemTop < margin)
+		elemTop       = 0;
+	  else
+		elemTop      -= margin;
+	  console.log("Scrolling from " + docViewTop + " to " + elemTop);
+	  $(window).scrollTop( elemTop );
+	  return;
+	}
+
+	// Put bottom so bottom edge of element + margin is visible
+	var viewNewBottom = elemTop + margin + elemHeight;
+	var viewNewTop    = viewNewBottom - docViewHeight;
+	console.log("Scrolling up " + docViewTop + " to " + viewNewTop);
+	$(window).scrollTop( viewNewTop < 0 ? 0 : viewNewTop );
+  };
 
 };

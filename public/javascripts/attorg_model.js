@@ -192,7 +192,17 @@ var OrgModelSuper = function(documentName, org_data,
 
 
   this.findHeadlinesFrom = function(ix, howMany, loopDirection, testFun) {
-	// Loop up/down list of headlines to find next to fulfill a condition
+	// XXXX Simply keep a record of all Headlines with level == 1.
+	// Then no need to traverse everything to find them.
+	// (Just modify the set level method to store it).
+
+	// XXXX
+	// This had loop start from +1 of the index. Stupid. Changed. See
+	// so it doesn't break anything.
+
+	// (This should get named in parameters.)
+	// Loop up/down list of headlines to find the next which fulfill a
+	// condition.
 	// Returns [index, undefined] if succesful.
 	// Otherwise [last_index, how_many_were_found]
 	// So call it like this:
@@ -218,13 +228,13 @@ var OrgModelSuper = function(documentName, org_data,
 		return [last, found];
 	  }
 
-	  i      += way;
 	  headline= this.headline(i);
 	  if (testFun(headline)) {
 		if (++found >= howMany)
 		  return [i, undefined];
 		last  = i;
 	  }
+	  i      += way;
 	}
   };
 
@@ -391,6 +401,8 @@ var OrgModelSuper = function(documentName, org_data,
 
 	var newTags   = false;		// Did Headline have more tags?
 
+	this._level1s = {};			// Set up when sets ID
+
 	for(var i = 0; i < arr.length; i++) {
 	  // The rest of this is eq to this, but faster:
 	  // this.new_headline(i, arr[i]);
@@ -398,6 +410,7 @@ var OrgModelSuper = function(documentName, org_data,
 	  var record  = _make_headline_from_data_structure(arr[i]);
 	  this.all_data.push( record );
 
+	  // - - - Do tags
 	  var tags    = record.tags;
 	  if (tags !== undefined) {
 		for(var j = 0; j < tags.length; j++) {
@@ -462,8 +475,14 @@ OrgHeadline.prototype = {
   id_str: function() {
     // Unique string ID which is set in html and can be used to
     // find the right Headline again.
-    if (arguments.length > 0)
+    if (arguments.length > 0) {
       this.headline.idstr = arguments[0];
+	  // N B -- sets up this, so can find all level 1s quickly (they
+	  // are always visible).
+	  // XXXX Add config lines here? Someplace else??
+	  if (this.level() === 1)
+		this.owner._level1s[arguments[0]] = true;
+	}
 	if (this.headline === undefined) {
 	  console.log("ERROR! Caller info:");
 	  console.trace();
@@ -556,8 +575,22 @@ OrgHeadline.prototype = {
 
   level: function() {
     if (arguments.length > 0) {
-      // XXXX Check so numeric??
-      this.headline.level = arguments[0];
+	  var oldLevel = this.headline.level;
+      // XXXX Check so 'newLevel' is numeric??
+	  var newLevel = arguments[0];
+
+	  // Keep up to date info about which Headlines are level 1s:
+	  // XXXX Add config lines here? Someplace else??
+	  if (oldLevel !== newLevel && (oldLevel === 1 || newLevel === 1) ) {
+		var id     = this.id_str();
+		if (oldLevel === 1) {
+		  delete this.owner._level1s[id];
+		} else if (newLevel === 1) {
+		  this.owner._level1s[id] = true;
+		}
+	  }
+		  
+      this.headline.level = newLevel;
 	  this.owner.dirty();
     }
 	var level = this.headline.level;
@@ -567,6 +600,39 @@ OrgHeadline.prototype = {
 	  return 10;
     return level;
   },
+
+  level1Ixs: function() {
+	// Returns array of all level 1s, sorted.
+	var arrKeys   = Object.keys(this.owner._level1s);
+	console.log("---------------------- LEVEL 1 INDEXES:");
+	console.log( arrKeys );
+	
+	var indexes   = arrKeys.map(
+	  function(id) {
+		return this.get_ix_from_id_string(id);
+	  },
+	  this
+	);
+	console.log( "Indexes:" );
+	console.log( indexes );
+	var sorted    = indexes.sort(
+	  function(a, b) {
+		if (a === undefined) {
+		  if (b === undefined)
+			return 0;
+		  return 1;			 // undefined last
+		} else if (b === undefined)
+		  return -1;
+		return a - b;		 // Tip on the Mozilla page.
+		// return (a < b) ? -1 : (a > b ? 1 : 0);
+	  }
+	);
+	console.log( "Sorted:" );
+	console.log( sorted );
+
+	return sorted;
+  },
+
 
   asterisks: function() {
 	return "************".substring(0, this.level() );
@@ -636,12 +702,15 @@ OrgHeadline.prototype = {
   // (N B: .index is NOT updated after del/insert of Headline!!)
 
   delete: function() {
+	// N B -- existing Headline objects don't get their indexes updated!
+	// (Try to keep it fast on slow hardware. :-( )
     this.owner.delete_headline(this.index);
   },
 
   // XXXXX Move the creation of a new Headline here.
 
   move: function(to_ix, dontRefresh) {
+	// N B -- existing Headline objects don't get their indexes updated!
     this.owner.moveHeadline(this.index, to_ix, dontRefresh);
   },
 
