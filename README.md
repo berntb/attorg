@@ -10,7 +10,7 @@ The goal is less to replace Org Mode and more to have a browser and minimal edit
 Status
 ------
 
-Attorg was a bit stalled, since it really needs lots of love from someone with *taste*, both for UI and UX. In the end, this wasn't solved, instead the UI was extracted to templates and the menus to named commands. (As it should have been from the beginning, of course.)
+Attorg was a bit stalled, since it really needs lots of love from someone with *taste*, both for UI and UX. This wasn't really solved, instead the UI was extracted to templates and the menus to named commands. (As it should have been from the beginning, of course.)
 
 It should now be possible to skin Attorg with templates and buttons/menus.
 
@@ -47,7 +47,7 @@ Here is what I think is the minimum viable feature list still needed to make Att
 + The command/key sequences shouldn't be listed in the code but put into a separate configuration file or in the GUI.
 + Saving(!) is needed. A couple of data sources should be configurable for users. At least one of Git or Dropbox should be supported.
 + Agendas.
-+ More complete tag handling.
++ More complete tag and todo handling.
 + Date/time handling.
 
 
@@ -129,3 +129,7 @@ License
 Attorg is licensed under GPL version 3, since this is about Stallman's GNU Emacs.
 
 /Bernt Budde
+
+
+
+

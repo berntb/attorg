@@ -191,19 +191,46 @@ var OrgModelSuper = function(documentName, org_data,
   }
 
 
+  this.level1Ixs = function() {
+	// Returns array of all level 1s, sorted.
+	var arrKeys   = _.keys(this._level1s);
+
+	var indexes   = arrKeys.map(
+	  function(id) {
+		return this.get_ix_from_id_string(id);
+	  },
+	  this
+	);
+	var sorted    = indexes.sort(
+	  function(a, b) {
+		if (a === undefined) {
+		  if (b === undefined)
+			return 0;
+		  return 1;			 // undefined last
+		} else if (b === undefined)
+		  return -1;
+		return a - b;		 // Tip on the Mozilla page.
+		// return (a < b) ? -1 : (a > b ? 1 : 0);
+	  }
+	);
+	for(var i = 0; i < sorted.length; i++) {
+	  var h = this.headline(sorted[i]);
+	}
+
+	return sorted;
+  },
+
+
+
   this.findHeadlinesFrom = function(ix, howMany, loopDirection, testFun) {
 	// XXXX Simply keep a record of all Headlines with level == 1.
 	// Then no need to traverse everything to find them.
 	// (Just modify the set level method to store it).
 
-	// XXXX
-	// This had loop start from +1 of the index. Stupid. Changed. See
-	// so it doesn't break anything.
-
 	// (This should get named in parameters.)
 	// Loop up/down list of headlines to find the next which fulfill a
 	// condition.
-	// Returns [index, undefined] if succesful.
+	// Returns [index, undefined, lastSuccessfulHeadline] if succesful.
 	// Otherwise [last_index, how_many_were_found]
 	// So call it like this:
 	// var foundSpec = model.findHeadlinesFrom(
@@ -231,12 +258,33 @@ var OrgModelSuper = function(documentName, org_data,
 	  headline= this.headline(i);
 	  if (testFun(headline)) {
 		if (++found >= howMany)
-		  return [i, undefined];
+		  return [i, undefined, headline];
 		last  = i;
 	  }
 	  i      += way;
 	}
   };
+
+
+  // Same as previous, but specialized to efficiently go over Level 1
+  // headlines. Only goes from beginning to end (XXX extend that?).
+  this.findLevel1Headlines = function(howMany, testFun) {
+	var level1s    = this.level1Ixs();
+	var found      =  0;
+	var last       = -1;
+	for(var i = 0; i < level1s.length; i++) {
+	  var index    = level1s[i];
+	  var headline = this.headline(index);
+	  if (testFun(headline)) {
+		if (++found >= howMany)
+		  return [index, undefined, headline];
+		last       = index;
+	  }
+	}
+	return [last, found];
+  };
+
+
 
   // - - -
   this.saveData = function() {
@@ -356,6 +404,14 @@ var OrgModelSuper = function(documentName, org_data,
       throw new Error("No Headline for id-string:" + id_string);
     return this.idstr_to_ix[id_string];
   };
+
+  this.headlineFromID = function(idString) {
+	var index = this.get_ix_from_id_string(idString);
+	if (index === undefined)
+	  return undefined;
+	return this.headline(index);
+  };
+
 
   // Note, this knows about implementation of headline structure:
   this.refresh_id_strings = function() {
@@ -600,39 +656,6 @@ OrgHeadline.prototype = {
 	  return 10;
     return level;
   },
-
-  level1Ixs: function() {
-	// Returns array of all level 1s, sorted.
-	var arrKeys   = Object.keys(this.owner._level1s);
-	console.log("---------------------- LEVEL 1 INDEXES:");
-	console.log( arrKeys );
-	
-	var indexes   = arrKeys.map(
-	  function(id) {
-		return this.get_ix_from_id_string(id);
-	  },
-	  this
-	);
-	console.log( "Indexes:" );
-	console.log( indexes );
-	var sorted    = indexes.sort(
-	  function(a, b) {
-		if (a === undefined) {
-		  if (b === undefined)
-			return 0;
-		  return 1;			 // undefined last
-		} else if (b === undefined)
-		  return -1;
-		return a - b;		 // Tip on the Mozilla page.
-		// return (a < b) ? -1 : (a > b ? 1 : 0);
-	  }
-	);
-	console.log( "Sorted:" );
-	console.log( sorted );
-
-	return sorted;
-  },
-
 
   asterisks: function() {
 	return "************".substring(0, this.level() );

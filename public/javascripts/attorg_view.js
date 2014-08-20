@@ -769,9 +769,16 @@ var OrgView = function(document_div_id, divid_headlines) {
   };
 
 
+  // This verifies that the headline is visible in the browser window,
+  // otherwise it finds a random headline in viewPort.
   this._findHeadlineInViewport = function(headline) {
-	// This verifies that the headline is visible in the browser
-	// window, otherwise it returns a random headline in viewPort:
+	// This is a case of ridiculous amount of premature optimization
+	// for something not called often. It is written partly for
+	// learning.
+
+	// XXXX Organize this differently; e.g. loop over function list
+	// that try to find visible Headline or closest possible.  When
+	// finds visible, store in cache and returns.
 	var model         = headline.owner;
 
 	// XXXX Must put id in _lastFoundHeadlineInViewport!!
@@ -783,15 +790,20 @@ var OrgView = function(document_div_id, divid_headlines) {
 	var docViewTop    = _findWindowScroll();
 	var docViewBot    = _findWindowScrollBottom();
 
-	function checkVisible(viewPortOff) {
+	function inViewport(viewPortOff) {
 	  return ( viewPortOff > docViewTop && viewPortOff < docViewBot);
 	};
 
-	function loopToFindAVisible(headline, downwards) {
-	  // Go step by step:
-	  var ix = headline.index;
-	  console.log("=======================  Headline, STEP BY STEP STAGE");
-	  var foundSpec = model.findHeadlinesFrom(
+	var lastLoopBefore, lastLoopAfter;
+	function loopHlineInViewPort(headline, downwards) {
+	  // Go step by step, for every Headline.
+	  // (This have to touch the DOM for every visible Headline, so it
+	  //  is potentially very slow for large documents.)
+	  lastLoopBefore  = undefined;
+	  lastLoopAfter   = undefined;
+	  var ix          = headline.index;
+	  var foundHline;
+	  var foundSpec   = model.findHeadlinesFrom(
 		ix, 1, (downwards ? 1 : -1), function(headline) {
 		  if (! headline.visible())
 			return false;
@@ -801,10 +813,24 @@ var OrgView = function(document_div_id, divid_headlines) {
 		  console.log("    Off:" + hOff + ", window: " + docViewTop);
 		  if (hOff < docViewTop) {
 			console.log("    (is before window.)");
+			// Find the last Headline before:
+			if (downwards)
+			  lastLoopBefore = headline.index;
+			else if (lastLoopBefore === undefined)
+			  lastLoopBefore = headline.index;
 			return false;
 		  }
-		  if (hOff < docViewBot)
+		  if (hOff < docViewBot) {
+			foundHline= headline;
 			return true;		// Is visible!
+		  }
+
+		  if (downwards) {
+			if (lastLoopAfter === undefined)
+			  lastLoopAfter  = headline.index;
+		  } else
+			lastLoopAfter    = headline.index;
+		  return false;
 
 		  console.log("    (Is AFTER window: " + docViewBot + ")");
 		  return false;			// Shouldn't happen?
@@ -812,9 +838,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  );
 
 	  if (foundSpec[1] === undefined)
-		console.log("FOUND A VISIBLE HEADLINE!");
-	  if (foundSpec[1] === undefined)
-		return foundSpec[0];
+		return foundHline;
 	  return undefined;
 
 	};
@@ -824,7 +848,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	// First, check if the input Headline is visible; a common case:
 	if (headline.visible()) {
 	  lastOffset      = that._findViewPortOffsetForHeadline(headline);
-	  if (checkVisible(lastOffset)) {
+	  if (inViewport(lastOffset)) {
 		console.log("Success in-Headline!");
 		that._lastFoundHeadlineInViewport = headline.id_str();
 		return headline;
@@ -833,128 +857,141 @@ var OrgView = function(document_div_id, divid_headlines) {
 	
 	// - - - Cache of earlier tries:
 	lastFound         = that._lastFoundHeadlineInViewport;
-	if (lastFound   !== undefined && model.length > lastFound) {
+	if (lastFound   !== undefined) {
 	  console.log("Checking cache");
-	  var lastHeadline= model.headline(lastFound);
-	  if (lastHeadline.visible()) {
+	  var lastHeadline= model.headlineFromID(lastFound);
+	  if (lastHeadline !== undefined && lastHeadline.visible()) {
 		lastOffset    = that._findViewPortOffsetForHeadline(lastHeadline);
-		if (lastOffset > docViewTop && lastOffset < docViewBot)
+		console.log("Cache ix:"  + lastHeadline.index
+					+ ", title:" + lastHeadline.title() );
+		if (inViewport(lastOffset))
 		  return lastHeadline;
+
+		// The cached Headline isn't in the viewPort anymore:
 		that._lastFoundHeadlineInViewport = undefined;
 
+		found         = undefined;
+		console.log("CHECK CACHE OFFSETS: off: " + lastOffset);
+		var tmp1 = docViewTop-lastOffset, tmp2 = lastOffset-docViewBot;
+		if (lastOffset < docViewTop)
+		  console.log("ABOVE pixels:" + tmp1);
+		else if (lastOffset > docViewBot)
+		  console.log("BELOW pixels:" + tmp2);
 		if (lastOffset < docViewTop && docViewTop-lastOffset < 500) {
 		  // Not so far before/above viewport. Traverse down towards View:
 		  console.log("Tries to scroll downwards");
-		  found       = loopToFindAVisible(model.headline(0), true);
-		  if (found !== undefined) {
-			console.log("Success DOWN!");
-			that._lastFoundHeadlineInViewport = found;
-			return model.headline(found);
-		  }
-		} else if (lastOffset > docViewTop && lastOffset-docViewTop < 500) {
+		  found       = loopHlineInViewPort(lastHeadline, true);
+		  if (found !== undefined)
+			console.log("CACHE SUCCESS DOWN!");
+		} else if (lastOffset > docViewBot && lastOffset-docViewBot < 500) {
 		  // Not so far after viewport. Traverse up towards View:
-		  console.log("Tries to scroll upwards");
-		  found       = loopToFindAVisible(model.headline(0), false);
-		  if (found !== undefined) {
-			console.log("Success UP!");
-			that._lastFoundHeadlineInViewport = found;
-			return model.headline(found);
-		  }
+		  console.log("CACHE ATTEMPT UP!");
+		  found       = loopHlineInViewPort(lastHeadline, false);
 		}
+		if (found !== undefined) {
+		  console.log("Success from Cache!");
+		  that._lastFoundHeadlineInViewport = found.id_str();
+		  return found;
+		}
+	  } else {
+		that._lastFoundHeadlineInViewport = undefined;
 	  }
-	  
 	}
 	
-	// TEMP TEST:
-	found             = loopToFindAVisible(model.headline(0), true);
-	if (found !== undefined) {
-	  that._lastFoundHeadlineInViewport = found;
-	  return model.headline(found);
-	}
-	return undefined;
+	// Simple variant: Loop from beginning.
+	// found             = loopHlineInViewPort(model.headline(0), true);
+	// if (found !== undefined) {
+	//   that._lastFoundHeadlineInViewport = found.d_str();
+	//   return found;
+	// }
+	// return undefined;
 
+	// - - - Find level 1 headline closest to viewPort:
 	console.log("---- Top document:" + docViewTop + ", bot: " + docViewBot);
-	// The idea is that we know the 1st levels are visible. Go over
-	// and check if anyone is visible (or the one closest to the open
-	// window).
-	// TL;DR: Go over all Level 1 headlines, find closest to docViewTop:
+	// (Level 1 headlines are always visible).
 	var preIx, preScroll;
-	var postScroll, last1st;
-	var foundSpec	  = model.findHeadlinesFrom(
-		0, 1, 1, function(headline) {
-		  if (! headline.visible() || headline.level() !== 1)
-			return false;		// no hit
-		  last1st     = headline.index;
-		  // Check offset to top in View
-		  var hOff    = that._findViewPortOffsetForHeadline(headline);
-		  console.log("--- Headline " + headline.title());
-		  console.log("    Off:" + hOff + ", window: " + docViewTop);
-		  if (docViewTop > hOff) {
-			console.log("    (is before window.)");
-			preIx     = last1st;
-			preScroll = hOff;
-			return false;
-		  }
-		  if (docViewBot > hOff) {
-			// This is more or less on the page! postScroll won't be set
-			return true;
-		  }
-		  if (docViewTop > hOff) {
-			postScroll= hOff;
-			return true;
-		  }
-		  console.log("SHOULDN'T HAPPEN??");
-		  return false;			// Shouldn't happen?
+	var postIx, postScroll;
+	var inViewPort    = undefined;;
+	var foundSpec	  = model.findLevel1Headlines(
+	  1, function(headline) {
+
+		// Check offset to top in View
+		var hOff    = that._findViewPortOffsetForHeadline(headline);
+
+		// This level 1 is before the viewport?
+		if (hOff < docViewTop) {
+		  console.log("    (is before window.)");
+		  preIx     = headline.index;
+		  preScroll = hOff;
+		  return false;
 		}
+
+		// A level 1 in the viewport?
+		if (hOff < docViewBot) {
+		  // This is ~ on the page! postScroll won't be set
+		  inViewPort= headline;
+		  return true;
+		}
+
+		if (hOff > docViewBot) {
+		  // If this is true, there were no level 1s in the browser's viewport
+		  postIx    = headline.index;
+		  postScroll= hOff;
+		  return true;
+		}
+		console.log("ERROR!! SHOULDN'T HAPPEN??");
+		return false;			// Shouldn't happen?
+	  }
 	);
 
-	// Found a visible?
-	if (foundSpec[1] === undefined) {
-	  that._lastFoundHeadlineInViewport = foundSpec[0];
-	  return model.headline(foundSpec[0]);
+	// Found a level 1 Headline in the browser viewport?
+	if (foundSpec[1] === undefined && inViewPort !== undefined) {
+	  that._lastFoundHeadlineInViewport = inViewPort.id_str();
+	  return inViewPort;
 	}
 
-	console.log("///////////// PreIx "+preIx+", Scroll "+preScroll+" Result:");
-	console.log(foundSpec);
-	var headlineIx;
+	// console.log("/////////// PreIx  "+preIx +", Scroll "+preScroll);
+	// console.log("/////////// PostIx "+postIx+", Scroll "+postScroll);
+	// console.log(foundSpec);
 
-	// This means that the top 1st level is visible (scrolled to the
-	// top) or that the document doesn't start with a level 1?
-	if (preIx === undefined) {
-	  foundHline      = model.headline(0);
-	  if (foundHline.visible()) {
-		var off       = that._findViewPortOffsetForHeadline(foundHline);
-		if (docViewTop > off) {
-		  preIx       = 0;
-		  preScroll   = off;
-		}
+	// No level 1 Headlines?? Just go from beginning:
+	if (preIx === undefined && postScroll === undefined)
+	  preIx         = 0;
+
+	if (preIx !== undefined && postIx !== undefined) {
+	  // Go either down or up, depending on which is closest:
+	  if (docViewTop-preScroll < postScroll-docViewBot)
+		postIx      = undefined;
+	  else
+		preIx       = undefined;
+	}
+
+	// Go down towards viewport:
+	if (preIx !== undefined) {
+	  var preH      = model.headline(preIx);
+	  found         = loopHlineInViewPort(preH, true);
+	  if (found === undefined) {
+		if (lastLoopBefore === undefined)
+		  found     = preH;
+		else
+		  found     = model.headline(lastLoopBefore);
 	  }
-	}
-	if (preIx === undefined && docViewTop < 300) {
-	  // I assume it is scrolled to top?
-	  // Just ignore this weird document for now.
-	  headlineIx      = loopToFindAVisible(model.headline(0), true);
-	  if (headlineIx === undefined)
-		return undefined;
-	  that._lastFoundHeadlineInViewport = headlineIx;
-	  return model.headline(headlineIx);
+	  that._lastFoundHeadlineInViewport = found.id_str();
+	  return found;
 	}
 
-	// - - - 
+	// Go up towards viewport:
+	var postH       = model.headline(postIx);
+	found           = loopHlineInViewPort(postH, false);
+	if (found === undefined) {
+	  if (lastLoopAfter === undefined)
+		found       = postH;
+	  else
+		found       = model.headline(lastLoopAfter);
+	}
 
-
-	// If no preIx, we are at ~ top. Check this.
-	// Otherwise, loop down from preIx (or up from first find, if
-	// any, depending on postScroll).
-
-	// So we can find the top visible Headline from that.
-
-	// XXXXX The important thing here is to cache stuff, to minimize
-	// checking.  Cache all 1st level offsets. Then find the real one
-	// and compare with the DOM. They change easily, when opens/closes
-	// etc. But With C-U M-V, it will be a big win.
-
-
+	that._lastFoundHeadlineInViewport = found.id_str();
+	return found;
   };
 
 
@@ -967,12 +1004,18 @@ var OrgView = function(document_div_id, divid_headlines) {
   // Lower level scroll handling based on jQuery/DOM elements:
 
   this._isScrolledIntoView = function(jQelem) {
-	var docViewTop  = $(window).scrollTop() + 70; // (Constant for Bootstrap)
-	var docViewBot = docViewTop + $(window).height();
+	var docViewTop    = _findWindowScroll();
+	var docViewBot    = _findWindowScrollBottom();
 
-	var elemTop = jQelem.offset().top;
-	var elemBottom = elemTop + jQelem.height();
+	var elemTop       = jQelem.offset().top;
+	// (XXXX Check! In JS, can I do 'foo = a || b;' ??)
+	var elemHeight    = jQelem.height();
+	if (elemHeight  === 0)
+	  elemHeight      = jQelem.find(".title-text").height();
+	var elemBottom    = elemTop + jQelem.height();
 
+	// XXXX I must have been tired to test if both elemBottom and
+	// elemTop is less than viewPort's bottom :-)
 	return ((elemBottom >= docViewTop) && (elemTop <= docViewBot)
 			&& (elemBottom <= docViewBot) &&  (elemTop >= docViewTop) );
   };
@@ -982,7 +1025,6 @@ var OrgView = function(document_div_id, divid_headlines) {
   this._scrollIntoViewAtBottom = function(jQelem, elementMargin) {
 	var docViewTop    = _findWindowScroll();
 	var docViewBot    = _findWindowScrollBottom();
-	// var docViewTop    = $(window).scrollTop() + 70; // (Bootstrap Constant)
 	var docViewHeight = $(window).height();
 	var margin        = elementMargin === undefined ?
 	  Math.floor( docViewHeight/15 ) : elementMargin;
@@ -1015,14 +1057,10 @@ var OrgView = function(document_div_id, divid_headlines) {
 	// (Sigh, that DOM element itself has height 0, at least in FF. :-( )
 	var elemHeight    = jQelem.find(".title-text").height();
 
-	// console.log("------- DO WORK OF _scrollIntoView:");
-	// console.log("View off " + docViewTop + ", height "
-	// 			+ docViewHeight);
-	// console.log("Element top:" + elemTop + ", height:" + elemHeight );
-
 
 	// Is element above? Show it, with a little margin
 	if (elemTop < docViewTop) {
+	  margin         += 2;		// Check on Safari, too.
 	  if (elemTop < margin)
 		elemTop       = 0;
 	  else
