@@ -56,7 +56,7 @@ Supported key chars commands
 
 These commands are implemented now, more or less completely.
 
-Not all are "real" Emacs/Org Mode. E.g. Ctrl-K removes a Headline directly. Ctrl-Return stops editing of a block text field. And so on.
+For now, some changes are made to "real" Emacs/Org Mode. E.g. Ctrl-K removes a Headline directly. Ctrl-Return stops editing of a block text field. Ctrl-space jumps to next Headline being edited. And so on.
 
 
 #### Diverse:

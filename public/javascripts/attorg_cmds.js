@@ -336,7 +336,7 @@ var OrgCmdMapper = function() {
 	}	  
 
 	// - - -
-	var keyChar   = this._getCharFromEvent(event, true);
+	var keyChar   = this.getCharFromEvent(event, true);
 	// Chrome doesn't allow getting every char, whatever I do? :-(
 
 	if (keyCode in keyCodesToNames)
@@ -403,7 +403,7 @@ var OrgCmdMapper = function() {
 
 
   // - - - Extract char-as-a-string from an Event:
-  this._getCharFromEvent = function(event, upperCase_p) {
+  this.getCharFromEvent = function(event, upperCase_p) {
 	// (From jQuery, browser compatibility)
     var keyCode   = event.which || event.keyCode;
 	// console.log("Key code " + keyCode + ", event:");

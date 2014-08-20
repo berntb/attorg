@@ -419,6 +419,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	div_parent.children(':last').html('');
   };
 
+
   this.show_headline = function(headline, noOpenCloseUpdates) {
 	var id_str = headline.id_str();
 	var div	 = $( '#' + this.make_headline_id(headline) ).parent();
@@ -433,7 +434,8 @@ var OrgView = function(document_div_id, divid_headlines) {
 	if (! this.noOpenCloseUpdates && !noOpenCloseUpdates)
 	  this.fixOpenCloseFromTo(headline.index, headline.index,
 							  headline.owner);
-  };
+  }
+;
 
   this.hide_headline = function(headline, noOpenCloseUpdates) {
 	var div	 = $( '#' + this.make_headline_id(headline) ).parent();
@@ -534,10 +536,14 @@ var OrgView = function(document_div_id, divid_headlines) {
   this.make_model_id_from_hldiv = function(div_id) {
 	return div_id.slice(3);
   };
+  this.makeModelIDFromEditField = function(div_id) {
+	return div_id.slice(2);
+  };
+
 
   this.has_headline_edit_on = function(headline) {
 	// There must be some more efficient way of doing this?! Should I
-	// set some flag, instead of using four jQuery calls??
+	// set some flag, instead of this looong jQuery calls??
 	var headline_edit_div =
 	  $( '#' + this.make_headline_id(headline )).parent().children(':last');
 	if (headline_edit_div.is(':empty'))
