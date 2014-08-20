@@ -538,6 +538,55 @@ function OrgAddKeyCmds(cmdHandler) {
   });
 
 
+  // This command (probably) not connected to a key sequence
+  cmdHandler.addACommand({
+	name:  "_JumpBetweenEditedHeadlines",
+	docum: "Description",
+
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
+	  var model	      = this.controller.model;
+	  var view	      = this.controller.view;
+
+	  var previousIx  = -1;
+
+	  var focusHline  = view.headlineWithFocus(model);
+
+	  if ( focusHline) {
+		if ( !view.isHeadlineScrolledIntoView(focusHline) ) {
+		  // Scroll active Headline into View and return:
+		  // Not really useful, but could be a button press on an iPad etc?
+		  view.scrollHeadlineIntoView(focusHline, 50);
+		  return true;
+		}
+
+		previousIx    = focusHline.index;
+	  }
+
+	  // - - - Look for next
+	  var i, hline;
+	  for(i = previousIx+1; i < model.length; i++) {
+		hline = model.headline(i);
+		if (hline.visible() && view.has_headline_edit_on(hline)
+		   && !view.isHeadlineScrolledIntoView(hline) ) {
+		  view.scrollHeadlineIntoView(hline, 50);
+		  view.setFocusTitle(hline);
+		  return true;
+		}
+	  }
+	  for(i = 0; i < previousIx; i++) {
+		hline = model.headline(i);
+		if (hline.visible() && view.has_headline_edit_on(hline)
+		   && !view.isHeadlineScrolledIntoView(hline)) {
+		  view.scrollHeadlineIntoView(hline, 50);
+		  view.setFocusTitle(hline);
+		  return true;
+		}
+	  }
+	  return true;				// Eat this one
+	}
+  });
+
+
 
   // - - - - - - - - - - -
   cmdHandler.addACommand({

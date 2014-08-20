@@ -551,6 +551,26 @@ var OrgView = function(document_div_id, divid_headlines) {
 	return true;
   };
 
+
+  this.headlineWithFocus = function(model) {
+	var focused     = $( document.activeElement );
+	// console.log(focused);
+	var focusID     = focused.attr("id");
+
+	if (focusID === undefined || focusID.length < 3)
+	  return undefined;
+
+	// - - - Get actively edited (focused) Headline:
+	var headlineID  = this.makeModelIDFromEditField(focusID);
+	console.log(focusID + " ---> " + headlineID);
+	var headline    = model.headlineFromID(headlineID);
+
+	return headline;
+  };
+
+
+
+
   // - - - - - Make Level-select HTML:
   var _level_generated = [];
 

@@ -431,62 +431,16 @@ var OrgController = function(model, view, commandHandler,
   // - - - - - - - - - - - - - - - - - -
   // Keyboard events:
 
-  // On ctrl-Space: If edited Headline isn't in Viewport, puts focus
-  // on it. Otherwise, jumps between all open edit fields.
-  // XXXX Make to a callable command.
   this.handleWindowKeyEvent = function(event) {
     var keyCode     = event.which || event.keyCode;
 	var control     = event.ctrlKey;
-	var charCode    = that.cmdHandler.getCharFromEvent(event);
-	console.log("CHAR EVENT. key code: " + keyCode + ", char " + charCode
-				+ ", ctrl Status:" + control);
+	// var charCode    = that.cmdHandler.getCharFromEvent(event);
 
 	if (keyCode !== 32 || !control)
 	  return true;
-	console.log("Ctrl-SPACE!");
 
-
-	// First -- check which Headline has focus???
-	// var focused    = $(':focus'); ??
-	// $( document.activeElement ) is better
-	var focused     = $( document.activeElement );
-	// console.log(focused);
-	var focusID     = focused.attr("id");
-
-	var headline, i, startLooking= -1;
-
-	if (focusID !== undefined && focusID.length > 3) {
-	  // - - - Get actively edited (focused) Headline:
-	  var headlineID= that.view.makeModelIDFromEditField(focusID);
-	  console.log(focusID + " ---> " + headlineID);
-	  var headline    = that.model.headlineFromID(headlineID);
-
-	  if ( !that.view.isHeadlineScrolledIntoView(headline) ) {
-		// Scroll active Headline into View and return:
-		that.view.scrollHeadlineIntoView(headline, 50);
-		return false;
-	  }
-	  startLooking    = headline.index; // After focused Headline
-	}
-
-	// - - - Loop from StartLooking until finds Headline being edited.
-	for(i = startLooking+1; i < that.model.length; i++) {
-	  headline = that.model.headline(i);
-	  if (headline.visible() && that.view.has_headline_edit_on(headline)) {
-		that.view.scrollHeadlineIntoView(headline, 50);
-		that.view.setFocusTitle(headline);
-		return false;
-	  }
-	}
-	for(i = 0; i < startLooking; i++) {
-	  headline = that.model.headline(i);
-	  if (headline.visible() && that.view.has_headline_edit_on(headline)) {
-		that.view.scrollHeadlineIntoView(headline, 50);
-		that.view.setFocusTitle(headline);
-		return false;
-	  }
-	}
-	return false;				// Eat this one
+	that.cmdHandler.callCommand('_JumpBetweenEditedHeadlines', {} );
+	return false;
   };
 
 
