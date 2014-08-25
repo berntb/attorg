@@ -1045,32 +1045,36 @@ var OrgController = function(model, view, commandHandler,
 	var modified_ix   = headline.increment_modified_locally();
 	var id            = headline.id_str();
 
-	// Help fun to find Headline in Model, when the reply coming
-	// back from the server:
-	var help_fun = function(model, id) {
-	  var ix = model.get_ix_from_id_string(id);
-	  if (ix === undefined) {
-		// Seems the Headline was removed before answer?
+	// - - - - -
+	// Help fun which finds Headline in Model. Checks so it hasn't
+	// been updated (or deleted) locally before the answer from server
+	// came back.
+	var findHeadline = function(model, id) {
+	  var headline = model.headlineFromID(id);
+	  if (headline === undefined) {
+		// The Headline was removed before answer?
+		console.log("Failed to get an existing Headline");
 		return {noHeadline: 1, error: "Has been removed"};
 	  }
-	  var headline = model.headline( ix );
 
-	  // Check to see if this has been sent to the server again, in
-	  // a later query:
+	  // Check to see if the Headline has been sent to the server
+	  // again, in a later query:
 	  var modified_now = headline.modified_locally();
 	  if (modified_now === undefined
 		  || modified_now > modified_ix) {
+		console.log("ERROR, headline updated??");
 		return {laterUpdate: 1, error: "Updated again"};
 	  }
 
-	  return {ix: ix, headline: headline};
+	  return {ix: headline.index, headline: headline};
 	};
 
 	// Got parsed Headline from the server. Update Model/View.
 	var success_fun = function(reply) {
-	  var look_up = help_fun(that.model, id);
+	  var look_up = findHeadline(that.model, id);
 	  if (!look_up.headline) {
-		alert("Error in update from server -- " + look_up.error);
+		alert("Error in update from server -- " + look_up.error); // XXXX TEST
+		console.log("Error in update from server -- " + look_up.error);
 		return;
 	  }
 	  var ix = look_up.ix;
@@ -1105,13 +1109,15 @@ var OrgController = function(model, view, commandHandler,
 
 	// Called by jQuery when update fails:
 	var fail_fun = function(reply) {
-	  var look_up = help_fun(that.model, id);
+	  var look_up = findHeadline(that.model, id);
 	  if (!look_up.headline) {
 		alert("Error in update from server -- " + look_up.error);
 		return;
 	  }
 	  var ix = look_up.ix;
 	  var headline = look_up.headline;
+	  console.log("REPLY:");
+	  console.log(reply);
 	  alert("Failed update of " + ix);
 	};
 	

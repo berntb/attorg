@@ -18,9 +18,12 @@
 use v5.10;
 
 package attorg;
-use Dancer ':syntax';
+
 use strict;
 use warnings;
+
+use Dancer ':syntax';
+# use Dancer::Plugin::Ajax;
 # use Cwd qw/abs_path/;
 use Sys::Hostname;
 use File::Spec;
@@ -28,15 +31,15 @@ use Data::Dumper;
 
 use Dancer::Plugin::Auth::Extensible;
 
-use examples::simple_form;
-use examples::navbar_login;
-use examples::tabs;
-use examples::show_file;
-use examples::photo_gallery;
-use examples::markdown;
-use examples::template_plugins;
-use examples::error_handling;
-use examples::dynamic_content;
+# use examples::simple_form;
+# use examples::navbar_login;
+# use examples::tabs;
+# use examples::show_file;
+# use examples::photo_gallery;
+# use examples::markdown;
+# use examples::template_plugins;
+# use examples::error_handling;
+# use examples::dynamic_content;
 
 use Attorg::Extract::Org;
 
@@ -53,9 +56,12 @@ get '/info' => require_login sub {
 sub _get_org_file_data {
   my $file    = shift;
 
-  my $user    = logged_in_user()->{user};
+  my $user    = logged_in_user()->{username} // logged_in_user()->{user};
   my $data_dir= config->{userdata_top};
 
+  # say STDERR "-" x 70, "\nDIR: $data_dir, USER $user, FILE $file";
+  # say STDERR Dumper logged_in_user();
+  # say STDERR "-" x 70;
   my $to_read = File::Spec->catfile($data_dir, $user, $file);
 
   $to_read    = File::Spec->catfile($data_dir, $file)
@@ -92,7 +98,7 @@ sub _parse_org_headline {
 	  || ! defined $data->[1];
 
   # Title specifications and Block specs
-  # say STDERR Dumper [$data->[1]->{title_subs}, $data->[1]->{block_parts}];
+  say STDERR "XXXXXXXXXXXXXXXXXX\n", Dumper $data->[1];
   return $data->[1]; # [$data->[1]->{title_subs}, $data->[1]->{block_parts}];
 }
 

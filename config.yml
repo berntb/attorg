@@ -20,7 +20,7 @@
 # all the settings in this file will be loaded at Dancer's startup.
 
 # Your application's name
-appname: "Attorg Test"
+appname: "Attorg"
 
 # The default layout to use for your application (located in
 # views/layouts/main.tt)
@@ -45,19 +45,13 @@ userdata_top: "/home/bernt/wuala/orgs"
 plugins:
    Auth::Extensible:
       realms:
-          config:
-              provider: Config
-              users:
-                  - user: user
-                    pass: fubar
-                    roles:
-                      - Developer
-                      - Manager
-                      - BeerDrinker
-                  # - user: bob
-                  #   pass: '{SSHA}+2u1HpOU7ak6iBR6JlpICpAUvSpA/zBM'
-                  #   roles:
-                  #     - Tester
+          users:
+              provider: 'Database'
+              # Set to 1 if you want to disable the use of roles (0 is default)
+              disable_roles: 0
+   Database:
+      driver: 'SQLite'
+      database: 'lusers.db'
 
 template: "template_toolkit"
 engines:

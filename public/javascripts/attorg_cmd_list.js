@@ -803,7 +803,7 @@ function OrgAddKeyCmds(cmdHandler) {
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p,
 				   number) {
-	  var inChar = this._getCharFromEvent(event, true);
+	  var inChar = this.getCharFromEvent(event, true);
 
 	  var flagNoCharsYet;
 	  if (inChar >= '1' && inChar <= '9') {
@@ -820,7 +820,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  this.setCharacterFilter(
 		function(charEvent) {
 		  var ctrlKey  = event.ctrlKey;
-		  var inChar = handlerObj._getCharFromEvent(charEvent, true);
+		  var inChar = handlerObj.getCharFromEvent(charEvent, true);
 		  console.log("C-U filter checks " + inChar);
 		  if (ctrlKey && inChar === 'U') {
 			flagNoCharsYet = false;
