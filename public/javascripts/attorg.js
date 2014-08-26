@@ -49,6 +49,8 @@ $(function() {
 
 
   function _generate_id_string() {
+	// XXXX Should have check for if existing ID!!  This will fail
+	// when reloads document.
     return "aoid_" + _internal_ix_counter++; // Attorg ID
   }
   
@@ -56,7 +58,8 @@ $(function() {
   var _init = function(document_name, data,
                        document_div_id, divid_headlines) {
     var model  = new OrgModel(document_name, data,
-                              undefined, _generate_id_string);
+                              undefined, undefined,
+							  _generate_id_string);
     stored_model[divid_headlines] = model;
 
     // XXXX Should honour the config flag on how to open an org file!
@@ -137,22 +140,6 @@ var OrgController = function(model, view, commandHandler,
 							 document_div_id, divid_headlines) {
   var that = this;
 
-  // ------------------------------------------------------------
-  // Initialization:
-  // Called at end, to set up View:
-  this._init_view = function() {
-    var docName  = this.model.documentName();
-    if (docName)
-      this.view.documentName(docName);
-
-    this.view.render_all(this.model);
-    this.view.init_document_parameters(this.model);
-
-    this.bind_events();
-  };
-
-  // XXXX Should handle a set of Views, to split field??
-
 
   // ------------------------------------------------------------
   this.view  = view;
@@ -171,78 +158,27 @@ var OrgController = function(model, view, commandHandler,
   // Set up callbacks for Model:
 
   // Just forward visible/hidden to View:
-  // XXXXX Make so it is event based.
+  // XXXXX Make this event based instead.
   model.callback_fun_visible = function(headline, visible,
-                                        noOpenCloseUpdate) {
+                                        noOpenCloseUpdates) {
     if (visible) {
-      that.view.show_headline( headline, noOpenCloseUpdate );
+      that.view.show_headline( headline, noOpenCloseUpdates );
     } else {
-      that.view.hide_headline( headline, noOpenCloseUpdate );
+      that.view.hide_headline( headline, noOpenCloseUpdates );
     }
   };
 
-  // ------------------------------------------------------------
-  // Event handlers:
 
-
-  this.bind_events = function() {
-	// - - - - - Menu commands:
-	var topDiv= $("#topmenu-commands");
-	topDiv.on('click',   '.attorg-command',  this.handleTopMenuCommand);
-
-	// - - - - - Modal commands:
-	$("#hline-tags-saved").click(this.saveHeadlineTags);
-	$("#hline-tags-cancel-save").click(this.cancelHeadlineTagsChange);
-
-
-    // - - - - - Search event:
-    $("#" + this.divid_search).submit( this.searchEvent );
-	$('.clear-search').click( this.searchEventClear );
-
-	// - - - - - Headline events:
-    var div   = $("#" + this.divid_headlines);
-
-    // $('.title_input').change( // (Fails if multiple org modes in window!!)
-    // div.find('.title_input').change(  // Less bad
-    // div.on('change', 'input:text',    this.title_text_change_event);
-
-    div.on('dblclick','.title-text',      this.dblClickHeadingEvent);
-    div.on('click',   '.block-text',      this.clickBlockEvent);
-
-	// - - - - - Edit tag by clicking existing tags:
-	div.on('click',   '.org-tags',        this.clickedEditTags);
-	div.on('dblclick','.org-tags',        this.clickedEditTags);
-
-	// - - - - - Most commands send this event:
-    div.on('click',   '.attorg-command',  this.handleUICommand);
-
-    // - - - - - Buttons in non-Edit mode:
-    div.on('click',   '.edit-header',     this.editHeadingEvent);
-    div.on('click',   '.add-header',      this.addHeadingEvent);
-
-    // - - - - -  Buttons etc in Edit mode:
-    div.on('click',   '.save-cmd',        this.saveCommandEvent);
-    div.on('click',   '.update-cmd',      this.updateCommandEvent);
-    div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
-    div.on('change',  '.lvl_select',      this.levelChangeEvent);
-
-    // - - - - - Key codes:
-	// (keydown seems more reactive, keypress is better but not
-	//  supported by Chrome (and IE?) -- arrow keys, C-N, etc. :-(
-	//  Sigh... Just support Safari and FF??)
-
-	// 'keypress' instead?? Sigh...
-    $(window).keydown(this.handleWindowKeyEvent);
-
-    div.on('keydown', '.title_edit',      this.handleTitleKeyEvent);
-    div.on('keydown', '.block_edit',      this.handleBlockKeyEvent);
-
-    // - - - - - Document links to other Headlines:
-	div.on('click',   '.internal_link',   this.jumpToLink);
+  model.callback_fun_update = function(headline, alwaysMakeVisible) {
+	// Protect the edit fields:
+	that.view.render_headline(headline, alwaysMakeVisible, true);
   };
 
   
-  // - - - - - - - - - - - - - - - - - -
+  // ------------------------------------------------------------
+  // Event handling are callbacks from DOM events:
+
+
   // Top menu event:
 
   this.handleTopMenuCommand  = function(event) {
@@ -258,9 +194,8 @@ var OrgController = function(model, view, commandHandler,
   };
 
   this.clickedEditTags = function(event) {
-	// XXXX IS THIS USED??
 	event.preventDefault();
-    var headline  = that._headlineFromMenuEvent(event, true);
+	var headline  = that._headlineFromMenuEvent(event, true);
 	console.log("Tag edit!");
 	console.log(event);
 	console.log(that._getHeadlineIxForButtonEvent( event ));
@@ -268,6 +203,7 @@ var OrgController = function(model, view, commandHandler,
 	// EditHlineTags
 	return true;
   };
+
 
   // - - - - - - - - - - - - - - - - - -
   // Handle clicking internal link to other part of the document
@@ -280,7 +216,7 @@ var OrgController = function(model, view, commandHandler,
 	// (If this is in edit mode and the text is clicked, should close
 	//  it when goes to target Headline.)
 	var headline   = that._headlineFromMenuEvent(event, true);
-    var ix         = headline.index;
+	var ix         = headline.index;
 	console.log("Jump to link from ix: " + ix);
 
 	// - - - Get what to find:
@@ -302,7 +238,7 @@ var OrgController = function(model, view, commandHandler,
 	}
 	var escapedStr = escapeRegExp(toFind);
 	if (onlyHeadline)
-	   // '***' etc not stored in Headline 
+	  // '***' etc not stored in Headline 
 	  escapedStr   = "^ *" + escapedStr + " *$";
 
 	// N B -- Radio links are not case sensitive, but these are.
@@ -311,7 +247,7 @@ var OrgController = function(model, view, commandHandler,
 
 	// - - - Find Headline (or its block) with that text:
 	var i;
-    for(i = 0; i < that.model.length; i++) {
+	for(i = 0; i < that.model.length; i++) {
 	  if (i === ix)
 		continue;
 
@@ -334,9 +270,12 @@ var OrgController = function(model, view, commandHandler,
 	return true;
   };
 
+
+
   // - - - - - - - - - - - - - - - - - -
   // Search Headlines from UI
   // (Show part of tree, based on regexp search.)
+
 
   // XXXX Let C-S, M-C-S, C-R, M-C-R Go to search field.
   // If two C-S etc (i.e. C-S in search field), searches to next hit,
@@ -436,6 +375,8 @@ var OrgController = function(model, view, commandHandler,
 	var control     = event.ctrlKey;
 	// var charCode    = that.cmdHandler.getCharFromEvent(event);
 
+	// Control-Space without focus on an text field goes to the next
+	// opened edit Headline:
 	if (keyCode !== 32 || !control)
 	  return true;
 
@@ -485,52 +426,44 @@ var OrgController = function(model, view, commandHandler,
 
 	var value = charResult[1];
 
-	if (resultFlag === OrgCmdMapper.CMD_DISPATCH_FUNCTION)  {
-	  console.log("Execute: " + value);
-	  // var cmdFun = charResult[2];
-	  var numericalPrefix = charResult[2];
-	  if (numericalPrefix !== undefined)
-	  	console.log("Numerical prefix " + numericalPrefix);
-
-      var model_str_id = event.target.id.slice(2);
-      var ix       = that.model.get_ix_from_id_string( model_str_id );
-      var headline = that.model.headline(ix);
-
-	  // 'value' here is command name.
-	  if (that.cmdHandler.callCommand(value,
-									  {
-										keyboard_p: true,
-										event:      event,
-										headline:   headline,
-										isBlock:    isBlock,
-										numericalPrefix: numericalPrefix
-									  })
-		 ) {
-		event.preventDefault();
-	  }
-
-	  // This is really simpler...
-      // var metaKey  = (event.altKey || event.metaKey);
-      // var ctrlKey  = event.ctrlKey;
-	  // if (cmdFun(true, event, ctrlKey, metaKey, keyCode, headline, isBlock,
-	  // 			 numericalPrefix))
-	  // event.preventDefault();
-	  return;
-	}
-
-	// XXXXX Do more stuff here!!
 	if (resultFlag === OrgCmdMapper.CMD_INFO)  {
 	  console.log("LOG INFO: " + value);
 	} else if (resultFlag === OrgCmdMapper.CMD_ERROR)  {
 	  console.log("ERROR: " + value);
 	}
+
+	if (resultFlag !== OrgCmdMapper.CMD_DISPATCH_FUNCTION)
+	  return;
+
+	// - - - Dispatch a named editor command:
+	console.log("EXECUTE CMD: " + value);
+
+	var numericalPrefix = charResult[2];
+	if (numericalPrefix !== undefined)
+	  console.log("Numerical prefix " + numericalPrefix);
+
+    var modelStrID = event.target.id.slice(2);
+    var ix         = that.model.get_ix_from_id_string( modelStrID );
+    var headline   = that.model.headline(ix);
+
+	// 'value' here is command name.
+	if (that.cmdHandler.callCommand(value,
+									{ keyboard_p: true,
+									  event:      event,
+									  headline:   headline,
+									  isBlock:    isBlock,
+									  numericalPrefix: numericalPrefix
+									}
+								   )
+	   )
+	  event.preventDefault();
   };
 
   
   // - - - - - - - - - - - - - - - - - -
   // Button Edit events:
   this.saveCommandEvent = function(event) {
-    // (Sigh, put ID:s in a few more Elements??)
+    // XXXX Clean up this getting ID:
     var edit_div = event.target.parentNode.parentNode.parentNode.parentNode;
     var model_id = that.view.make_model_id_from_hldiv(edit_div.id);
     var headline = that.saveHeadlineFromModelID( model_id );
@@ -661,114 +594,19 @@ var OrgController = function(model, view, commandHandler,
   // ----------------------------------------------------------------------
   // Help routines
 
-  // - - - - - - - - - - - - - - - - - -
-  // Used by Search, et al:
+  // Utility for Search events, et al:
   function escapeRegExp(str) {
 	return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
   }
 
 
-  // - - - - - - - - - - - - - - - - - -
-  this._makeHeadlineAndSuperiorsVisible = function(headline) {
-	headline.visible(true);
-
-	// Make all superior visible, too:
-	var iterHeadline = headline;
-	while(iterHeadline.level() > 1) {
-	  iterHeadline = that.model.headline(iterHeadline.findDirectOwner());
-	  if (! iterHeadline.visible() )
-		iterHeadline.visible(true);
-	}
-
-	this._updateOpenCloseAroundChanged(iterHeadline.index);
-  };
 
 
-
-  // - - - - - - - - - - - - - - - - - -
-  // Make a Headline visible in a nice Emacsy way.
-  // (That means showing all children for superior Headline.)
-  this.updateTreeVisibility = function(headline, toShow) {
-    // If toShow is set (one of 'kids', 'all' or 'hide'), it is
-    // used. Otherwise, visibility of the subtree beneath the
-    // headline is cycled.
-
-    var vis_children = headline.visible_children();
-    if (vis_children === 'no_kids')
-      return '';              // (show/hide block like real Emacs??)
-    if (toShow === undefined)
-      toShow = '';
-    else
-      vis_children = 'X';     // Won't influence
-
-    var to_update;
-
-    if (toShow === 'kids' || vis_children === 'no_visible') {
-      to_update = headline.change_children_visible(1);     // Show 1st level
-      that.view.fixOpenCloseFromTo(to_update[0], to_update[1], that.model);
-      return 'kids';
-    }
-    if (toShow === 'all' || vis_children === 'direct_kids') {
-      to_update = headline.change_children_visible(true);  // Show all
-      that.view.fixOpenCloseFromTo(to_update[0], to_update[1], that.model);
-      return 'all';
-    }
-    if (toShow === 'hide' || vis_children === 'all_visible') {
-      to_update = headline.change_children_visible(false); // Hide all
-      that.view.fixOpenCloseFromTo(to_update[0], to_update[1], that.model);
-      return 'hide';
-    }
-    to_update = headline.change_children_visible(true);    // Show all
-    that.view.fixOpenCloseFromTo(to_update[0], to_update[1], that.model);
-    return 'all';
-  };
-
-
-  // - - - - - - - - - - - - - - - - - -
-  // updates opened/closed icons after a Headline change
-  this.levelChange = function(headline, new_level) {
-    // if (headline.level() === 1)
-    // Show 1st level children, so they don't disappear. (Always??)
-    var ix = headline.index;
-    headline.change_children_visible(1);
-    if (new_level < 1)  new_level = 1;
-    if (new_level > 10) new_level = 10;
-    headline.level(new_level);
-    if (new_level === 1)
-      headline.visible(true);
-    // that.model.dirty(ix, 'level');
-	// (This kludge doesn't rerender any open edit fields.)
-    this.view.render_headline( headline, true, true );
-    that._updateOpenCloseAroundChanged(ix);
-
-  };
-
-  // - - - - - - - - - - - - - - - - - -
-  // updates opened/closed icons after a Headline change
-  this.levelChangeSubtree = function(first, last, diff) {
-    for(var i = first; i < last; i++) {
-      var headline = this.model.headline(i);
-      // headline.change_children_visible(1);
-      var new_level = headline.level() + diff;
-      if (new_level < 1)  new_level = 1;
-      if (new_level > 10) new_level = 10;
-      headline.level(new_level);
-      if (new_level === 1)
-        headline.visible(true);
-      that.model.dirty(i, 'level');
-      this.view.render_headline( headline, false, true );
-    }
-    // This should only be called for a subtree, but do double
-    // updates just to be sure...
-    that._updateOpenCloseAroundChanged(first);
-    if (last-1 !== first)
-      that._updateOpenCloseAroundChanged(last-1);
-  };
 
 
   // - - - - - - - - - - - - - - - - - -
   // XXXXX Too complex, this must be neater and more automatic. :-(
-  // And, if anything, moved to model. Or somewhere else.
+  // And, if anything, moved to model. Or anyplace else.
   this._updateOpenCloseAroundChanged = function(ix) {
     if (ix < 0) ix  = 0;
     if (ix >= this.model.length)
@@ -780,9 +618,9 @@ var OrgController = function(model, view, commandHandler,
     if (ix > 0) {
 	  // (ix > 0 ==> Except for first index.)
       startStop     = this.model.headline(ix-1).updateVisibleInHierarchy();
-	  // console.log("from-to: " + startStop);
-	  // console.log(startStop[0]+" "+this.model.headline(startStop[0]).title());
-	  // console.log(startStop[1]+" "+this.model.headline(startStop[1]).title());
+	  //console.log("from-to: " + startStop);
+	  //console.log(startStop[0]+" "+this.model.headline(startStop[0]).title());
+	  //console.log(startStop[1]+" "+this.model.headline(startStop[1]).title());
       if (startStop[1] < ix) {
         var sStop2  = headline.updateVisibleInHierarchy();
 		// console.log("AND from-to: " + sStop2);
@@ -1014,121 +852,17 @@ var OrgController = function(model, view, commandHandler,
 	  headline.headline.block_parts = undefined;
       modified = true;
     }
-	// if (arguments.length > 2) {
-	//   // Got tags:
-	//   var tagsNow = headline.tags();
-	//   if ((tagsNow === undefined && tags    !== undefined)
-	// 	  || (tags === undefined && tagsNow !== undefined)
-	// 	  || (tags !== undefined && tags.join(":") !== tagsNow.join(":"))
-	// 	 ) {
-	// 	headline.tags( tags );
-	// 	// modified = true; -- only for update on server.
-	//   }
-	// }
 
     if (modified) {
 	  // Will be replaced
       that.view.render_headline( headline );
 	  if (! headline.is_config())
-		that.update_headline_delayed( headline );
+		that.model.updateHeadlineDelayed( headline );
 	}
   };
 
 
-  this.update_headline_delayed = function(headline) {
-	// XXXX Need Model function to decide if a Headline/block has
-	// Org things that needs parsing (only server side).
-
-	var headline_text = headline.title() || "";
-	var block_text    = headline.block() || "";
-
-	var modified_ix   = headline.increment_modified_locally();
-	var id            = headline.id_str();
-
-	// - - - - -
-	// Help fun which finds Headline in Model. Checks so it hasn't
-	// been updated (or deleted) locally before the answer from server
-	// came back.
-	var findHeadline = function(model, id) {
-	  var headline = model.headlineFromID(id);
-	  if (headline === undefined) {
-		// The Headline was removed before answer?
-		console.log("Failed to get an existing Headline");
-		return {noHeadline: 1, error: "Has been removed"};
-	  }
-
-	  // Check to see if the Headline has been sent to the server
-	  // again, in a later query:
-	  var modified_now = headline.modified_locally();
-	  if (modified_now === undefined
-		  || modified_now > modified_ix) {
-		console.log("ERROR, headline updated??");
-		return {laterUpdate: 1, error: "Updated again"};
-	  }
-
-	  return {ix: headline.index, headline: headline};
-	};
-
-	// Got parsed Headline from the server. Update Model/View.
-	var success_fun = function(reply) {
-	  var look_up = findHeadline(that.model, id);
-	  if (!look_up.headline) {
-		alert("Error in update from server -- " + look_up.error); // XXXX TEST
-		console.log("Error in update from server -- " + look_up.error);
-		return;
-	  }
-	  var ix = look_up.ix;
-	  var headline = look_up.headline;
-
-	  // - - - Update!
-	  // XXXX Most of this is repeated from the Model! Fix.
-	  var data = JSON.parse(reply);
-	  // console.log(data);
-	  headline.modified_locally(undefined);
-
-	  // console.log(data);
-	  var block_parts = data.block_parts;
-	  var priority    = data.priority;
-	  if (data.title_subs)
-		headline.headline.title_subs = data.title_subs;
-	  if (data.block_parts)
-		headline.headline.block_parts = data.block_parts;
-	  if (data.priority)
-		headline.priority(data.priority);
-	  // This might also be updated:
-	  if (data.title_text)
-		headline.title(data.title_text);
-
-	  // XXXX THIS NEEDS THAT TODO STATE IS SENT ALONG TO SERVER FOR
-	  // PARSING!  NOW IT ONLY WORKS WITH BUILT IN TODO STATES!
-	  if (data.todo_state)
-		headline.todo(data.todo_state);
-	  
-	  that.view.render_headline( headline );
-	};
-
-	// Called by jQuery when update fails:
-	var fail_fun = function(reply) {
-	  var look_up = findHeadline(that.model, id);
-	  if (!look_up.headline) {
-		alert("Error in update from server -- " + look_up.error);
-		return;
-	  }
-	  var ix = look_up.ix;
-	  var headline = look_up.headline;
-	  console.log("REPLY:");
-	  console.log(reply);
-	  alert("Failed update of " + ix);
-	};
-	
-    var ajaxtst = $.post(
-	  "/attorg/translate_row/",
-      {headline: "* " + headline_text,
-       text: block_text},
-      success_fun
-    ).fail( fail_fun );
-	// (The 'fail' thing is because $.post() returns a "promise".)
-  };
+  // ----------------------------------------------------------------------
 
   this._init_view();
 
@@ -1136,3 +870,182 @@ var OrgController = function(model, view, commandHandler,
   return this;
 };
 
+
+
+// ------------------------------------------------------------
+// Initialization:
+// Called at end of initiation, to set up View:
+
+// XXXX Should handle a set of Views, to split field??
+OrgController.prototype._init_view = function() {
+  var docName  = this.model.documentName();
+  if (docName)
+    this.view.documentName(docName);
+
+  this.view.render_all(this.model);
+  this.view.init_document_parameters(this.model);
+
+  this.bind_events();
+};
+
+
+// ------------------------------------------------------------
+// Events:
+
+
+OrgController.prototype.bind_events = function() {
+  // - - - - - Menu commands:
+  var topDiv= $("#topmenu-commands");
+  topDiv.on('click',   '.attorg-command',  this.handleTopMenuCommand);
+
+  // - - - - - Modal commands:
+  $("#hline-tags-saved").click(this.saveHeadlineTags);
+  $("#hline-tags-cancel-save").click(this.cancelHeadlineTagsChange);
+
+
+  // - - - - - Search event:
+  $("#" + this.divid_search).submit( this.searchEvent );
+  $('.clear-search').click( this.searchEventClear );
+
+  // - - - - - Headline events:
+  var div   = $("#" + this.divid_headlines);
+
+  // $('.title_input').change( // (Fails if multiple org modes in window!!)
+  // div.find('.title_input').change(  // Less bad
+  // div.on('change', 'input:text',    this.title_text_change_event);
+
+  div.on('dblclick','.title-text',      this.dblClickHeadingEvent);
+  div.on('click',   '.block-text',      this.clickBlockEvent);
+
+  // - - - - - Edit tag by clicking existing tags:
+  div.on('click',   '.org-tags',        this.clickedEditTags);
+  div.on('dblclick','.org-tags',        this.clickedEditTags);
+
+  // - - - - - Most commands send this event:
+  div.on('click',   '.attorg-command',  this.handleUICommand);
+
+  // - - - - - Buttons in non-Edit mode:
+  div.on('click',   '.edit-header',     this.editHeadingEvent);
+  div.on('click',   '.add-header',      this.addHeadingEvent);
+
+  // - - - - -  Buttons etc in Edit mode:
+  div.on('click',   '.save-cmd',        this.saveCommandEvent);
+  div.on('click',   '.update-cmd',      this.updateCommandEvent);
+  div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
+  div.on('change',  '.lvl_select',      this.levelChangeEvent);
+
+  // - - - - - Key codes:
+  // (keydown seems more reactive, keypress is better but not
+  //  supported by Chrome (and IE?) -- arrow keys, C-N, etc. :-(
+  //  Sigh... Just support Safari and FF??)
+
+  // 'keypress' instead?? Sigh...
+  $(window).keydown(this.handleWindowKeyEvent);
+
+  div.on('keydown', '.title_edit',      this.handleTitleKeyEvent);
+  div.on('keydown', '.block_edit',      this.handleBlockKeyEvent);
+
+  // - - - - - Document links to other Headlines:
+  div.on('click',   '.internal_link',   this.jumpToLink);
+};
+
+
+// ------------------------------------------------------------
+// Utilities:
+
+// - - - - - - - - - - - - - - - - - -
+OrgController.prototype._makeHeadlineAndSuperiorsVisible = function(headline) {
+  headline.visible(true);
+
+  // Make all superior visible, too:
+  var iterHeadline = headline;
+  while(iterHeadline.level() > 1) {
+	iterHeadline = that.model.headline(iterHeadline.findDirectOwner());
+	if (! iterHeadline.visible() )
+	  iterHeadline.visible(true);
+  }
+
+  this._updateOpenCloseAroundChanged(iterHeadline.index);
+};
+
+
+// - - - - - - - - - - - - - - - - - -
+// Make a Headline visible in a nice Emacsy way.
+OrgController.prototype.updateTreeVisibility = function(headline, toShow) {
+  // If toShow is set (one of 'kids', 'all' or 'hide'), it is
+  // used. Otherwise, visibility of the subtree beneath the
+  // headline is cycled.
+
+  var vis_children = headline.visible_children();
+  if (vis_children === 'no_kids')
+    return '';              // (show/hide block like real Emacs??)
+  if (toShow === undefined)
+    toShow = '';
+  else
+    vis_children = 'X';     // Won't influence
+
+  var to_update;
+
+  if (toShow === 'kids' || vis_children === 'no_visible') {
+    to_update = headline.change_children_visible(1);     // Show 1st level
+    this.view.fixOpenCloseFromTo(to_update[0], to_update[1], this.model);
+    return 'kids';
+  }
+  if (toShow === 'all' || vis_children === 'direct_kids') {
+    to_update = headline.change_children_visible(true);  // Show all
+    this.view.fixOpenCloseFromTo(to_update[0], to_update[1], this.model);
+    return 'all';
+  }
+  if (toShow === 'hide' || vis_children === 'all_visible') {
+    to_update = headline.change_children_visible(false); // Hide all
+    this.view.fixOpenCloseFromTo(to_update[0], to_update[1], this.model);
+    return 'hide';
+  }
+  to_update = headline.change_children_visible(true);    // Show all
+  this.view.fixOpenCloseFromTo(to_update[0], to_update[1], this.model);
+  return 'all';
+};
+
+
+
+// - - - - - - - - - - - - - - - - - -
+// updates opened/closed icons after a Headline change
+OrgController.prototype.levelChange = function(headline, new_level) {
+  // if (headline.level() === 1)
+  // Show 1st level children, so they don't disappear. (Always??)
+  var ix = headline.index;
+  headline.change_children_visible(1);
+  if (new_level < 1)  new_level = 1;
+  if (new_level > 10) new_level = 10;
+  headline.level(new_level);
+  if (new_level === 1)
+    headline.visible(true);
+  // this.model.dirty(ix, 'level');
+  // (This kludge doesn't rerender any open edit fields.)
+  this.view.render_headline( headline, true, true );
+  this._updateOpenCloseAroundChanged(ix);
+
+};
+
+// - - - - - - - - - - - - - - - - - -
+// updates opened/closed icons after a Headline change
+OrgController.prototype.levelChangeSubtree = function(first, last, diff) {
+  // this.view._TEMP_TEST = 1;
+  for(var i = first; i < last; i++) {
+    var headline = this.model.headline(i);
+    // headline.change_children_visible(1);
+    var new_level = headline.level() + diff;
+    if (new_level < 1)  new_level = 1;
+    if (new_level > 10) new_level = 10;
+    headline.level(new_level);
+    if (new_level === 1)
+      headline.visible(true);
+    this.model.dirty(i, 'level');
+    this.view.render_headline( headline, false, true );
+  }
+  // This should only be called for a subtree, but do double
+  // updates just to be sure...
+  this._updateOpenCloseAroundChanged(first);
+  if (last-1 !== first)
+    this._updateOpenCloseAroundChanged(last-1);
+};

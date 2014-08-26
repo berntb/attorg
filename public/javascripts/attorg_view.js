@@ -155,29 +155,34 @@ var OrgView = function(document_div_id, divid_headlines) {
 	}
   };
 
-  // Handles commands to edit Level, TODO, insert new Headline and
-  // to enter Editing mode for a Headline. In the future, tags,
-  // etc. (Modal editing in Emacs... :-( :-) )
+  // When to just hide all block text:
   this.dontShowBlockRegexp = /^\s*$/;
 
   this.make_headline = function( headline,
 								 all_todo_done_states,
-								 force_visible,
+								 alwaysRender,
 								 hide_headline_html_prefix) {
 	// hide_headline_html_prefix:
 	//  Set if needs to update only Headline presentation (because the
 	//  Headline has other stuff visible, typically edit fields.)
 
 	var visible_at_all= headline.visible();
-	var headline_id = headline.id_str();
+	var headline_id   = headline.id_str();
 
 	// Don't build everything when empty.
 	// (When show_headline() is called, then it needs to make certain
 	//	it is created before being shown as visible.)
 
-	if (!visible_at_all && ! force_visible ) {
+	if (!visible_at_all && (!alwaysRender
+							|| this.lazilyNotRendered[headline_id])
+	   ) {
+	  // if (this._TEMP_TEST)
+	  //   console.log("LAZY, NO UPDATE Headline " + headline.index
+	  // 			+ ", level " + headline.level() + ": " + headline.title());
 	  this.lazilyNotRendered[headline_id] = true;
-	  return template_empty( { id: headline_id } );
+	  // We only call this for those already hidden:
+	  return template_empty( { id:          headline_id,
+							   hide_prefix: hide_headline_html_prefix} );
 	}
 
 	var title_value	  = headline.title();
@@ -192,7 +197,6 @@ var OrgView = function(document_div_id, divid_headlines) {
 
 	var titleHilite, blockHilite, tagHilite;
 
-
 	if (!configp && hiliteRegexp && hiliteRegexp.test(title_value)) {
 	  console.log("SEARCH HIT:" + title_value);
 	  titleHilite     = true;
@@ -205,8 +209,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  }
 	}
 
-	// XXXX Need to check tags for hilite too!!
-
+	// - - - Todo/tags:
 	if (todo === '')
 	  todo            = '-'
 	if (tags != undefined) {
@@ -215,8 +218,9 @@ var OrgView = function(document_div_id, divid_headlines) {
 	  if (hiliteRegexp && hiliteRegexp.test(tags))
 		tagHilite     = true;
 	}
-
-
+	// if (this._TEMP_TEST)
+	//   console.log("UPDATE FULL HEADLINE:" + headline.index
+	// 			  + ", level " + headline.level() + ": " + headline.title());
 
 	return template_hline(
 	  { id: headline_id, // ID string for Headline

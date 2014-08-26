@@ -22,7 +22,9 @@
 // Model code:
 
 var OrgModel = function(documentName, org_data,
-						visible_update_callback, increment_function) {
+						visible_update_callback,
+						updateHeadlineCallback,
+						increment_function) {
 
   OrgModelSuper.apply(this, arguments);
 
@@ -49,7 +51,8 @@ OrgModel.prototype = OrgModelSuper;
 // loads a new file. (Could throw it away instead and have a new one?)
 
 var OrgModelSuper = function(documentName, org_data,
-							 visible_update_callback, increment_function) {
+							 visibleUpdateCallback, updateHeadlineCallback,
+							 increment_function) {
 
   var Headline = OrgHeadline;	// Shorter name
 
@@ -67,14 +70,13 @@ var OrgModelSuper = function(documentName, org_data,
   // the net, so use std way of parsing out it.)
   this.length   = 0;
   this.all_data = [];
-  // this.all_data = arr;
-  // this.length   = arr.length;
 
   // This function must generate unique ID strings:
   this.generate_id_string = increment_function;
 
   // This will be called for every headline set to hidden/shown.
-  this.callback_fun_visible = visible_update_callback;
+  this.callback_fun_visible = visibleUpdateCallback;
+  this.callback_fun_update  = updateHeadlineCallback;
 
 
   this.modified_flag = false;
@@ -153,7 +155,6 @@ var OrgModelSuper = function(documentName, org_data,
   // (Help routine to create local Headline data structure from [net]
   //  external data source.)
   function _make_headline_from_data_structure(spec) {
-	// XXXX Need to handle sub parts of title/block.
 	return headline_data = {
 	  level:  (spec.level ? spec.level : 1),
 	  config: (spec.config ? true : false ),
@@ -223,11 +224,7 @@ var OrgModelSuper = function(documentName, org_data,
 
 
   this.findHeadlinesFrom = function(ix, howMany, loopDirection, testFun) {
-	// XXXX Simply keep a record of all Headlines with level == 1.
-	// Then no need to traverse everything to find them.
-	// (Just modify the set level method to store it).
-
-	// (This should get named in parameters.)
+	// (XXXX This should get named in parameters.)
 	// Loop up/down list of headlines to find the next which fulfill a
 	// condition.
 	// Returns [index, undefined, lastSuccessfulHeadline] if succesful.
@@ -350,7 +347,7 @@ var OrgModelSuper = function(documentName, org_data,
   };
 
 
-  // - - - - -
+  // ----------------------------------------------------------------------
   // Handle unique string ids to Headline index:
 
   // (We need a unique string and just not indexing, since headlines
@@ -436,13 +433,113 @@ var OrgModelSuper = function(documentName, org_data,
   };
 
 
+  // ----------------------------------------------------------------------
+  // Interaction with server:
+
+  // This is called when a Headline is updated locally, to use the
+  // server to reparse it:
+  this.updateHeadlineDelayed = function(headline) {
+	var headline_text = headline.title() || "";
+	var block_text    = headline.block() || "";
+
+	var modified_ix   = headline.increment_modified_locally();
+	var id            = headline.id_str();
+
+	// - - - - -
+	// Help fun which finds Headline in Model. Checks so it hasn't
+	// been updated (or deleted) locally before the answer from server
+	// came back.
+	var model = this;
+	var findHeadline = function(model, id) {
+	  var headline = model.headlineFromID(id);
+	  if (headline === undefined) {
+		// The Headline was removed before answer?
+		console.log("Failed to get an existing Headline");
+		return {noHeadline: 1, error: "Has been removed"};
+	  }
+
+	  // Check to see if the Headline has been sent to the server
+	  // again, in a later query:
+	  var modified_now = headline.modified_locally();
+	  if (modified_now === undefined
+		  || modified_now > modified_ix) {
+		console.log("ERROR, headline updated??");
+		return {laterUpdate: 1, error: "Updated again"};
+	  }
+
+	  return {ix: headline.index, headline: headline};
+	};
+
+	// Got parsed Headline from the server. Update Model/View:
+	var success_fun = function(reply) {
+	  var look_up = findHeadline(model, id);
+	  if (!look_up.headline) {
+		// If the Headline was updated/changed already again before we
+		// got an answer from the server.
+		alert("Error in update from server -- " + look_up.error); // XXXX TEST
+		console.log("Error in update from server -- " + look_up.error);
+		return;
+	  }
+
+	  var ix = look_up.ix;
+	  var headline = look_up.headline;
+
+	  // - - - Update!
+	  var data = JSON.parse(reply);
+	  // console.log(data);
+	  headline.modified_locally(undefined);
+
+	  // console.log(data);
+	  var block_parts = data.block_parts;
+	  var priority    = data.priority;
+	  if (data.title_subs)
+		headline.headline.title_subs = data.title_subs;
+	  if (data.block_parts)
+		headline.headline.block_parts = data.block_parts;
+	  if (data.priority)
+		headline.priority(data.priority);
+	  // This might also be updated:
+	  if (data.title_text)
+		headline.title(data.title_text);
+
+	  if (data.todo_state)
+		headline.todo(data.todo_state);
+
+	  headline.owner.callback_fun_update(headline);
+	};
+
+	// Called by jQuery when update fails:
+	var fail_fun = function(reply) {
+	  var look_up = findHeadline(model, id);
+	  if (!look_up.headline) {
+		alert("Error in update from server -- " + look_up.error);
+		return;
+	  }
+	  var ix = look_up.ix;
+	  var headline = look_up.headline;
+	  console.log("REPLY:");
+	  console.log(reply);
+	  alert("Failed update of " + ix);
+	};
+	
+	// XXXX THIS NEEDS THAT TODO STATE IS SENT ALONG TO SERVER FOR
+	// PARSING!  NOW IT ONLY WORKS WITH BUILT IN TODO STATES!
+
+    var ajaxtst = $.post(
+	  "/attorg/translate_row/",
+      {headline: "* " + headline_text,
+       text: block_text},
+      success_fun
+    ).fail( fail_fun ); // ('fail' because $.post() returns a "promise".)
+  };
+
 
 
   // ----------------------------------------------------------------------
   // - - - - - - - - - - - - -
   // Set up any input data:
-  // (XXXX When change so stores objects, update this. And make init
-  //       method out of it)
+  // (XXXX When change so stores objects, make an init method out of
+  //       it)
   if (arr && arr.length) {
 	// All tags in Headlines which aren't in a '#+FILETAGS' will be
 	// added, but any '#+FILETAGS' won't be updated. Is that a good

@@ -112,8 +112,8 @@
     </div>
   </div>
 </div>
-<!-- Templates ---------------------- -->
 
+<!-- Templates ---------------------- -->
 
 <!-- Normal headline: -->
 <script id ="template_hline" type="text/template">
@@ -161,8 +161,8 @@
 	  <span class="block-text"><%= (blockHilite) ? '<pre><span class="hilight">' + block + '</span></pre>' : (block.length ? "<pre>" + block + "</pre>" : '' ) %>
 	</span>
   </div>
-  <div class="headline-edit col-md-11"></div>
 <% if (hide_prefix) { } else { %>
+  <div class="headline-edit col-md-11"></div>
 </div>
 <% } %>
 </script>
@@ -250,9 +250,13 @@
 
 <!-- Not visible Headline, values put there lazily: -->
 <script id ="template_hidden_hline" type="text/template">
-<div class="row" style="display: none;">
-  <div id="hl_<%= id %>">Lazily not instantiated.</div>
-</div>
+<% if (hide_prefix) { %>
+	<div id="hl_<%= id %>">Lazily not instantiated.</div>
+<% } else { %>
+  <div class="row" style="display: none;">
+	<div id="hl_<%= id %>">Lazily not instantiated.</div>
+  </div>
+<% } %>
 </script>
 
 
