@@ -550,6 +550,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	  var previousIx  = -1;
 
 	  var focusHline  = view.headlineWithFocus(model);
+	  console.log("Checking for focused H-line:" + focusHline);
 
 	  if ( focusHline) {
 		if ( !view.isHeadlineScrolledIntoView(focusHline) ) {
@@ -563,26 +564,44 @@ function OrgAddKeyCmds(cmdHandler) {
 	  }
 
 	  // - - - Look for next
-	  var i, hline;
+	  // XXXX This makes fizzbuzz look elegant. Clean up, any future
+	  // employer will shudder. :-(
+	  var i, hline, halfOK;
 	  for(i = previousIx+1; i < model.length; i++) {
-		hline = model.headline(i);
-		if (hline.visible() && view.has_headline_edit_on(hline)
-		   && !view.isHeadlineScrolledIntoView(hline) ) {
-		  view.scrollHeadlineIntoView(hline, 50);
-		  view.setFocusTitle(hline);
-		  return true;
+		hline         = model.headline(i);
+		if (hline.visible() && view.has_headline_edit_on(hline)) {
+		  if (view.isHeadlineScrolledIntoView(hline) ) {
+			// If we only find one which is visible, let's focus on that
+			if (halfOK === undefined)
+			  halfOK  = i;
+		  } else {
+			view.scrollHeadlineIntoView(hline, 50);
+			view.setFocusTitle(hline);
+			return true;
+		  }
 		}
 	  }
 	  for(i = 0; i < previousIx; i++) {
-		hline = model.headline(i);
-		if (hline.visible() && view.has_headline_edit_on(hline)
-		   && !view.isHeadlineScrolledIntoView(hline)) {
-		  view.scrollHeadlineIntoView(hline, 50);
-		  view.setFocusTitle(hline);
-		  return true;
+		hline         = model.headline(i);
+		if (hline.visible() && view.has_headline_edit_on(hline)) {
+		  if (view.isHeadlineScrolledIntoView(hline) ) {
+			// If we only find one which is visible, let's focus on that
+			if (halfOK === undefined)
+			  halfOK  = i;
+		  } else {
+			view.scrollHeadlineIntoView(hline, 50);
+			view.setFocusTitle(hline);
+			return true;
+		  }
 		}
 	  }
-	  return true;				// Eat this one
+
+	  if (halfOK !== undefined) {
+		hline         = model.headline(halfOK);
+		view.scrollHeadlineIntoView(hline, 50);
+		view.setFocusTitle(hline);
+	  }
+	  return true;
 	}
   });
 

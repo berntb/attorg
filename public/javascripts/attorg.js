@@ -174,7 +174,7 @@ var OrgController = function(model, view, commandHandler,
 	that.view.render_headline(headline, alwaysMakeVisible, true);
   };
 
-  
+
   // ------------------------------------------------------------
   // Event handling are callbacks from DOM events:
 
@@ -578,7 +578,7 @@ var OrgController = function(model, view, commandHandler,
   }
 
   // ----------------------------------------------------------------------
-  // Tags:
+  // Events about Tags:
 
   this.saveHeadlineTags = function(event) {
 	that.cmdHandler.callCommand("_saveModalDialog", { });
@@ -594,12 +594,11 @@ var OrgController = function(model, view, commandHandler,
   // ----------------------------------------------------------------------
   // Help routines
 
+  // - - - - - - - - - - - - - - - - - -
   // Utility for Search events, et al:
   function escapeRegExp(str) {
 	return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
   }
-
-
 
 
 
@@ -666,59 +665,27 @@ var OrgController = function(model, view, commandHandler,
 
   // Help method which updates a Headline from Edit fields:
   this.saveHeadlineFromModelID = function(model_str_id) {
-    var i = that.model.get_ix_from_id_string( model_str_id );
-    var headline = that.model.headline(i);
+    var i = this.model.get_ix_from_id_string( model_str_id );
+    var headline = this.model.headline(i);
 
     return this.updateEditedHeadline(headline);
   };
 
 
   this.updateEditedHeadline = function(headline) {
-	var values = that.view.get_values(headline);
-    that.update_headline_title_block(headline, values.title, values.block);
+	var values = this.view.get_values(headline);
+    this.updateHeadlineTitleBlock(headline, values.title, values.block);
     return headline;
   };
 
 
-  // Help method which updates a Headline with title/block values:
-  // XXXX Should this handle tags??
-  this.update_headline_title_block = function(headline, title, block) {
-    var modified = false;
-    if (title !== undefined && title !== headline.title()) {
-	  // console.log("UPDATE headline:");
-	  // console.log( headline );
-      headline.title( title );
-	  // alert("HEADLINE UPDATE " + JSON.stringify(headline.headline));
-      that.model.dirty(headline.index, 'title');
-	  headline.headline.title_subs = undefined;
-	  // This is if multiple quick updates and 
-	  if (headline.headline.title_update_ix) {
-		headline.headline.title_update_ix++;
-	  } else {
-		headline.headline.title_update_ix = 1;
-	  }
-      modified = true;
-    }
-    if (block !== undefined && block !== headline.block() ) {
-      headline.block( block );
-	  // alert("BLOCK UPDATE " + JSON.stringify(headline.headline));
-      that.model.dirty(headline.index, 'block');
-	  headline.headline.block_parts = undefined;
-      modified = true;
-    }
 
-    if (modified) {
-	  // Will be replaced
-      that.view.render_headline( headline );
-	  if (! headline.is_config())
-		that.model.updateHeadlineDelayed( headline );
-	}
-  };
+  // ------------------------------------------------------------
+  // Initialize everything:
+  this._init_view();
 
 
   // ----------------------------------------------------------------------
-
-  this._init_view();
 
   // End of Controller Object spec:
   return this;
@@ -782,20 +749,19 @@ OrgController.prototype.bind_events = function() {
   div.on('click',   '.edit-header',     this.editHeadingEvent);
   div.on('click',   '.add-header',      this.addHeadingEvent);
 
-  // - - - - -  Buttons etc in Edit mode:
+  // - - - - - Buttons etc in Edit mode:
   div.on('click',   '.save-cmd',        this.saveCommandEvent);
   div.on('click',   '.update-cmd',      this.updateCommandEvent);
   div.on('click',   '.cancel-cmd',      this.cancelCommandEvent);
   div.on('change',  '.lvl_select',      this.levelChangeEvent);
 
-  // - - - - - Key codes:
-  // (keydown seems more reactive, keypress is better but not
-  //  supported by Chrome (and IE?) -- arrow keys, C-N, etc. :-(
-  //  Sigh... Just support Safari and FF??)
+  // - - - - - Keyboard events:
+  // (Keydown seems more reactive. 'keypress' is better but Chrome
+  //  (and IE?) can't catch arrow keys, C-N, etc. :-( Sigh... not with
+  //  keydown there either, :-( )
 
-  // 'keypress' instead?? Sigh...
+
   $(window).keydown(this.handleWindowKeyEvent);
-
   div.on('keydown', '.title_edit',      this.handleTitleKeyEvent);
   div.on('keydown', '.block_edit',      this.handleBlockKeyEvent);
 
@@ -1052,3 +1018,40 @@ OrgController.prototype.saveAndGotoIndex = function(headline, goIx,
   else
     this.view.setFocusTitle( nextHeadline );
 };
+
+
+// Help method which updates a Headline with title/block values:
+OrgController.prototype.updateHeadlineTitleBlock = function(headline,
+															title, block) {
+  var modified = false;
+  if (title !== undefined && title !== headline.title()) {
+	// console.log("UPDATE headline:");
+	// console.log( headline );
+    headline.title( title );
+	// alert("HEADLINE UPDATE " + JSON.stringify(headline.headline));
+    this.model.dirty(headline.index, 'title');
+	headline.headline.title_subs = undefined;
+	// This is if multiple quick updates and 
+	if (headline.headline.title_update_ix) {
+	  headline.headline.title_update_ix++;
+	} else {
+	  headline.headline.title_update_ix = 1;
+	}
+    modified = true;
+  }
+  if (block !== undefined && block !== headline.block() ) {
+    headline.block( block );
+	// alert("BLOCK UPDATE " + JSON.stringify(headline.headline));
+    this.model.dirty(headline.index, 'block');
+	headline.headline.block_parts = undefined;
+    modified = true;
+  }
+
+  if (modified) {
+	// Will be replaced
+    this.view.render_headline( headline );
+	if (! headline.is_config())
+	  this.model.updateHeadlineDelayed( headline );
+  }
+};
+

@@ -4,21 +4,12 @@
 // Map editor commands to names -- and key codes to names.
 
 var OrgCmdMapper = function() {
-  var that = this;
-
-  // XXXX Handle the prefixes C-U, C-U -12, etc.
-
   // XXXXX Select (or have a text field) with keys that should be
   // treated as prefixes for ESC and C-. Then e.g. iPad can use
-  // meta/ctrl key sequences. (Can you add to keyboard on
-  // iPad/Android in Safari/Chrome??)
+  // meta/ctrl key sequences.
 
-  // (This is done to easily support C-H A(propos) and C-H K(ey).)
-
-
-  // - - - Key translation part:
-
-  var namesToKeyCodes = {
+  // - - - Key name translation part:
+  this.namesToKeyCodes = {
 	LEFT:  37,
 	UP:    38,
 	RIGHT: 39,
@@ -27,8 +18,7 @@ var OrgCmdMapper = function() {
 	TAB:    9,
 	SPACE: 32,
   };
-
-  var keyCodesToNames = {		// (There is an inverting fun in '_'??)
+  this.keyCodesToNames = {		// (There is an inverting fun in '_'.)
     37:  'LEFT',
     38:  'UP',
     39:  'RIGHT',
@@ -201,7 +191,7 @@ var OrgCmdMapper = function() {
 		  shifted  += 'M-';
 		if (shiftMetaCtrl.indexOf("C") >= 0)
 		  shifted  += 'C-';
-		if (charSpec.length > 1 && !(charSpec in namesToKeyCodes)) {
+		if (charSpec.length > 1 && !(charSpec in this.namesToKeyCodes)) {
 		  alert("Failed to find character name: " + charSpec);
 		  console.log("Failed to find character name: " + charSpec);
 		  return undefined;
@@ -339,8 +329,8 @@ var OrgCmdMapper = function() {
 	var keyChar   = this.getCharFromEvent(event, true);
 	// Chrome doesn't allow getting every char, whatever I do? :-(
 
-	if (keyCode in keyCodesToNames)
-	  keyChar     = keyCodesToNames[keyCode];
+	if (keyCode in this.keyCodesToNames)
+	  keyChar     = this.keyCodesToNames[keyCode];
     var ctrlDescr = event.ctrlKey ? 'C-' : '';
     var shiftDescr= event.shiftKey ? 'S-' : '';
 
