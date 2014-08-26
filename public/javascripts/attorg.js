@@ -603,152 +603,6 @@ var OrgController = function(model, view, commandHandler,
 
 
 
-
-  // - - - - - - - - - - - - - - - - - -
-  // XXXXX Too complex, this must be neater and more automatic. :-(
-  // And, if anything, moved to model. Or anyplace else.
-  this._updateOpenCloseAroundChanged = function(ix) {
-    if (ix < 0) ix  = 0;
-    if (ix >= this.model.length)
-      ix            = this.model.length-1;
-    if (this.model.length === 0) return;
-
-    var headline    = this.model.headline(ix);
-    var startStop;
-    if (ix > 0) {
-	  // (ix > 0 ==> Except for first index.)
-      startStop     = this.model.headline(ix-1).updateVisibleInHierarchy();
-	  //console.log("from-to: " + startStop);
-	  //console.log(startStop[0]+" "+this.model.headline(startStop[0]).title());
-	  //console.log(startStop[1]+" "+this.model.headline(startStop[1]).title());
-      if (startStop[1] < ix) {
-        var sStop2  = headline.updateVisibleInHierarchy();
-		// console.log("AND from-to: " + sStop2);
-		// console.log(sStop2[0] +" "+ this.model.headline(sStop2[0]).title());
-		// console.log(sStop2[1] +" "+ this.model.headline(sStop2[1]).title());
-        startStop[1]= sStop2[1];
-      }
-    } else {
-      startStop     = headline.updateVisibleInHierarchy();
-      if (startStop[1] === ix && this.model.length > 1) {
-        // Modified 1st Headline to > than 2nd. Update the rest of
-        // the old hierarchy that used to be beneath the 1st.
-        startStop   = this.model.headline(1).updateVisibleInHierarchy();
-        startStop[0]= 0;
-      }
-    }
-
-    this.view.fixOpenCloseFromTo(startStop[0], startStop[1], that.model);
-    return startStop;         // The subtree
-  };
-
-
-  // - - - - - - - - - - - - - - - - - -
-  this.moveHeadlineUp = function(headline) {
-    var index  = headline.index;
-    if (index === 0) return;  // Nothing to see here...
-    console.log(index + " setup, len " + that.model.length);
-    var nextH  = that.model.headline(index-1);
-
-    // Make certain both are visible:
-    headline.visible(true);
-    nextH.visible(true);
-    // Move them around in View and Model:
-    that.view.move_headline(nextH, index+1); // (Don't move the one we edit)
-    headline.move(index-1);
-    // Make certain the open/close arrows are correct:
-	headline.index--;
-    that._updateOpenCloseAroundChanged(index);
-    that._updateOpenCloseAroundChanged(index-1);
-  };
-
-
-  // - - - - - - - - - - - - - - - - - -
-  this.moveHeadlineDown = function(headline) {
-    var index  = headline.index;
-    if (index+1 >= that.model.length) return; // Nothing to see here...
-    console.log(index + " setup, len " + that.model.length);
-    var nextH  = that.model.headline(index+1);
-
-    // Make both visible:
-    headline.visible(true);
-    nextH.visible(true);
-    // Move them around in View and Model:
-    that.view.move_headline(nextH, index);
-    headline.move(index+1);
-	headline.index++;
-    // Make certain the opened/closed arrows are correct:
-    that._updateOpenCloseAroundChanged(index);
-    that._updateOpenCloseAroundChanged(index+1);
-  };
-
-
-  // - - - - - - - - - - - - - - - - - -
-  this.moveHeadlineTree = function(fromStart, fromEnd, toAfterThis) {
-    // Move a range of Headlines to another place.
-    var i, no, headline;
-    console.log("From " + fromStart + " to " + fromEnd + " -> after " +
-                toAfterThis);
-
-    if (toAfterThis < fromStart) {
-      // No problem with indexes:
-      no         = 0;
-      for(i = fromStart; i < fromEnd; i++) {
-        headline = this.model.headline(i);
-        // headline.visible(true);
-        console.log("Moving ''" + headline.title() + "''.  " +
-                    "From " + i + " to " + (toAfterThis+no-1));
-        this.view.move_headline(headline, toAfterThis+no+1);
-        headline.move(toAfterThis+no+1);
-        no++;
-      }
-
-      this._updateOpenCloseAroundChanged(toAfterThis);
-      this._updateOpenCloseAroundChanged(toAfterThis+no);
-      var tree   = this._updateOpenCloseAroundChanged(fromStart+no-1);
-      if (tree[1] <= fromStart+no-1)
-        this._updateOpenCloseAroundChanged(fromStart+no);
-    } else {
-      // No problem with indexes...
-      for(i = fromStart; i < fromEnd; i++) {
-        headline = this.model.headline(fromStart);
-        this.view.move_headline(headline, toAfterThis);
-        headline.move(toAfterThis-1);
-      }
-      var tree   = this._updateOpenCloseAroundChanged(fromStart);
-      if (tree[0] >= fromStart)
-        this._updateOpenCloseAroundChanged(fromStart-1);
-      if (tree[0] >= fromStart)
-        this._updateOpenCloseAroundChanged(fromStart-1);
-      this._updateOpenCloseAroundChanged(toAfterThis);
-      tree       = this._updateOpenCloseAroundChanged(toAfterThis);
-      if (tree[0] >= fromStart)
-        this._updateOpenCloseAroundChanged(fromStart-1);
-      this._updateOpenCloseAroundChanged(fromStart+ (fromEnd-fromStart));
-    }
-  };
-
-
-  // - - - - - - - - - - - - - - - - - -
-  this.saveAndGotoIndex = function(headline, goIx, focusOnBlock) {
-    // Saves any opened edit headline and opens another in Edit:
-    if (headline !== undefined && this.view.has_headline_edit_on(headline)) {
-      this.updateEditedHeadline(headline);
-      this.view.close_edit_headline( headline );
-    }
-
-    var nextHeadline   = this.model.headline(goIx);
-
-    if (! that.view.has_headline_edit_on(nextHeadline))
-      that.view.render_edit_headline(goIx, nextHeadline);
-
-    if (focusOnBlock || nextHeadline.is_config() )
-      this.view.setFocusBlock( nextHeadline );
-    else
-      this.view.setFocusTitle( nextHeadline );
-  };
-  
-
   // - - - - - - - - - - - - - - - - - -
   // Help routines for the button command events:
 
@@ -1048,4 +902,153 @@ OrgController.prototype.levelChangeSubtree = function(first, last, diff) {
   this._updateOpenCloseAroundChanged(first);
   if (last-1 !== first)
     this._updateOpenCloseAroundChanged(last-1);
+};
+
+
+// - - - - - - - - - - - - - - - - - -
+// XXXXX Too complex, this must be neater and more automatic. :-(
+// And, if anything, moved to model. Or anyplace else.
+OrgController.prototype._updateOpenCloseAroundChanged = function(ix) {
+  if (ix < 0) ix  = 0;
+  if (ix >= this.model.length)
+    ix            = this.model.length-1;
+  if (this.model.length === 0) return;
+
+  var headline    = this.model.headline(ix);
+  var startStop;
+  if (ix > 0) {
+	// (ix > 0 ==> Except for first index.)
+    startStop     = this.model.headline(ix-1).updateVisibleInHierarchy();
+	//console.log("from-to: " + startStop);
+	//console.log(startStop[0]+" "+this.model.headline(startStop[0]).title());
+	//console.log(startStop[1]+" "+this.model.headline(startStop[1]).title());
+    if (startStop[1] < ix) {
+      var sStop2  = headline.updateVisibleInHierarchy();
+	  // console.log("AND from-to: " + sStop2);
+	  // console.log(sStop2[0] +" "+ this.model.headline(sStop2[0]).title());
+	  // console.log(sStop2[1] +" "+ this.model.headline(sStop2[1]).title());
+      startStop[1]= sStop2[1];
+    }
+  } else {
+    startStop     = headline.updateVisibleInHierarchy();
+    if (startStop[1] === ix && this.model.length > 1) {
+      // Modified 1st Headline to > than 2nd. Update the rest of
+      // the old hierarchy that used to be beneath the 1st.
+      startStop   = this.model.headline(1).updateVisibleInHierarchy();
+      startStop[0]= 0;
+    }
+  }
+
+  this.view.fixOpenCloseFromTo(startStop[0], startStop[1], this.model);
+  return startStop;         // The subtree
+};
+
+
+// - - - - - - - - - - - - - - - - - -
+OrgController.prototype.moveHeadlineUp = function(headline) {
+  var index  = headline.index;
+  if (index === 0) return;  // Nothing to see here...
+  console.log(index + " setup, len " + this.model.length);
+  var nextH  = this.model.headline(index-1);
+
+  // Make certain both are visible:
+  headline.visible(true);
+  nextH.visible(true);
+  // Move them around in View and Model:
+  this.view.move_headline(nextH, index+1); // (Don't move the one we edit)
+  headline.move(index-1);
+  // Make certain the open/close arrows are correct:
+  headline.index--;
+  this._updateOpenCloseAroundChanged(index);
+  this._updateOpenCloseAroundChanged(index-1);
+};
+
+
+
+// - - - - - - - - - - - - - - - - - -
+OrgController.prototype.moveHeadlineDown = function(headline) {
+  var index  = headline.index;
+  if (index+1 >= this.model.length) return; // Nothing to see here...
+  console.log(index + " setup, len " + this.model.length);
+  var nextH  = this.model.headline(index+1);
+
+  // Make both visible:
+  headline.visible(true);
+  nextH.visible(true);
+  // Move them around in View and Model:
+  this.view.move_headline(nextH, index);
+  headline.move(index+1);
+  headline.index++;
+  // Make certain the opened/closed arrows are correct:
+  this._updateOpenCloseAroundChanged(index);
+  this._updateOpenCloseAroundChanged(index+1);
+};
+
+
+
+// - - - - - - - - - - - - - - - - - -
+OrgController.prototype.moveHeadlineTree = function(fromStart, fromEnd,
+													toAfterThis) {
+  // Move a range of Headlines to another place.
+  var i, no, headline;
+  console.log("From " + fromStart + " to " + fromEnd + " -> after " +
+              toAfterThis);
+
+  if (toAfterThis < fromStart) {
+    // No problem with indexes:
+    no         = 0;
+    for(i = fromStart; i < fromEnd; i++) {
+      headline = this.model.headline(i);
+      // headline.visible(true);
+      console.log("Moving ''" + headline.title() + "''.  " +
+                  "From " + i + " to " + (toAfterThis+no-1));
+      this.view.move_headline(headline, toAfterThis+no+1);
+      headline.move(toAfterThis+no+1);
+      no++;
+    }
+
+    this._updateOpenCloseAroundChanged(toAfterThis);
+    this._updateOpenCloseAroundChanged(toAfterThis+no);
+    var tree   = this._updateOpenCloseAroundChanged(fromStart+no-1);
+    if (tree[1] <= fromStart+no-1)
+      this._updateOpenCloseAroundChanged(fromStart+no);
+  } else {
+    // No problem with indexes...
+    for(i = fromStart; i < fromEnd; i++) {
+      headline = this.model.headline(fromStart);
+      this.view.move_headline(headline, toAfterThis);
+      headline.move(toAfterThis-1);
+    }
+    var tree   = this._updateOpenCloseAroundChanged(fromStart);
+    if (tree[0] >= fromStart)
+      this._updateOpenCloseAroundChanged(fromStart-1);
+    if (tree[0] >= fromStart)
+      this._updateOpenCloseAroundChanged(fromStart-1);
+    this._updateOpenCloseAroundChanged(toAfterThis);
+    tree       = this._updateOpenCloseAroundChanged(toAfterThis);
+    if (tree[0] >= fromStart)
+      this._updateOpenCloseAroundChanged(fromStart-1);
+    this._updateOpenCloseAroundChanged(fromStart+ (fromEnd-fromStart));
+  }
+};
+
+
+// - - - - - - - - - - - - - - - - - -
+OrgController.prototype.saveAndGotoIndex = function(headline, goIx,
+													focusOnBlock) {
+  // Saves any opened edit headline and opens another in Edit:
+  if (headline !== undefined && this.view.has_headline_edit_on(headline)) {
+    this.updateEditedHeadline(headline);
+    this.view.close_edit_headline( headline );
+  }
+
+  var nextHeadline   = this.model.headline(goIx);
+
+  if (! this.view.has_headline_edit_on(nextHeadline))
+    this.view.render_edit_headline(goIx, nextHeadline);
+
+  if (focusOnBlock || nextHeadline.is_config() )
+    this.view.setFocusBlock( nextHeadline );
+  else
+    this.view.setFocusTitle( nextHeadline );
 };
