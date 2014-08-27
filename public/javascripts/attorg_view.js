@@ -768,9 +768,9 @@ var OrgView = function(document_div_id, divid_headlines) {
 		if (! headline.visible())
 		  return false;
 		var hOff      = that._findViewPortOffsetForHeadline(headline);
-		console.log("   H-line ix:" + headline.index + ", step UP by 1:"
-					+ headline.title());
-		console.log("     the Off:" + hOff + ", window: " + docViewTop);
+		// console.log("   H-line ix:" + headline.index + ", step UP by 1:"
+		// 			+ headline.title());
+		// console.log("     the Off:" + hOff + ", window: " + docViewTop);
 		if (upwards) {
 		  if (hOff < (docViewTop + viewMargin) ) {
 			console.log("    (is before window.)");
@@ -778,7 +778,7 @@ var OrgView = function(document_div_id, divid_headlines) {
 		  }
 		} else {
 		  if (hOff > (docViewBot - viewMargin) ) {
-			console.log("    (is before window downwards.)");
+			// console.log("    (is before window downwards.)");
 			return true;
 		  }
 		}

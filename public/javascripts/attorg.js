@@ -20,8 +20,6 @@
 
 // ----------------------------------------------------------------------
 
-
-
 // Polyfill:
 if (!String.prototype.trim) {
   String.prototype.trim = function () {
@@ -33,13 +31,17 @@ if (!String.prototype.trim) {
 // ----------------------------------------------------------------------
 // Global variables.
 
-// (These aren't really used. Replace sometime.)
+// These aren't really used. Replace or do something different.
+// (The idea was to have multiple models/controllers and/or multiple
+//  views to a model, to support C-x 5 2 // C-x 5 0 // etc.)
 
 var stored_model     = {};
 var org_controllers  = {};
 
 
 // ----------------------------------------------------------------------
+
+// (BTW, really should use RequireJS or something.)
 
 $(function() {
   // - - -
