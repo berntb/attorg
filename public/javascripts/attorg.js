@@ -56,57 +56,54 @@ $(function() {
   
   // - - -
   var _init = function(document_name, data,
-                       document_div_id, divid_headlines) {
+                       document_div_id, divIdHeadlines) {
     var model  = new OrgModel(document_name, data,
                               undefined, undefined,
 							  _generate_id_string);
-    stored_model[divid_headlines] = model;
+    stored_model[divIdHeadlines] = model;
 
     // XXXX Should honour the config flag on how to open an org file!
-    var headline;
-    if (model.length && model.headline(0).level() === 1) {
-      for (var i = 0; i < model.length; i++) {
+    var i, headline, hasA1 = false;
+    for (i = 0; i < model.length; i++) {
+      var headline = model.headline(i);
+      if (headline.level() === 1) {
+		hasA1      = true;
+		break;
+	  }
+    }
+
+    if (hasA1) {
+      for (i = 0; i < model.length; i++) {
         var headline = model.headline(i);
         headline.visible(headline.level() === 1);
       }
     } else {
-      // If not starting with a level 1, it might be complex. Have a
-      // simple fallback. Replace with something smarter later (maybe).
-      for (var i = 0; i < model.length; i++)
+      // If no level 1, set all visible, for now:
+      for (i = 0; i < model.length; i++)
         model.headline(i).visible(true);
     }
 
-	var view       = new OrgView(document_div_id, divid_headlines);
-	var cmdHandler = new OrgCmdMapper();
-    org_controllers[divid_headlines] = new OrgController(
-      model,
-	  view,
-	  cmdHandler,
-      document_div_id,
-      divid_headlines
-    );
-    // org_controllers[divid_headlines].init_view(view);
-	OrgAddKeyCmds(cmdHandler, org_controllers[divid_headlines]);
+	var view       = new OrgView(document_div_id, divIdHeadlines);
+	var cmdHandler = new OrgCmdMapper(undefined);
+    var controller = new OrgController(model, view, cmdHandler,
+									   document_div_id,
+									   divIdHeadlines
+									  );
+	cmdHandler.setController(controller);
+	org_controllers[divIdHeadlines] = controller;
+
+    // org_controllers[divIdHeadlines].init_view(view);
+	OrgAddKeyCmds(cmdHandler, controller);
   };
 
   var text, data, model;
   var document_div_id = "org_edit_document_parameters";
-  var divid_headlines = "org_edit";
-  var fileName = $("#file-to-start").val();
-
-  // Just test code
-  // var ajaxtst = $.post("/attorg/translate_row/",
-  // 					  {headline: "** Foo",
-  // 					   text: " foo bar\n  frotz _gurka_ gazonkan \n\n  "},
-  // 					  function(data) {
-  // 						alert("Got post:\n" + data);
-  // 					  }
-  // 					 );
+  var divIdHeadlines  = "org_edit";
+  var fileName        = $("#file-to-start").val();
 
   if (fileName === '') {
-    // XXXX Set up empty data representation:
-    // Temporary test data
-    // text   = $("#data").html();
+    // XXXX Add some empty data representation, with links to
+    // documentation (or an org document with the documentation.)
     text = '[ ' +
       '{ "drawer_names" : [ "CLOCK", "LOGBOOK", "PROPERTIES" ],' +
       '  "priorities"   : [ "A", "B", "C" ],' +
@@ -118,12 +115,12 @@ $(function() {
       ']';
     eval("data = " + text );
 
-    _init('unknown', data, document_div_id, divid_headlines);
+    _init('unknown', data, document_div_id, divIdHeadlines);
   } else {
     // Need to set a "Loading..." text into the org div and make a
     // callback that sets up everything...
     $.getJSON('/attorg/data/' + fileName, function(data) {
-      _init(fileName, data, document_div_id, divid_headlines);
+      _init(fileName, data, document_div_id, divIdHeadlines);
     });
   }
 
@@ -137,7 +134,7 @@ $(function() {
 
 
 var OrgController = function(model, view, commandHandler,
-							 document_div_id, divid_headlines) {
+							 document_div_id, divIdHeadlines) {
   var that = this;
 
 
@@ -145,12 +142,10 @@ var OrgController = function(model, view, commandHandler,
   this.view  = view;
   this.model = model;
   this.cmdHandler      = commandHandler;
-  commandHandler.setController(this);
-
 
   this.document_div_id = document_div_id;
-  this.divid_headlines = divid_headlines;
-  this.divid_search    = divid_headlines + "_search";
+  this.divIdHeadlines  = divIdHeadlines;
+  this.divid_search    = divIdHeadlines + "_search";
 
   // this.keyMapper       = new OrgKeyFunMapper();
 
@@ -686,7 +681,6 @@ var OrgController = function(model, view, commandHandler,
 
 
   // ----------------------------------------------------------------------
-
   // End of Controller Object spec:
   return this;
 };
@@ -729,7 +723,7 @@ OrgController.prototype.bind_events = function() {
   $('.clear-search').click( this.searchEventClear );
 
   // - - - - - Headline events:
-  var div   = $("#" + this.divid_headlines);
+  var div   = $("#" + this.divIdHeadlines);
 
   // $('.title_input').change( // (Fails if multiple org modes in window!!)
   // div.find('.title_input').change(  // Less bad

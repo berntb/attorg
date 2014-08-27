@@ -564,8 +564,8 @@ function OrgAddKeyCmds(cmdHandler) {
 	  }
 
 	  // - - - Look for next
-	  // XXXX This makes fizzbuzz look elegant. Clean up, any future
-	  // employer will shudder. :-(
+	  // XXXX This repeated code makes fizzbuzz look elegant. Clean
+	  // up, any future employer would shudder. :-)
 	  var i, hline, halfOK;
 	  for(i = previousIx+1; i < model.length; i++) {
 		hline         = model.headline(i);
@@ -650,14 +650,7 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addACommand({
 	name:  "HeadlineUp",		// ("M-up")
 	docum: "Description",
-
-	// XXXX Must open/close better. Confused with open arrows if moves:
-	// * A
-	// * B moved up, then down
-	// ** C
-	// ** D
-
-	autoLoop: true,				// XXXX Implement
+	autoLoop: true,
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  this.controller.moveHeadlineUp( headline ); // Move single headline:
@@ -667,8 +660,7 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addACommand({
 	name:  "HeadlineDown",		// ("M-down")
 	docum: "Description",
-
-	autoLoop: true,				// XXXX Implement
+	autoLoop: true,
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  this.controller.moveHeadlineDown( headline ); // Move single headline:
@@ -679,8 +671,7 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addACommand({
 	name:  "MoveTreeUp",		// "M-S-up"
 	docum: "Description",
-
-	autoLoop: true,				// XXXX Implement
+	autoLoop: true,
 
 	// XXXX Need to split this into two, so can use as command
 	// names. (For menu use, M-X, etc.)
@@ -700,8 +691,7 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addACommand({
 	name:  "MoveTreeDown",				// "M-down"
 	docum: "Description",
-
-	autoLoop: true,				// XXXX Implement
+	autoLoop: true,
 
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  var thisTree	= headline.findSubTree();
@@ -721,7 +711,6 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addACommand({
 	name:  "DelHeadline",
 	docum: "Description",
-
 	// XXXX Support C-U number!1
 
 	// Puts mark on whole Headline
