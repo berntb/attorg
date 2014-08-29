@@ -81,7 +81,9 @@ sub _parse_org_headline {
   my $priotext= shift // '';
 
   $hline      =~ s/^\s*//;
-  $hline      =~ s/\s*$//s;		# Remove empty spaces 
+  $hline      =~ s/\s*$//s;		# Remove empty spaces
+  # The Org::Parser wants lots of spaces to accept tags. Lower it to 5.
+  $hline      =~ s/\s{5,}(:[a-z\d:]+:)$/                              $1/i;
   $block      =~ s/\s*$//s;		# Block must be able to start on indentation.
 
   my $alltext = length($hline) ? $hline : '* ';
