@@ -54,9 +54,9 @@ Here is what I think is the minimum viable feature list still needed to make Att
 Supported key chars commands
 ----------------------------
 
-The GUI is not necessary for adding tags, TODO state, priorites and level is not needed. You can specify that directly as in Emacs, when editing a Headline.
+The GUI is not necessary for adding tags, TODO state, priorites and level. You can specify that directly as in Emacs, when editing a Headline.
 
-Also note that there is support for underlining etc, in the normal way, but for now the Greek letters etc are not supported.
+Also note that there is support for underlining etc, in the normal way, but for now the Greek letters like '\Alpha' etc are not supported.
 
 These commands are implemented now, more or less completely.
 
