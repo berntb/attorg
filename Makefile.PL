@@ -17,7 +17,7 @@ WriteMakefile(
         'Dancer'          => 1.3095,
         'Template'        => 0,
 		# ------
-		'Org::Parser'     => 0.39,
+		'Org::Parser'     => 0.40,
 		'Text::Tabs'      => 0,
 		'Git::Repository' => 0,
 

@@ -1171,4 +1171,9 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("NumberPrefix", "C-U");
   cmdHandler.addKeyCommand("NumberPrefix", "C-0,, C-1,, C-2,, C-3,, C-4");
   cmdHandler.addKeyCommand("NumberPrefix", "C-5,, C-6,, C-7,, C-8,, C-9");
+
+  // - - - Generic:
+  // XXXX
+  // C-c C-c should update todo list if on a "#+TODO:" line etc.
+
 };

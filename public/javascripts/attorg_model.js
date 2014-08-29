@@ -436,6 +436,38 @@ var OrgModelSuper = function(documentName, org_data,
   // ----------------------------------------------------------------------
   // Interaction with server:
 
+  this.saveDocument = function(whereSpec, savedAsAnotherName) {
+
+	var toSave    = this.saveData();
+	console.log("SAVE DATA:");
+	console.log(toSave);
+	
+	var success_fun = function(reply) {
+	  // XXXX Let luser now about message, if error.
+	};
+
+
+	// When update fails from e.g. network (or bad server):
+	var fail_fun = function(reply) {
+	  // XXXX
+	};
+	
+    var ajaxtst = $.post(
+	  "/attorg/save/",
+      {
+		data:      toSave,
+		file_spec: whereSpec,
+		save_as:   savedAsAnotherName,
+	  },
+      success_fun
+    ).fail( fail_fun ); // ('fail' because $.post() returns a "promise".)
+  };
+
+
+
+  // XXXX This needs to store failed updates if no net connection, so
+  // they can be redone when a net connection is restored.
+
   // This is called when a Headline is updated locally, to use the
   // server to reparse it:
   this.updateHeadlineDelayed = function(headline) {
@@ -498,6 +530,8 @@ var OrgModelSuper = function(documentName, org_data,
 		headline.headline.block_parts = data.block_parts;
 	  if (data.priority)
 		headline.priority(data.priority);
+	  if (data.tags && data.tags.length > 0)
+		headline.tags(data.tags);
 	  // This might also be updated:
 	  if (data.title_text)
 		headline.title(data.title_text);
@@ -522,15 +556,39 @@ var OrgModelSuper = function(documentName, org_data,
 	  alert("Failed update of " + ix);
 	};
 	
-	// XXXX THIS NEEDS THAT TODO STATE IS SENT ALONG TO SERVER FOR
-	// PARSING!  NOW IT ONLY WORKS WITH BUILT IN TODO STATES!
-
     var ajaxtst = $.post(
 	  "/attorg/translate_row/",
       {headline: "* " + headline_text,
-       text: block_text},
+       text: block_text,
+	   todo_states: this._makeTodoSpec(),
+	   priorities:  this._makePrioritySpec()
+	  },
       success_fun
     ).fail( fail_fun ); // ('fail' because $.post() returns a "promise".)
+  };
+
+  // - - -
+  // Generate a '#+TODO' specification for present TODO states.
+  // (Used for sending updated Headline for parsing to server, so
+  // luser can write the todo state first on the line.)
+  this._makeTodoSpec = function() {
+	var todoStates  = this.todo_states();
+	var doneStates  = this.done_states();
+
+	if (todoStates.length === 0 && doneStates.length === 0)
+	  return '';
+	var todoText    = todoStates.join(" ");
+	if (doneStates.length !== 0)
+	  todoText     += " | " + doneStates.join(" ");
+
+	return "#+TODO: " + todoText;
+  };
+
+  // As previous, but for priorities.
+  this._makePrioritySpec = function() {
+    // #+PRIORITIES: A C B
+	var states      = this.priorities();
+	return "#+PRIORITIES: " + states.join(" ");
   };
 
 
@@ -538,8 +596,7 @@ var OrgModelSuper = function(documentName, org_data,
   // ----------------------------------------------------------------------
   // - - - - - - - - - - - - -
   // Set up any input data:
-  // (XXXX When change so stores objects, make an init method out of
-  //       it)
+  // XXXX Make an init method out of this.
   if (arr && arr.length) {
 	// All tags in Headlines which aren't in a '#+FILETAGS' will be
 	// added, but any '#+FILETAGS' won't be updated. Is that a good
@@ -583,9 +640,9 @@ var OrgModelSuper = function(documentName, org_data,
 	this.length   = arr.length;
   }
 
-
   return this;
 };
+
 
 
 
@@ -644,6 +701,7 @@ OrgHeadline.prototype = {
     return this.headline.idstr;
   },
 
+  // XXXX Sigh... Have a function which returns a function doing an accessor
   block: function() {
     if (arguments.length > 0) {
       // Note -- this doesn't handle block_subs!
@@ -661,24 +719,39 @@ OrgHeadline.prototype = {
   },
 
   todo: function() {
-	// XXXX Have a function which returns a function doing an accessor:
     if (arguments.length > 0) {
       this.headline.todo_state = arguments[0];
 	  this.owner.dirty();
 	}
     return this.headline.todo_state;
   },
+
   tags: function() {
-	// XXXX Have a function which returns a function doing an accessor:
     if (arguments.length > 0) {
       this.headline.tags = arguments[0];
 	  this.owner.dirty();
+	  // Update the tag list, if there are new tags here!!
+	  if (this.headline.tags !== undefined) {
+		var modified = false;
+		var documTags= this.owner.tags();
+		for(var i = 0; i < this.headline.tags.length; i++) {
+		  var t = this.headline.tags[i];
+		  console.log("Checking " + t);
+		  if (_.contains(documTags, t ))
+			continue;
+		  modified = true;
+		  documTags.push( t );
+		}
+		// XXXXX Update UI!! Specific callback for that (controller?)
+		if (modified)
+		  console.log("----- UPDATE UI LIST OF TAGS!! -----");
+	  }
 	}
     return this.headline.tags;
   },
 
   priority: function() {
-	// XXXX Check value when it is set!!
+	// XXXX Check value when it is set!?
     if (arguments.length > 0) {
       this.headline.priority = arguments[0];
 	  this.owner.dirty();
@@ -840,6 +913,7 @@ OrgHeadline.prototype = {
 
   // ------------------------------------------------------------
   // Generate result:
+
   generateTextForSave: function() {
 	// XXXX Where does text go from before first Headline??
 	// Utils:

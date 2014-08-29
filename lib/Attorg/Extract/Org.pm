@@ -81,7 +81,6 @@ sub get_org_from_string {
 
   my $orgp = Org::Parser->new();
   my $doc = $orgp->parse($org_string);
-
   my @headlines_for_json;
   trav($doc, \@headlines_for_json);
 
@@ -240,6 +239,7 @@ sub trav {
     }
   }
 }
+
 
 sub check_block_indentation {
   # N B -- this fun removes '\n' for last line in block, which is

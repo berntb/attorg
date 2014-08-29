@@ -1020,6 +1020,18 @@ OrgController.prototype.saveAndGotoIndex = function(headline, goIx,
 OrgController.prototype.updateHeadlineTitleBlock = function(headline,
 															title, block) {
   var modified = false;
+  if (title !== undefined) {
+	var result = /^([*]+)\s+(.*)/.exec(title);
+	if (result !== null) {
+	  title    = result[2];
+	  var level= result[1].length;
+
+	  if (level !== headline.level()) {
+		modified = true;
+		headline.level(level);
+	  }
+	}
+  }
   if (title !== undefined && title !== headline.title()) {
 	// console.log("UPDATE headline:");
 	// console.log( headline );

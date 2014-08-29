@@ -77,14 +77,20 @@ sub _get_org_file_data {
 sub _parse_org_headline {
   my $hline   = shift // '';
   my $block   = shift // '';
+  my $todotext= shift // '';
+  my $priotext= shift // '';
 
   $hline      =~ s/^\s*//;
   $hline      =~ s/\s*$//s;		# Remove empty spaces 
   $block      =~ s/\s*$//s;		# Block must be able to start on indentation.
 
-  my $alltext = length($hline) ? $hline : '';
+  my $alltext = length($hline) ? $hline : '* ';
   $alltext   .= "\n " . $block
 	  if length($block);
+  $alltext    = $todotext . "\n" . $alltext
+	  if length($todotext);
+  $alltext    = $priotext . "\n" . $alltext
+	  if length($priotext);
 
   # XXXX This is pure user supplied text from over a socket... Check
   # it more carefully, before sending it on to Parse::Org!!
@@ -92,14 +98,17 @@ sub _parse_org_headline {
   # Catch errors here.
   my $data    = Attorg::Extract::Org::get_org_from_string( $alltext );
 
-  say STDERR "-" x 70, "\n$alltext\n", Dumper($data), "-" x 70, "\n";
+  # Test, remove later:
+  # say STDERR "X" x 70;
+  # say STDERR "-" x 70, "\n$alltext\n", Dumper($data), "-" x 70, "\n";
+  # say STDERR "X" x 70;
 
   return undef  if !scalar @$data || !$data->[0]{document}
-	  || ! defined $data->[1];
+	  || ! defined $data->[3];
 
-  # Title specifications and Block specs
-  say STDERR "XXXXXXXXXXXXXXXXXX\n", Dumper $data->[1];
-  return $data->[1]; # [$data->[1]->{title_subs}, $data->[1]->{block_parts}];
+  # Title specifications and Block specs:
+  # (First in list is document spec, 2nd is the TODO keywords spec).
+  return $data->[3];
 }
 
 
@@ -124,7 +133,7 @@ get '/attorg/edit/:file' => require_login sub {
      user_def => logged_in_user, # to_dumper( logged_in_user ),
      user_name=> logged_in_user->{user},
      filename => $file,
-     # data     => to_json( $data ),
+     # data   => to_json( $data ),
     };
 };
 
@@ -141,21 +150,28 @@ get '/attorg/data/:file' => require_login sub {
   return to_json( _get_org_file_data($file) );
 };
 
-get '/attorg/translate_row/' => require_login sub {
-  my $headline= params->{headline} // '';
-  my $block   = params->{text} // '';
-
-  return to_json( _parse_org_headline($headline, $block) );
-};
-
 
 post '/attorg/translate_row/' => require_login sub {
-  my $headline= params->{headline} // '';
-  my $block   = params->{text} // '';
+  my $headline  = params->{headline} // '';
+  my $block     = params->{text} // '';
+  my $todo_spec = params->{todo_states} // ''; # N B -- an Org text string.
+  my $priorities= params->{priorities} // '';  # (ditto)
 
-  return to_json( _parse_org_headline($headline, $block) );
+  return to_json( _parse_org_headline($headline, $block,
+									  $todo_spec, $priorities) );
 };
 
+
+post '/attorg/save/' => require_login sub {
+  my $to_file   = params->{data} // '';
+  my $file_spec = params->{file_spec} // '';
+  my $save_as   = params->{save_as} // 0;
+
+  # 1. Attempt to save, depending on specification.
+  # 2. If fail, return error message. If success, return 
+
+  return to_json( { foo => "bar" } );
+};
 
 
 # Just a test. Do verify path, so doesn't get /etc/passwd etc... :-)

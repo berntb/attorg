@@ -54,9 +54,18 @@ Here is what I think is the minimum viable feature list still needed to make Att
 Supported key chars commands
 ----------------------------
 
+The GUI is not necessary for adding tags, TODO state, priorites and level is not needed. You can specify that directly as in Emacs, when editing a Headline.
+
+Also note that there is support for underlining etc, in the normal way, but for now the Greek letters etc are not supported.
+
 These commands are implemented now, more or less completely.
 
-For now, some changes are made to "real" Emacs/Org Mode. E.g. Ctrl-K removes a Headline directly. Ctrl-Return stops editing of a block text field. Ctrl-space jumps to next Headline being edited. And so on.
+### Some changes to the normal Emacs/Org Mode:
+
+*  C-K,           Removes a Headline directly
+*  C-G            Stops editing (closes fields) of a Headline/Block
+*  C-Return,      As Ctrl-G, but saves any changes first
+*  C-Space,       Jumps to (next) Headline being edited
 
 
 #### Diverse:
@@ -69,8 +78,8 @@ For now, some changes are made to "real" Emacs/Org Mode. E.g. Ctrl-K removes a H
 #### Move around:
 
 *  MoveLevelUp,   C-C C-U
-*  MovePrevious,  C-C C-P // C-P // up arrow // C-up # (Block don't reuse up.)
-*  MoveNext,      C-N // down arrow // C-down
+*  MovePrevious,  C-C C-P // C-P // C-up arrow
+*  MoveNext,      C-N // C-down arrow
 *  PrevSameLevel, C-C C-B
 *  NextSameLevel, C-C C-F
 
@@ -116,11 +125,6 @@ For now, some changes are made to "real" Emacs/Org Mode. E.g. Ctrl-K removes a H
 #### Tags:
 
 *  EditHlineTags, C-C C-Q // C-C C-X T  # C-Q is dangerous for obvious reasons
-
-
-#### Delete a Headline:
-
-*  DelHeadline,   C-K  # Sorry about that :-)
 
 
 License
