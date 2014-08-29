@@ -60,7 +60,7 @@ $(function() {
   var _init = function(document_name, data,
                        document_div_id, divIdHeadlines) {
     var model  = new OrgModel(document_name, data,
-                              undefined, undefined,
+                              {}, // Don't know the callbacks yet
 							  _generate_id_string);
     stored_model[divIdHeadlines] = model;
 
@@ -155,22 +155,30 @@ var OrgController = function(model, view, commandHandler,
   // Set up callbacks for Model:
 
   // Just forward visible/hidden to View:
-  // XXXXX Make this event based instead.
-  model.callback_fun_visible = function(headline, visible,
-                                        noOpenCloseUpdates) {
+
+  // (I might want multiple Views to the same model in the future, but
+  // I should have some signal that the views could hang on, instead
+  // of this garbage.)
+  // XXXXX Make callbacks event based instead. (Use Backbone's code?)
+  model.callback_visible = function(headline, visible,
+                                    noOpenCloseUpdates) {
     if (visible) {
       that.view.show_headline( headline, noOpenCloseUpdates );
     } else {
       that.view.hide_headline( headline, noOpenCloseUpdates );
     }
   };
-
-
-  model.callback_fun_update = function(headline, alwaysMakeVisible) {
+  model.callback_update = function(headline, alwaysMakeVisible) {
 	// Protect the edit fields:
 	that.view.render_headline(headline, alwaysMakeVisible, true);
   };
-
+  model.callback_DocumentTodo = function() {
+	that.view.showDocumentTodoLists(that.model.todo_states(),
+									that.model.done_states());
+  };
+  model.callback_DocumentTags = function() {
+	that.view.showDocumentTagList(that.model.tags());
+  };
 
   // ------------------------------------------------------------
   // Event handling are callbacks from DOM events:

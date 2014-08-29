@@ -51,7 +51,7 @@ OrgModel.prototype = OrgModelSuper;
 // loads a new file. (Could throw it away instead and have a new one?)
 
 var OrgModelSuper = function(documentName, org_data,
-							 visibleUpdateCallback, updateHeadlineCallback,
+							 callbacks,
 							 increment_function) {
 
   var Headline = OrgHeadline;	// Shorter name
@@ -75,8 +75,10 @@ var OrgModelSuper = function(documentName, org_data,
   this.generate_id_string = increment_function;
 
   // This will be called for every headline set to hidden/shown.
-  this.callback_fun_visible = visibleUpdateCallback;
-  this.callback_fun_update  = updateHeadlineCallback;
+  this.callback_visible     = callbacks.visibleUpdate;
+  this.callback_update      = callbacks.updateHeadline;
+  this.callback_DocumentTodo= callbacks.updateDocumentTodo;
+  this.callback_DocumentTags= callbacks.updateDocumentTags;
 
 
   this.modified_flag = false;
@@ -539,7 +541,8 @@ var OrgModelSuper = function(documentName, org_data,
 	  if (data.todo_state)
 		headline.todo(data.todo_state);
 
-	  headline.owner.callback_fun_update(headline);
+	  if (headline.owner.callback_update !== undefined)
+		headline.owner.callback_update(headline);
 	};
 
 	// Called by jQuery when update fails:
@@ -742,9 +745,9 @@ OrgHeadline.prototype = {
 		  modified = true;
 		  documTags.push( t );
 		}
-		// XXXXX Update UI!! Specific callback for that (controller?)
-		if (modified)
-		  console.log("----- UPDATE UI LIST OF TAGS!! -----");
+		// Update View list of the model's tags:
+		if (modified && this.owner.callback_DocumentTags !== undefined)
+		  this.owner.callback_DocumentTags();
 	  }
 	}
     return this.headline.tags;
@@ -1012,9 +1015,9 @@ OrgHeadline.prototype = {
       
       if (new_value !== present_value) {
         this.headline.visible = new_value ? true : false;
-        if (this.owner.callback_fun_visible !== undefined)
-          this.owner.callback_fun_visible(this, this.headline.visible,
-										  this.owner.noOpenCloseUpdates);
+        if (this.owner.callback_visible !== undefined)
+          this.owner.callback_visible(this, this.headline.visible,
+									  this.owner.noOpenCloseUpdates);
         return new_value;
       }
     }

@@ -47,24 +47,34 @@ var OrgView = function(document_div_id, divid_headlines) {
   };
 
   this.init_document_parameters = function(model_data) {
-	// XXXX
+	// XXXX Add so these are clickable for updates. And have some
+	// variant for setting the globally used ones (as in .emacs
+	// initialization.)
+	this.showDocumentTodoLists(model_data.todo_states(),
+							   model_data.done_states());
+	this.showDocumentTagList(model_data.tags());
+	this.showDocumentPriorityList(model_data.priorities());
+	this.showDocumentDrawers(model_data.drawer_names());
+  };
 
-	var todo  = model_data.todo_states();
-	var done  = model_data.done_states();
-	var tags  = model_data.tags();
-	var draws = model_data.drawer_names();
-
+  this.showDocumentTodoLists = function(todo, done) {
 	$("#" + this.document_div_id + " .todo_states_list")
 	  .html( _.escape(todo.join(", ")) );
 	$("#" + this.document_div_id + " .done_states_list")
 	  .html( _.escape(done.join(", ")) );
+  };
+  this.showDocumentTagList = function(tags) {
 	$("#" + this.document_div_id + " .tag_list")
 	  .html( (tags !== undefined && tags.length) ?
 			 _.escape(tags.join(", ")) : "-" );
+  };
+  this.showDocumentPriorityList = function(priorities) {
 	$("#" + this.document_div_id + " .priority_list")
-	  .html( _.escape(model_data.priorities().join(", ")) );
+	  .html( _.escape(priorities.join(", ")) );
+  };
+  this.showDocumentDrawers = function(drawers) {
 	$("#" + this.document_div_id + " .drawer_names_list")
-	  .html( _.escape(draws.join(", ")) );
+	  .html( _.escape(drawers.join(", ")) );
   };
 
 
