@@ -58,13 +58,11 @@ The GUI is not necessary for adding tags, TODO state, priorites and level. You c
 
 Also note that there is support for underlining etc, in the normal way, but for now the Greek letters like '\Alpha' etc are not supported.
 
-These commands are implemented now, more or less completely.
-
-### Some changes to the normal Emacs/Org Mode:
+#### Some changes to the normal Emacs/Org Mode:
 
 *  C-K,           Removes a Headline directly
-*  C-G            Stops editing (closes fields) of a Headline/Block
-*  C-Return,      As Ctrl-G, but saves any changes first
+*  C-G,           Stops editing (closes fields) of a Headline/Block
+*  C-Return,      As Ctrl-G but saves any changes first
 *  C-Space,       Jumps to (next) Headline being edited
 
 
