@@ -750,6 +750,7 @@ function OrgAddKeyCmds(cmdHandler) {
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  console.log("In SaveDocument");
 
+	  // XXXX Need a "where"-spec:
 	  var text = this.controller.model.saveData();
 	  console.log(text);
 	  return true;

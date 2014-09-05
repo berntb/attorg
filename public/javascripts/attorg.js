@@ -59,25 +59,26 @@ $(function() {
   // - - -
   var _init = function(document_name, data,
                        document_div_id, divIdHeadlines) {
-    var model  = new OrgModel(document_name, data,
-                              {}, // Don't know the callbacks yet
-							  _generate_id_string);
+    var model         = new OrgModel(document_name, data,
+									 {}, // Don't know the callbacks yet
+									 _generate_id_string);
     stored_model[divIdHeadlines] = model;
 
     // XXXX Should honour the config flag on how to open an org file!
-    var i, headline, hasA1 = false;
+    var i, headline, firstLevel1, hasLevel1 = false;
     for (i = 0; i < model.length; i++) {
-      var headline = model.headline(i);
+      var headline    = model.headline(i);
       if (headline.level() === 1) {
-		hasA1      = true;
+		firstLevel1   = i;
+		hasLevel1     = true;
 		break;
 	  }
     }
 
-    if (hasA1) {
+    if (hasLevel1) {
       for (i = 0; i < model.length; i++) {
-        var headline = model.headline(i);
-        headline.visible(headline.level() === 1);
+        var headline  = model.headline(i);
+        headline.visible(i <= firstLevel1 || headline.level() === 1);
       }
     } else {
       // If no level 1, set all visible, for now:
@@ -85,12 +86,12 @@ $(function() {
         model.headline(i).visible(true);
     }
 
-	var view       = new OrgView(document_div_id, divIdHeadlines);
-	var cmdHandler = new OrgCmdMapper(undefined);
-    var controller = new OrgController(model, view, cmdHandler,
-									   document_div_id,
-									   divIdHeadlines
-									  );
+	var view          = new OrgView(document_div_id, divIdHeadlines);
+	var cmdHandler    = new OrgCmdMapper(undefined);
+    var controller    = new OrgController(model, view, cmdHandler,
+										  document_div_id,
+										  divIdHeadlines
+										 );
 	cmdHandler.setController(controller);
 	org_controllers[divIdHeadlines] = controller;
 
@@ -104,9 +105,9 @@ $(function() {
   var fileName        = $("#file-to-start").val();
 
   if (fileName === '') {
-    // XXXX Add some empty data representation, with links to
-    // documentation (or an org document with the documentation.)
-    text = '[ ' +
+    // XXXX The default document should have links to the Attorg
+    // documentation (or be an org document with the documentation.)
+    text              = '[ ' +
       '{ "drawer_names" : [ "CLOCK", "LOGBOOK", "PROPERTIES" ],' +
       '  "priorities"   : [ "A", "B", "C" ],' +
       '  "document"     : 1,' +
@@ -544,7 +545,7 @@ var OrgController = function(model, view, commandHandler,
 
 
   this.addHeadingEvent = function(event) {
-    event.stopPropagation();  // Gets two adds, otherwise
+    event.stopPropagation();
     var i = that._getHeadlineIxForButtonEvent( event );
 
     var headline_before = that.model.headline(i);
@@ -662,6 +663,35 @@ var OrgController = function(model, view, commandHandler,
     var headline = this.model.new_headline(ix, { level: level } );
     this.view.render_new_headline(ix, headline );
     this.view.render_edit_headline(ix, headline);
+
+	// XXXX
+
+	// Need to traverse all Headlines after ix with h.level > level,
+	// Set them visible. (If 1st Headline after is level+1, then just
+	// set Hlines of level+1 to visible.)
+	var i, subHeadline, len = this.model.length;
+	var allVisibleFlag = true;
+	if (len > ix + 1) {
+	  // Some subheadings were "stolen" from previous headline:
+	  if (ix > 0)
+		this._updateOpenCloseAroundChanged(ix-1);
+	  subHeadline = this.model.headline(ix+1);
+	  if (subHeadline.level() > level) {
+		subHeadline.visible(true);
+		if (subHeadline.level() === level+1)
+		  allVisibleFlag = false;
+		for(i = ix+2; i < len; i++) {
+		  subHeadline = this.model.headline(i);
+		  if (subHeadline.level() <= level)
+			break;
+		  if (allVisibleFlag)
+			subHeadline.visible(true);
+		  else if (subHeadline.level() === level+1)
+			subHeadline.visible(true);
+		}
+	  }
+	}
+	this._updateOpenCloseAroundChanged(ix);
 
     this.view.setSelectTitle( headline );
 	this.model.dirty(-1, undefined);

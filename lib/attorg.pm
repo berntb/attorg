@@ -97,13 +97,8 @@ sub _parse_org_headline {
   # XXXX This is pure user supplied text from over a socket... Check
   # it more carefully, before sending it on to Parse::Org!!
 
-  # Catch errors here.
+  # XXXX How is error catching here?? Check.
   my $data    = Attorg::Extract::Org::get_org_from_string( $alltext );
-
-  # Test, remove later:
-  # say STDERR "X" x 70;
-  # say STDERR "-" x 70, "\n$alltext\n", Dumper($data), "-" x 70, "\n";
-  # say STDERR "X" x 70;
 
   return undef  if !scalar @$data || !$data->[0]{document}
 	  || ! defined $data->[3];
@@ -167,11 +162,13 @@ post '/attorg/translate_row/' => require_login sub {
 post '/attorg/save/' => require_login sub {
   my $to_file   = params->{data} // '';
   my $file_spec = params->{file_spec} // '';
-  my $save_as   = params->{save_as} // 0;
+  # $save_as needs to be done by itself, since it needs to handle
+  # existing files etc.
 
   # 1. Attempt to save, depending on specification.
-  # 2. If fail, return error message. If success, return 
+  # 2. If fail, return error message. If success, return undef.
 
+  
   return to_json( { foo => "bar" } );
 };
 

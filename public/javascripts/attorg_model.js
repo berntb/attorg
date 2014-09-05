@@ -438,14 +438,23 @@ var OrgModelSuper = function(documentName, org_data,
   // ----------------------------------------------------------------------
   // Interaction with server:
 
-  this.saveDocument = function(whereSpec, savedAsAnotherName) {
+  // XXXX Need to change this a bit. 'saveAs' must be a separate call,
+  // which sends to this method.
+  // In saveAs, there should be two phases, first to check if there
+  // already is a file at that source/dir/name. If not (or Modal with
+  // query is accepted), then change source/name and do a normal save.
 
+  // In short, saveAs is a totally different animal where luser needs
+  // to step up/down in a directory hierarchy. (Use html in an iFrame
+  // for this?? No need to use a 1-page app.)
+
+  this.saveDocument = function(whereSpec) {
 	var toSave    = this.saveData();
 	console.log("SAVE DATA:");
 	console.log(toSave);
 	
 	var success_fun = function(reply) {
-	  // XXXX Let luser now about message, if error.
+	  // XXXX Let luser know about message, if error.
 	};
 
 
@@ -459,7 +468,7 @@ var OrgModelSuper = function(documentName, org_data,
       {
 		data:      toSave,
 		file_spec: whereSpec,
-		save_as:   savedAsAnotherName,
+		save_as:   undefined,
 	  },
       success_fun
     ).fail( fail_fun ); // ('fail' because $.post() returns a "promise".)
