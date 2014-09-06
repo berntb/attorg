@@ -304,14 +304,16 @@ OrgCmdMapper.prototype.callCommand = function(commandName, callParams) {
   if (blockLoop !== true || numberPre === undefined || numberPre+0 < 1)
 	return fun(keyboardp, event,
 			   ctrlKey, metaKey,  keyCode,
-			   headline, isBlock, numberPre);
+			   headline, isBlock, numberPre,
+			   callParams);
 
   console.log("Checking command " + commandName + " ------ FOR LOOP!");
   var val;
   for(var i = 0; i < numberPre; i++) {
 	val = fun(keyboardp, event,
 			  ctrlKey, metaKey,  keyCode,
-			  headline, isBlock, 1); // Always one here
+			  headline, isBlock, 1, // Always one here
+			  callParams);
 	if (val === false)
 	  return false;
   }

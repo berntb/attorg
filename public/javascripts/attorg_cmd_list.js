@@ -178,6 +178,60 @@ function OrgAddKeyCmds(cmdHandler) {
 
 
   cmdHandler.addACommand({
+	name:  "MovePrevHline",				// 'C-c C-p'
+	docum: "Description",
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
+	  // Emacs do it like this:
+	  if (block_p && number === undefined)
+		return this.callCommand('MovePrevious',
+								{
+								  charEvent:  true,
+								  event:	  event,
+								  headline:	  headline,
+								  isBlock:	  true,
+								  numericalPrefix: number
+								});
+	  
+	  // If not in block don't go to block but to the Headline text:
+	  this.callCommand('MovePrevious',
+					   {
+						 charEvent:  true,
+						 event:	  event,
+						 headline:	  headline,
+						 isBlock:	  false,
+						 numericalPrefix: number
+					   });
+	  var view  = this.controller.view;
+	  var model = this.controller.model;
+	  var hline = view.headlineWithFocus(model);
+	  if (hline !== undefined)
+		view.setFocusTitle( hline );
+	  return true;
+	}
+  });
+
+
+  cmdHandler.addACommand({
+	name:  "MoveNextHline",				// 'C-c C-n'
+	docum: "Description",
+	both:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
+					number) {
+
+	  return this.callCommand('MoveNext',
+							  {
+								charEvent:  true,
+								event:	  event,
+								headline:	  headline,
+								isBlock:	  true,
+								numericalPrefix: number
+							  });
+	}
+  });
+
+
+
+  cmdHandler.addACommand({
 	name:  "MovePrevious",				// 'C-80, up, C-up'
 	docum: "Description",
 	text:  function(charEvent, event, ctrl, meta, keycode, headline, block_p,
@@ -191,7 +245,7 @@ function OrgAddKeyCmds(cmdHandler) {
 								  event:	  event,
 								  headline:	  headline,
 								  isBlock:	  block_p,
-								  numericalPrefix: -number
+								  numericalPrefix: -number,
 								});
 	  }
 
@@ -745,7 +799,7 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addACommand({
 	name:  "SaveDocument",
 	docum: "Description",
-	
+	// XXXX Make another command for "Save As" (C-x C-w)
 	// Save document to server
 	both: function(charEvent, event, ctrl, meta, keycode, headline, block_p) {
 	  console.log("In SaveDocument");
@@ -1053,9 +1107,7 @@ function OrgAddKeyCmds(cmdHandler) {
 
 
   cmdHandler.addACommand({
-	name:  "_saveModalDialog",
-	// Parameters are uninteresting. This should just be called when a
-	// Modal is up.
+	name:  "_saveTagsModalDialog",
 	both: function() {
 	  // Get new values for tags and close Modal:
 	  var newTags  = this.controller.view.findCheckedTagsForHeadline();
@@ -1108,7 +1160,7 @@ function OrgAddKeyCmds(cmdHandler) {
   cmdHandler.addKeyCommand("OpenClose",	   "TAB,, S-TAB,, M-S-TAB");
   cmdHandler.addKeyCommand("SaveDocument", "C-X C-S");
   // XXXX
-  // Change CR so more Emacsy:
+  // Change CR so it is more Emacsy:
   // - C-CR opens a new line after the Headline (at the same level)
   // - M-CR opens a new Healine directly after (also at the same level)
   //   AND it gets any subtree of present Headline.
@@ -1117,8 +1169,10 @@ function OrgAddKeyCmds(cmdHandler) {
 
   // - - - Move commands:
   cmdHandler.addKeyCommand("MoveLevelUp",  "C-C C-U");
-  cmdHandler.addKeyCommand("MovePrevious", "C-C C-P,, C-P,, up,, C-up");
+  cmdHandler.addKeyCommand("MovePrevious", "C-P,, up,, C-up");
+  cmdHandler.addKeyCommand("MovePrevHline","C-C C-P");
   cmdHandler.addKeyCommand("MoveNext",	   "C-N,, down,, C-down");
+  cmdHandler.addKeyCommand("MoveNextHline","C-C C-N");
   cmdHandler.addKeyCommand("PrevSameLevel","C-C C-B"); // Same or higher level
   cmdHandler.addKeyCommand("NextSameLevel","C-C C-F"); // Same or higher level
 

@@ -520,7 +520,7 @@ var OrgController = function(model, view, commandHandler,
     var headline  = that._headlineFromMenuEvent(event, true);
 	var attorgCmd = $(event.target).attr("data-command")
 	  || $(event.currentTarget).attr("data-command");
-	console.log(event);
+	// console.log(event);
 	console.log("--- CMD name:" + attorgCmd);
 
 	// XXXX Should the present C-U number prefixes be done, too??
@@ -587,7 +587,7 @@ var OrgController = function(model, view, commandHandler,
   // Events about Tags:
 
   this.saveHeadlineTags = function(event) {
-	that.cmdHandler.callCommand("_saveModalDialog", { });
+	that.cmdHandler.callCommand("_saveTagsModalDialog", { });
 	return true;
   }
 
@@ -663,8 +663,6 @@ var OrgController = function(model, view, commandHandler,
     var headline = this.model.new_headline(ix, { level: level } );
     this.view.render_new_headline(ix, headline );
     this.view.render_edit_headline(ix, headline);
-
-	// XXXX
 
 	// Need to traverse all Headlines after ix with h.level > level,
 	// Set them visible. (If 1st Headline after is level+1, then just
